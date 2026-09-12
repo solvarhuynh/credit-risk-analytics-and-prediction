@@ -18,7 +18,7 @@
 
 ---
 
-## Thành viên 1 (Lead — vẫn làm task như thành viên thường)
+## Thành viên 1
 
 ### 🎯 Main: Modeling & Machine Learning
 
@@ -69,13 +69,13 @@
 
 | Việc | Chi tiết |
 | --- | --- |
-| Xây dựng Dashboard | Power BI hoặc Streamlit + Plotly, dùng dữ liệu sạch từ Thành viên 2 |
+| Xây dựng Dashboard | Power BI, dùng dữ liệu sạch từ Thành viên 2 và bảng điểm từ Thành viên 1 |
 | Đa dạng biểu đồ | Tối thiểu 8 loại: Bar, Line, Pie/Donut, Scatter, Heatmap, Treemap, Boxplot |
 | Bản đồ (Map) | Biểu đồ địa lý thể hiện phân bố rủi ro vỡ nợ theo vùng |
 | Tính tương tác | Filter nhiều cấp, Drill-down, Tooltip, Cross-filtering giữa các biểu đồ |
 | What-if Simulator | Tích hợp model từ Thành viên 1 (qua pickle/API) — nhập tay thông tin khách hàng → trả về risk score/khuyến nghị ngay trên dashboard |
 
-**Deliverable:** Dashboard hoàn chỉnh chạy được trực tiếp (file .pbix hoặc app Streamlit), phần báo cáo "Thiết kế Dashboard".
+**Deliverable:** Dashboard Power BI hoàn chỉnh chạy được trực tiếp (file .pbix), phần báo cáo "Thiết kế Dashboard".
 
 ### 🔧 Secondary: Data Visualization hỗ trợ EDA
 
@@ -98,7 +98,8 @@ Mỗi người đóng góp góc nhìn từ mảng mình phụ trách, sau đó c
 
 | Phần báo cáo | Người viết chính |
 | --- | --- |
-| Giới thiệu đề tài & Mô tả dataset | Thành viên 2 |
+| Giới thiệu đề tài | Thành viên 1 |
+| Mô tả dataset | Thành viên 2 |
 | Quy trình tiền xử lý & EDA | Thành viên 2 |
 | Thiết kế Dashboard | Thành viên 3 |
 | Mô hình dự báo (Logistic/XGBoost, SHAP, Credit Scoring) | Thành viên 1 |
@@ -111,7 +112,7 @@ Làm chung, chia phần trình bày theo đúng phần Main của từng ngườ
 
 ### 🎬 Video Demo (bắt buộc theo barem — dùng làm bản backup)
 
-- **Mục đích:** Phòng trường hợp lỗi kỹ thuật khi demo trực tiếp buổi bảo vệ (mất mạng, lỗi Power BI/Streamlit...), có sẵn video chạy mượt để trình chiếu thay thế.
+- **Mục đích:** Phòng trường hợp lỗi kỹ thuật khi demo trực tiếp buổi bảo vệ (mất mạng, lỗi Power BI...), có sẵn video chạy mượt để trình chiếu thay thế.
 - **Nội dung:** Quay màn hình theo kịch bản Data Analyst trình bày cho Risk Committee — mở đầu bài toán kinh doanh → pipeline dữ liệu (Thành viên 2) → mô hình dự báo (Thành viên 1) → thao tác trên Dashboard + What-if Simulator (Thành viên 3) → kết luận & khuyến nghị.
 - **Độ dài:** 5–8 phút, súc tích, không lan man.
 - **Phân công quay:** Mỗi người tự quay phần mình phụ trách (voice-over + screen recording), 1 người tổng hợp dựng/ghép video cuối cùng (có thể luân phiên hoặc người rành edit video nhất đảm nhận).

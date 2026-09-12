@@ -1,0 +1,23 @@
+---
+description: Quy tắc canonical path, dọn dẹp file và log công việc cho từng thành viên.
+alwaysApply: true
+---
+
+# Quản lý file và log
+
+- Trước khi tạo file/folder, tìm theo tên và chức năng trong repo.
+- Cập nhật file cũ nếu cùng mục đích. Nếu phải thay thế, xóa file lỗi thời trong cùng thay đổi và cập nhật mọi link tham chiếu.
+- Không đặt tên final2, new, latest, copy, backup, temp, test_ok hoặc các tên không nói rõ vai trò.
+- Không tạo folder trống để dành. Artifact lớn chỉ ở data/ hoặc models/ và phải tuân thủ gitignore.
+- Mỗi file material tạo/sửa/xóa phải có đường dẫn trong log owner; output dùng chung còn phải cập nhật contract hoặc task liên quan.
+- Không để raw data, binary model, secret, token hoặc log terminal dài trong Git/log.
+
+## Log bắt buộc
+
+- TV1 chỉ ghi docs/logs/log_tv1.md.
+- TV2 chỉ ghi docs/logs/log_tv2.md.
+- TV3 chỉ ghi docs/logs/log_tv3.md.
+
+Append một entry sau mỗi task meaningful, gồm: ngày, task, trạng thái, tóm tắt việc làm, đường dẫn thay đổi, kiểm tra, và một next step/blocker. Không viết lại lịch sử cũ.
+
+Khi owner/path/file cũ chưa rõ, dừng và hỏi thay vì tạo một phiên bản cạnh tranh.

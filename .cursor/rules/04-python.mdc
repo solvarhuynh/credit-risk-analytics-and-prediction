@@ -1,0 +1,14 @@
+---
+description: Quy ước Python cho mã pipeline, mô hình và adapter dashboard.
+globs: **/*.py
+alwaysApply: false
+---
+
+# Quy ước Python
+
+- Mỗi module/hàm public có docstring tiếng Việt hoặc nhất quán một ngôn ngữ, type hint đầy đủ và trách nhiệm rõ ràng.
+- Không để print debug, code chết, import thừa, đường dẫn máy cứng hoặc seed ngầm.
+- Tách load, transform, train, evaluate và export thành hàm/module có thể kiểm thử.
+- Không fit imputer, encoder, scaler hoặc feature selector trên toàn bộ dữ liệu trước split.
+- Không nạp raw data/model lớn vào Git. Đường dẫn lấy từ config tập trung.
+- Trước commit, chạy tối thiểu kiểm tra cú pháp/import cho phần sửa và test liên quan khi đã có test.

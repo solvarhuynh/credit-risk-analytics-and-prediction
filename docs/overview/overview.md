@@ -3,7 +3,7 @@
 **Môn học:** Tương tác Dữ liệu Trực quan
 **Dataset:** Home Credit Default Risk (Kaggle)
 **Mục tiêu điểm:** 9.5/10 (A+)
-**Dashboard:** Power BI / Streamlit + Plotly
+**Dashboard:** Power BI (Python dùng cho pipeline và mô hình)
 **Model:** Logistic Regression + XGBoost
 
 ---
@@ -65,7 +65,7 @@ Trong hoạt động cho vay tiêu dùng, việc đánh giá sai rủi ro tín d
 
 ### 3.3 Dashboard trực quan hóa tương tác
 
-- **Công cụ:** Power BI hoặc Streamlit + Plotly
+- **Công cụ:** Power BI (Python xử lý pipeline và mô hình)
 - **8+ loại biểu đồ:** Bar, Line, Pie/Donut, Scatter, Heatmap, Treemap, Boxplot, và **Map** (phân bố rủi ro theo vùng)
 - **Tính năng:** Filter nhiều cấp, Drill-down, Tooltip, Cross-filtering giữa các biểu đồ
 - **Điểm nhấn:** What-if Simulator — nhập thông tin khách hàng, hệ thống trả về risk score tức thì
@@ -118,7 +118,7 @@ Trong hoạt động cho vay tiêu dùng, việc đánh giá sai rủi ro tín d
 | Ngôn ngữ & xử lý dữ liệu | Python (Pandas, NumPy) |
 | Trực quan hóa tĩnh (EDA) | Matplotlib, Seaborn |
 | Machine Learning | Scikit-learn (Logistic Regression), XGBoost/LightGBM, imbalanced-learn (SMOTE), SHAP |
-| Dashboard tương tác | Power BI hoặc Streamlit + Plotly |
+| Dashboard tương tác | Power BI |
 | Báo cáo & thuyết trình | Word/LaTeX (chuẩn IEEE), PowerPoint/Slide |
 
 ---

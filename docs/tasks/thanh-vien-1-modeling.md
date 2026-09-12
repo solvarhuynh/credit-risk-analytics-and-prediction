@@ -1,4 +1,4 @@
-# NHIỆM VỤ CHI TIẾT — THÀNH VIÊN 1 (LEAD)
+# NHIỆM VỤ CHI TIẾT — THÀNH VIÊN 1
 
 **Đề tài:** Phân tích rủi ro tín dụng và khả năng vỡ nợ của khách hàng cá nhân
 **Vai trò:** Lead (quản lý tiến độ chung) — nhưng khối lượng công việc kỹ thuật như thành viên bình thường

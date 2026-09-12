@@ -16,7 +16,7 @@ Xây dựng Dashboard trực quan hóa tương tác hoàn chỉnh, biến kết 
 
 ### 2.1 Lựa chọn & chuẩn bị công cụ
 
-- [ ] Quyết định dùng **Power BI** hay **Streamlit + Plotly** (cân nhắc: Power BI dễ đạt điểm UI/UX nhanh, Streamlit linh hoạt hơn để tích hợp model trực tiếp cho What-if Simulator)
+- [ ] Dùng **Power BI** làm dashboard chính: dựng Data Model, Power Query, DAX measures và cấu hình interaction/cross-filtering. Python chỉ tạo các bảng dữ liệu/model artifacts để Power BI tiêu thụ.
 - [ ] Cài đặt môi trường, kết nối với dataset đã làm sạch từ Thành viên 2
 - [ ] Thiết kế wireframe/layout tổng thể trước khi build (mấy trang, mỗi trang có gì)
 
@@ -41,16 +41,11 @@ Xây dựng Dashboard trực quan hóa tương tác hoàn chỉnh, biến kết 
 
 Dataset Home Credit Default Risk **không có** tên tỉnh/thành hay tọa độ GPS thật — chỉ có các trường mã hóa vùng dạng số: `REGION_RATING_CLIENT`, `REGION_RATING_CLIENT_W_CITY`, `REGION_POPULATION_RELATIVE`. Để có Map hợp lệ, đúng khoa học (không "chế" dữ liệu không tồn tại), chọn 1 trong 2 phương án sau:
 
-**Phương án A (khuyến nghị — an toàn, minh bạch):**
-- Dùng **Choropleth Map dạng mô phỏng**: gán ngẫu nhiên có kiểm soát (hoặc theo phân phối hợp lý) các giá trị `REGION_RATING_CLIENT` (1/2/3) vào một bản đồ hành chính mẫu (VD: bản đồ các tỉnh Việt Nam hoặc các bang/vùng của một quốc gia bất kỳ dùng làm minh họa)
-- **Bắt buộc ghi chú rõ trong dashboard và báo cáo**: "Bản đồ mang tính minh họa phân bố theo Region Rating nội bộ của dataset (không phải vị trí địa lý thực tế của khách hàng, vì dataset gốc không cung cấp thông tin này)"
-- Đây là cách xử lý trung thực, thể hiện hiểu biết về hạn chế dữ liệu — điểm cộng khi vấn đáp thay vì bị trừ vì "bịa" dữ liệu
+**Không dùng bản đồ mô phỏng bằng cách gán ngẫu nhiên khách hàng vào tỉnh/thành.** Cách đó không tạo dữ liệu địa lý thật.
 
-**Phương án B (nếu muốn địa lý thật):**
-- Tìm thêm 1 dataset phụ có thật (VD: dataset tín dụng theo vùng của World Bank/quốc gia cụ thể) để bổ sung tọa độ, dùng làm ví dụ minh họa riêng, tách biệt rõ với phần phân tích chính trên Home Credit
-- Rủi ro: tốn thời gian, dễ gây nhầm lẫn nguồn dữ liệu nếu trình bày không rõ ràng — chỉ làm nếu còn dư thời gian
-
-→ **Quyết định:** Dùng Phương án A, ghi chú rõ ràng để tránh bị đánh giá là dữ liệu không trung thực khi vấn đáp.
+- [ ] Hỏi giảng viên liệu biểu đồ phân bố theo Region Rating được chấp nhận thay bản đồ địa lý hay không.
+- [ ] Nếu không, chỉ dùng Map khi có nguồn địa lý thật và khóa join hợp lệ; ghi rõ nguồn, cách join và giới hạn trong dashboard/báo cáo.
+- [ ] Lưu quyết định trong tài liệu rủi ro/kiến trúc của dự án.
 - [ ] Đảm bảo mỗi loại biểu đồ chọn đúng loại dữ liệu phù hợp (không dùng Pie chart cho dữ liệu có quá nhiều category)
 
 ### 2.4 Tính năng tương tác
@@ -66,8 +61,8 @@ Dataset Home Credit Default Risk **không có** tên tỉnh/thành hay tọa đ�
 - [ ] Nhận model đã train từ Thành viên 1 (file `.pkl` + hướng dẫn input/output)
 - [ ] Thiết kế 1 trang/section riêng cho phép người dùng **nhập tay** thông số khách hàng giả định: thu nhập, tuổi, số năm làm việc, loại vay, số tiền vay...
 - [ ] Khi nhấn "Tính toán" → gọi model → trả về ngay: xác suất vỡ nợ, Credit Score, Risk Tier (Low/Medium/High), khuyến nghị (Approve/Reject/Review)
-- [ ] Nếu dùng Streamlit: tích hợp trực tiếp bằng Python (load pickle, predict ngay trong app)
-- [ ] Nếu dùng Power BI: có thể cần dùng Power BI + Python script visual hoặc kết nối qua API đơn giản — bàn với Thành viên 1 về cách khả thi nhất
+- [ ] Dashboard nạp bảng điểm do Python xuất. Không load model XGBoost trực tiếp trong Power BI.
+- [ ] Nếu làm What-if Simulator, dùng Logistic Regression rút gọn đã chốt feature/hệ số và đối chiếu kết quả DAX với Python.
 - [ ] Test với vài trường hợp thực tế từ tập test để đảm bảo kết quả hợp lý (khách rõ ràng rủi ro cao phải ra risk score cao)
 
 ### 2.6 Tích hợp kết quả dự báo lên Dashboard
@@ -77,7 +72,7 @@ Dataset Home Credit Default Risk **không có** tên tỉnh/thành hay tọa đ�
 
 ### 2.7 Bàn giao
 
-- [ ] Hoàn thiện file dashboard (`.pbix` cho Power BI hoặc app Streamlit deploy được/chạy local ổn định)
+- [ ] Hoàn thiện file dashboard Power BI (`.pbix`) và hướng dẫn refresh dữ liệu.
 - [ ] Quay lại vài screenshot/GIF các tính năng chính để dùng trong báo cáo và slide
 - [ ] Viết phần báo cáo "Thiết kế Dashboard" (giải thích layout, luồng tương tác, lý do chọn từng loại biểu đồ)
 
@@ -99,7 +94,7 @@ Dataset Home Credit Default Risk **không có** tên tỉnh/thành hay tọa đ�
 
 ## 4. Checklist chuẩn bị vấn đáp (bắt buộc tự luyện)
 
-- [ ] Giải thích được lý do chọn Power BI/Streamlit thay vì công cụ khác
+- [ ] Giải thích được lý do chọn Power BI và sự phân tách Python pipeline/model với lớp dashboard
 - [ ] Giải thích được cách Cross-filtering hoạt động về mặt kỹ thuật
 - [ ] Giải thích được What-if Simulator lấy model từ đâu, xử lý input/output như thế nào
 - [ ] Giải thích được vì sao chọn field cụ thể để tô màu trên bản đồ (Map)
@@ -110,7 +105,7 @@ Dataset Home Credit Default Risk **không có** tên tỉnh/thành hay tọa đ�
 
 ## 5. Deliverables cuối cùng
 
-1. File Dashboard hoàn chỉnh (`.pbix` hoặc Streamlit app)
+1. File Dashboard Power BI hoàn chỉnh (`.pbix`)
 2. Screenshot/GIF minh họa các tính năng chính (filter, drill-down, cross-filtering, What-if Simulator)
 3. Phần báo cáo "Thiết kế Dashboard" (theo chuẩn IEEE)
 4. Nội dung trình bày slide phần Dashboard + demo trực tiếp trong buổi bảo vệ

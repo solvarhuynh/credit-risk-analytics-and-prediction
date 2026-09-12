@@ -1,0 +1,26 @@
+---
+description: Quy tắc kiểm tra, commit, push và review cho nhóm ba thành viên.
+alwaysApply: true
+---
+
+# Kiểm tra, Git và review
+
+## Quality gate
+
+- Chạy kiểm tra phù hợp trước commit: Markdown/doc check cho docs; import/compile hoặc test liên quan cho Python; refresh/kiểm tra nguồn dữ liệu cho Power BI.
+- Nếu không thể chạy kiểm tra, ghi rõ lý do và trạng thái blocked trong log; không tuyên bố PASS.
+- Kiểm tra git diff và git status để tránh đưa file ngoài scope, dữ liệu, model hoặc secret vào commit.
+
+## Commit và push
+
+1. Chỉ làm trên branch tv1, tv2 hoặc tv3; không commit/push trực tiếp vào main.
+2. Stage từng đường dẫn cụ thể; cấm git add . và git add -A.
+3. Commit nhỏ, một mục đích, theo mẫu feat(scope), fix(scope), docs(scope), refactor(scope), test(scope), chore(scope).
+4. Commit phải gồm entry log tương ứng và không được chứa thay đổi chưa kiểm tra.
+5. Sync/rebase với main theo quy trình nhóm, push branch cá nhân, rồi tạo PR vào main.
+
+## Review
+
+PR phải nêu: task, file thay đổi, validation, output canonical, tác động downstream và blocker còn lại.
+
+Contract, schema, config dùng chung, threshold/model policy và file Power BI dùng chung cần review chéo trước merge. Không merge chỉ vì không có conflict.

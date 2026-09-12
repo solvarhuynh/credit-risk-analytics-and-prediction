@@ -1,0 +1,33 @@
+---
+description: Quy trình bắt buộc khi AI hoặc thành viên thực hiện một task trong dự án.
+alwaysApply: true
+---
+
+# Quy trình thực hiện task
+
+## Trước khi bắt đầu
+
+1. Đọc README, contract, task và log của owner liên quan.
+2. Xác định đúng một task: mục tiêu, owner, input, output canonical, consumer, kiểm tra cần chạy và điều kiện dừng.
+3. Tìm file/folder hiện có cùng chức năng. Ưu tiên sửa trực tiếp; không tự tạo bản song song.
+4. Nếu thay đổi schema dữ liệu/model, metric, công cụ dashboard hoặc phạm vi dự án, dừng và xin xác nhận của leader.
+
+## Khi giao việc cho AI
+
+Prompt phải nêu rõ: file/data được đọc, việc cần làm, phần không được thay đổi, output/path mong đợi, cách kiểm tra PASS và điều kiện STOP.
+
+Một prompt chỉ làm một task kỹ thuật cụ thể. Không tự suy diễn rằng audit được phép train model, hoặc sửa docs được phép xóa/tái cấu trúc dữ liệu.
+
+## Trong khi làm
+
+- Không bịa dữ liệu, insight, metric, đường dẫn, kết quả chạy, hoặc khả năng tích hợp.
+- Không dùng dữ liệu nhãn/test để chọn feature, threshold hay model.
+- Ưu tiên mã tái lập được trong src; notebook dùng để minh họa/phân tích.
+- Không sửa file ngoài scope task. Nếu phát hiện lỗi khác, ghi vào log như một next step.
+
+## Sau khi làm
+
+1. Kiểm tra lại đường dẫn, consumer downstream và file trùng/orphan.
+2. Chạy kiểm tra nhỏ nhất có ý nghĩa. Không nói task chạy được nếu chưa có bằng chứng kiểm tra.
+3. Cập nhật log owner trước khi commit.
+4. Báo cáo ngắn: đã làm gì, kiểm tra nào PASS/FAIL, file nào đổi, blocker/next step.
