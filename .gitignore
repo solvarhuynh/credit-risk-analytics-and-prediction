@@ -1,0 +1,57 @@
+# ==========================================
+# GITIGNORE - DO AN CREDIT RISK ANALYTICS
+# ==========================================
+
+# 1. Du lieu nang (tranh push len Git gay vuot 100MB)
+data/raw/*
+!data/raw/.gitkeep
+data/interim/*
+!data/interim/.gitkeep
+data/processed/*.csv
+data/processed/*.parquet
+!data/processed/.gitkeep
+
+# 2. Model artifacts nang (>50MB)
+models/*.pkl
+models/*.joblib
+models/*.onnx
+!models/.gitkeep
+
+# 3. Moi truong ao Python (Virtual Environments)
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# 4. Bytecode & Cache Python
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.pytest_cache/
+.mypy_cache/
+
+# 5. Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# 6. Cau hinh IDE / Editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# 7. He dieu hanh & Tep tam
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.temp
+~$*.docx
+~$*.xlsx
+~$*.pptx
+
+# 8. Logs
+*.log
