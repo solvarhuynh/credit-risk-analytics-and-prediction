@@ -11,7 +11,7 @@ Ngày kiểm tra: 13/09/2026. Thư mục này là bộ dữ liệu **Home Credit
 ## Danh mục từng tệp
 
 | Tệp | Kích thước hiện tại | Khóa/liên kết | Vai trò |
-| --- | ---: | --- | --- | --- |
+| --- | ---: | --- | --- |
 | `application_train.csv` | 158.44 MB | `SK_ID_CURR` | Bảng trung tâm, một hồ sơ vay hiện tại mỗi dòng, chứa nhãn `TARGET` và các biến hồ sơ. |
 | `application_test.csv` | 25.34 MB | `SK_ID_CURR` | Cùng schema với train trừ `TARGET`; dùng tính điểm ngoài mẫu/Kaggle. |
 | `bureau.csv` | 162.14 MB | `SK_ID_CURR`, `SK_ID_BUREAU` | Các khoản tín dụng tại tổ chức tín dụng khác. Tạo feature dư nợ, số khoản vay, trạng thái khoản vay. |
