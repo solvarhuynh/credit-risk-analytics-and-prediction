@@ -116,7 +116,7 @@ Trong hoạt động cho vay tiêu dùng, việc đánh giá sai rủi ro tín d
 | Nhóm | Công cụ / Thư viện |
 | --- | --- |
 | Ngôn ngữ & xử lý dữ liệu | Python (Pandas, NumPy) |
-| Trực quan hóa tĩnh (EDA) | Matplotlib, Seaborn |
+| Trực quan hóa tĩnh (EDA) | Matplotlib, Seaborn, Plotly |
 | Machine Learning | Scikit-learn (Logistic Regression), XGBoost/LightGBM, imbalanced-learn (SMOTE), SHAP |
 | Dashboard tương tác | Power BI |
 | Báo cáo & thuyết trình | Word/LaTeX (chuẩn IEEE), PowerPoint/Slide |
