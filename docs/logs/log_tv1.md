@@ -14,3 +14,11 @@ Chỉ append entry mới theo quy trình trong docs/tasks/working-protocol.md.
 - **Kiểm tra:** đối chiếu `data_contract.md`, task TV1/TV2 và trạng thái pipeline/canonical artifacts.
 - **Blocker:** TV2 chưa bàn giao `data/processed/cleaned_dataset.parquet` và `data/processed/data_dictionary.csv` cùng join/quality audit.
 - **Next step:** Chờ TV2 hoàn thành canonical Data Engineering handoff, sau đó chạy lại Join Review + Feature Review + Model Input Quality Gate trước khi Modeling.
+
+## 2026-09-13 — Setup handoff guide
+
+- **Trạng thái:** done
+- **Đã làm:** tạo hướng dẫn môi trường, prerequisite, trạng thái lệnh chạy và validation cho phần Modeling.
+- **File thay đổi:** `docs/setup/tv1_setup.md`, `docs/logs/log_tv1.md`.
+- **Kiểm tra:** đối chiếu model contract, trạng thái canonical input và rule setup/handoff.
+- **Next step:** Cập nhật lệnh train ngay sau khi canonical model input và modeling script được bàn giao.

@@ -10,6 +10,14 @@ Chỉ append entry mới theo quy trình trong docs/tasks/working-protocol.md.
 - **Kiểm tra đã chạy:** `python -m py_compile src\\data\\load_data.py`; đọc thử `application_train`; chạy full preflight trên toàn bộ raw CSV; kiểm tra thông báo khi thiếu file; đọc bảng mô tả optional bằng encoding phù hợp.
 - **Next step:** DE-02 — Data Cleaning & Sentinel/Missing Handling.
 
+## 2026-09-13 — Setup handoff guide
+
+- **Trạng thái:** done
+- **Đã làm:** tạo hướng dẫn chạy DE-01, raw prerequisites, validation và giới hạn output.
+- **File thay đổi:** `docs/setup/tv2_setup.md`, `docs/logs/log_tv2.md`.
+- **Kiểm tra:** đối chiếu command DE-01 đã chạy thực tế và canonical raw paths.
+- **Next step:** Cập nhật guide cùng mỗi task DE-02 đến DE-06 khi có command/output mới.
+
 ## 2026-09-13 — DE-01 — Raw Data Loading & Schema Preflight (handoff sync)
 
 - **Trạng thái:** done - `tv1 đã làm giúp`
