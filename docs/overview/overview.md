@@ -2,7 +2,7 @@
 
 **Môn học:** Tương tác Dữ liệu Trực quan
 **Dataset:** Home Credit Default Risk (Kaggle)
-**Mục tiêu điểm:** 9.5/10 (A+)
+**Mục tiêu điểm:** 9/10 (A+)
 **Dashboard:** Power BI (Python dùng cho pipeline và mô hình)
 **Model:** Logistic Regression + XGBoost
 
