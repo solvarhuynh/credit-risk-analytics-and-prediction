@@ -19,9 +19,9 @@ Sau khi xong:
 
 Mỗi thành viên chỉ append vào log của mình:
 
-- TV1: docs/logs/log_tv1.md
-- TV2: docs/logs/log_tv2.md
-- TV3: docs/logs/log_tv3.md
+- TV1: logs/log_tv1.md
+- TV2: logs/log_tv2.md
+- TV3: logs/log_tv3.md
 
 Mỗi entry cần: ngày, mã/tên task, trạng thái (done/blocked/in progress), việc đã làm, đường dẫn file thay đổi, kiểm tra đã chạy, và đúng một next step hoặc blocker.
 
