@@ -3,8 +3,8 @@
 **Đề tài:** Phân tích rủi ro tín dụng và khả năng vỡ nợ của khách hàng cá nhân
 **Môn học:** Tương tác Dữ liệu Trực quan
 **Dataset:** Home Credit Default Risk (Kaggle)
-**Mục tiêu điểm:** 9.5/10 (A+)
-**Team:** 3 thành viên — không phân vai trò Lead (Lead vẫn làm task như thành viên thường)
+**Mục tiêu điểm:** 9/10 (A+)
+**Team:** 3 thành viên
 
 ---
 
