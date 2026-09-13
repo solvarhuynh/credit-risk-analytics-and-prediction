@@ -1,0 +1,13 @@
+---
+description: Mọi output runnable phải có hướng dẫn setup và cách chạy theo owner.
+alwaysApply: true
+---
+
+# Setup và handoff bắt buộc
+
+- Mỗi thành viên có đúng một guide canonical tại `docs/setup/tv{n}_setup.md`.
+- Khi tạo hoặc sửa code, notebook, pipeline, model artifact hay dashboard mà người khác cần chạy/refresh, phải cập nhật guide của owner trong cùng task.
+- Guide phải ghi rõ: mục đích, prerequisite, lệnh chạy hoặc thao tác refresh, input/source, output, validation và giới hạn/blocker hiện tại.
+- Chỉ ghi lệnh đã tồn tại và đã kiểm tra; phần chưa implement phải ghi `PENDING` hoặc `BLOCKED`, không bịa command/output.
+- Log owner phải liệt kê đường dẫn guide khi guide được tạo hoặc thay đổi.
+- Không tạo thêm các tên cạnh tranh như `setup_new`, `run_latest`, `quickstart2`; cập nhật guide canonical hiện có.
