@@ -10,17 +10,17 @@ Ngày kiểm tra: 13/09/2026. Thư mục này là bộ dữ liệu **Home Credit
 
 ## Danh mục từng tệp
 
-| Tệp | Kích thước hiện tại | Khóa/liên kết | Vai trò | Quyết định |
+| Tệp | Kích thước hiện tại | Khóa/liên kết | Vai trò |
 | --- | ---: | --- | --- | --- |
-| `application_train.csv` | 158.44 MB | `SK_ID_CURR` | Bảng trung tâm, một hồ sơ vay hiện tại mỗi dòng, chứa nhãn `TARGET` và các biến hồ sơ. | **Giữ bắt buộc** |
-| `application_test.csv` | 25.34 MB | `SK_ID_CURR` | Cùng schema với train trừ `TARGET`; dùng tính điểm ngoài mẫu/Kaggle. | Giữ có điều kiện |
-| `bureau.csv` | 162.14 MB | `SK_ID_CURR`, `SK_ID_BUREAU` | Các khoản tín dụng tại tổ chức tín dụng khác. Tạo feature dư nợ, số khoản vay, trạng thái khoản vay. | **Giữ** |
-| `bureau_balance.csv` | 358.19 MB | `SK_ID_BUREAU` → `bureau` | Trạng thái tín dụng theo tháng của từng bản ghi bureau. Không join trực tiếp vào application; aggregate theo `SK_ID_BUREAU`, rồi qua `bureau` về `SK_ID_CURR`. | **Giữ** (mở rộng) |
-| `previous_application.csv` | 386.21 MB | `SK_ID_CURR`, `SK_ID_PREV` | Các đơn vay trước tại Home Credit: kết quả duyệt, số tiền, sản phẩm. | **Giữ** |
-| `installments_payments.csv` | 689.62 MB | `SK_ID_PREV`, `SK_ID_CURR` | Lịch sử trả góp theo kỳ; nguồn chính cho feature trả trễ/chênh lệch thanh toán. | **Giữ** |
-| `POS_CASH_balance.csv` | 374.51 MB | `SK_ID_PREV`, `SK_ID_CURR` | Số dư và quá hạn hàng tháng của khoản POS/cash. | **Giữ** (mở rộng) |
-| `credit_card_balance.csv` | 404.91 MB | `SK_ID_PREV`, `SK_ID_CURR` | Số dư, hạn mức, chi tiêu, thanh toán và quá hạn của thẻ tín dụng. | **Giữ** (mở rộng) |
-| `HomeCredit_columns_description.csv` | 0.04 MB | Tên bảng/cột | Data dictionary từ nguồn, giải nghĩa cột và giá trị đặc biệt. | **Giữ bắt buộc** |
+| `application_train.csv` | 158.44 MB | `SK_ID_CURR` | Bảng trung tâm, một hồ sơ vay hiện tại mỗi dòng, chứa nhãn `TARGET` và các biến hồ sơ. |
+| `application_test.csv` | 25.34 MB | `SK_ID_CURR` | Cùng schema với train trừ `TARGET`; dùng tính điểm ngoài mẫu/Kaggle. |
+| `bureau.csv` | 162.14 MB | `SK_ID_CURR`, `SK_ID_BUREAU` | Các khoản tín dụng tại tổ chức tín dụng khác. Tạo feature dư nợ, số khoản vay, trạng thái khoản vay. |
+| `bureau_balance.csv` | 358.19 MB | `SK_ID_BUREAU` → `bureau` | Trạng thái tín dụng theo tháng của từng bản ghi bureau. Không join trực tiếp vào application; aggregate theo `SK_ID_BUREAU`, rồi qua `bureau` về `SK_ID_CURR`. |
+| `previous_application.csv` | 386.21 MB | `SK_ID_CURR`, `SK_ID_PREV` | Các đơn vay trước tại Home Credit: kết quả duyệt, số tiền, sản phẩm. |
+| `installments_payments.csv` | 689.62 MB | `SK_ID_PREV`, `SK_ID_CURR` | Lịch sử trả góp theo kỳ; nguồn chính cho feature trả trễ/chênh lệch thanh toán. |
+| `POS_CASH_balance.csv` | 374.51 MB | `SK_ID_PREV`, `SK_ID_CURR` | Số dư và quá hạn hàng tháng của khoản POS/cash. |
+| `credit_card_balance.csv` | 404.91 MB | `SK_ID_PREV`, `SK_ID_CURR` | Số dư, hạn mức, chi tiêu, thanh toán và quá hạn của thẻ tín dụng. |
+| `HomeCredit_columns_description.csv` | 0.04 MB | Tên bảng/cột | Data dictionary từ nguồn, giải nghĩa cột và giá trị đặc biệt. |
 
 `data/raw/.gitkeep` là tệp kỹ thuật để Git giữ thư mục rỗng; giữ nguyên.
 
