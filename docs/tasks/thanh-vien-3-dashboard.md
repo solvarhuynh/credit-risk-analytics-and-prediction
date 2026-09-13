@@ -86,7 +86,7 @@ Dataset Home Credit Default Risk **không có** tên tỉnh/thành hay tọa đ�
 
 ## 3. Danh sách công việc hỗ trợ (Secondary: Data Visualization hỗ trợ EDA)
 
-- [ ] Hỗ trợ Thành viên 2 vẽ các biểu đồ tĩnh (Matplotlib/Seaborn) cho phần EDA — đặc biệt các biểu đồ cần kỹ thuật trực quan hóa tốt (heatmap, phân phối)
+- [ ] Hỗ trợ Thành viên 2 vẽ các biểu đồ tĩnh (Matplotlib/Seaborn/Plotly) cho phần EDA — đặc biệt các biểu đồ cần kỹ thuật trực quan hóa tốt (heatmap, phân phối)
 - [ ] Đề xuất bảng màu, style nhất quán để khi đưa lên Dashboard không bị "lệch tông" so với phần EDA trong báo cáo
 - [ ] Góp ý cho Thành viên 2 loại biểu đồ nào nên dùng cho từng loại insight (kinh nghiệm từ việc build dashboard có thể áp dụng ngược lại cho EDA)
 
