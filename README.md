@@ -1,6 +1,6 @@
 # Phân tích rủi ro tín dụng và dự báo vỡ nợ
 
-Đồ án môn **Tương tác Dữ liệu Trực quan**, dùng [Home Credit Default Risk](https://www.kaggle.com/c/home-credit-default-risk/data): dữ liệu nhiều bảng → tiền xử lý/EDA → dự báo xác suất vỡ nợ → dashboard tương tác.
+Đồ án môn **Tương tác Dữ liệu Trực quan**, dùng [Home Credit Default Risk](https://www.kaggle.com/c/home-credit-default-risk/data) hoặc [Driver](https://drive.google.com/file/d/1KACipCMMBQNzD53ozWCAQIDITlWIVugW/view?usp=drive_link): dữ liệu nhiều bảng → tiền xử lý/EDA → dự báo xác suất vỡ nợ → dashboard tương tác.
 
 > Repository đang ở giai đoạn khởi tạo. Các file trong `src/` là skeleton; `docs/` quy định đầu ra và điểm bàn giao giữa các thành viên.
 
