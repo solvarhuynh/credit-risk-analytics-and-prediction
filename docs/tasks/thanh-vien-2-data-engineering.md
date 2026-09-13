@@ -65,15 +65,20 @@ Xây dựng toàn bộ tầng dữ liệu của dự án: từ thu thập, làm 
 
 ### 2.7 Video Demo — phần quay của Thành viên 2 (việc chung, xem chi tiết ở `phan-cong-nhiem-vu.md`)
 
-- [ ] Quay screen recording phần pipeline: chạy script clean_data, minh họa trước/sau xử lý missing/outlier, kết quả EDA
+- [ ] Quay screen recording phần pipeline: chạy lệnh `python -m src.data.build_pipeline`, minh họa trước/sau xử lý missing/outlier, kết quả EDA
 - [ ] Voice-over giải thích ngắn gọn nguồn dữ liệu và các bước xử lý chính
 - [ ] Gửi clip cho người tổng hợp dựng video hoàn chỉnh
 
 ### 2.8 Bàn giao
 
-- [ ] Xuất dataset đã làm sạch, đã join, đã có calculated fields (`cleaned_dataset.csv`)
+- [ ] Xuất dataset đã làm sạch, đã join, đã có calculated fields (`data/processed/cleaned_dataset.parquet`) và `data/processed/data_dictionary.csv`
 - [ ] Gửi cho Thành viên 1 (để train model) và Thành viên 3 (để build dashboard)
-- [ ] Viết script pipeline hoàn chỉnh (`clean_data_pipeline.py`) để tái tạo dataset từ đầu — có thể tham khảo cấu trúc pipeline dạng function theo từng bước
+- [ ] Hiện thực hóa pipeline dữ liệu hoàn chỉnh thông qua các module skeleton trong `src/` (thực thi qua `python -m src.data.build_pipeline`), không tạo file lẻ `clean_data_pipeline.py`:
+  - `src/data/load_data.py`
+  - `src/data/cleaning.py`
+  - `src/data/aggregate.py`
+  - `src/data/build_pipeline.py`
+  - `src/features/engineering.py`
 - [ ] Viết phần báo cáo "Giới thiệu dataset" + "Quy trình tiền xử lý & EDA" kèm Data Dictionary
 
 ---
@@ -108,9 +113,9 @@ Xây dựng toàn bộ tầng dữ liệu của dự án: từ thu thập, làm 
 
 ## 5. Deliverables cuối cùng
 
-1. Script pipeline hoàn chỉnh (`clean_data_pipeline.py`)
-2. Dataset đã làm sạch (`cleaned_dataset.csv`)
-3. Data Dictionary (bảng mô tả các trường dữ liệu)
+1. Pipeline dữ liệu hoàn chỉnh dạng module trong `src/` (thực thi qua `python -m src.data.build_pipeline`)
+2. Dataset đã làm sạch dạng parquet (`data/processed/cleaned_dataset.parquet`)
+3. Data Dictionary (`data/processed/data_dictionary.csv`)
 4. Bộ biểu đồ EDA (3-5 biểu đồ)
 5. Kết quả Fairness Check + Confusion Matrix theo threshold
 6. Phần báo cáo "Dataset" + "Tiền xử lý & EDA" (theo chuẩn IEEE)
