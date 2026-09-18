@@ -50,4 +50,4 @@ Nếu thiếu raw file, command phải dừng và liệt kê chính xác file c�
 
 DE-01 trả report trong memory/console, chưa tạo processed dataset. Bước kế tiếp
 là `DE-02 — Data Cleaning & Sentinel/Missing Handling`; sau đó tiếp tục theo
-roadmap trong `docs/logs/log_tv2.md`.
+roadmap trong `logs/log_tv2.md`.

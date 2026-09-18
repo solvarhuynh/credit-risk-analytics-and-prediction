@@ -70,3 +70,26 @@ Chỉ append entry mới theo quy trình trong docs/tasks/working-protocol.md.
 - **File thay đổi:** `src/models/cost_optimization.py`, `logs/log_tv1.md`
 - **Kiểm tra:** Syntax/import và tiny numeric fixture kiểm tra công thức, zero PD/LGD/EAD, range invalid và finite output; không dùng canonical/raw project data, không tạo business result.
 - **Next step:** WAIT FOR TV2 CANONICAL DATA → rerun Model Input Quality Gate.
+
+## 2026-09-18 — TTD-WF-01 — Canonical log path normalization
+
+- **Trạng thái:** done
+- **Đã làm:** chuẩn hóa canonical owner logs thành logs/log_tv*.md; cập nhật .cursor/rules/02-quan-ly-file-va-log.mdc và docs/setup/tv2_setup.md; bảo toàn nguyên vẹn các entry lịch sử trong logs/.
+- **File thay đổi:** `.cursor/rules/02-quan-ly-file-va-log.mdc`, `docs/setup/tv2_setup.md`, `logs/log_tv1.md`.
+- **Kiểm tra đã chạy:** ripgrep kiểm tra toàn repo xác nhận không còn active reference nào trỏ tới docs/logs/; git diff --check; git status --short.
+- **Next step:** TTD-WF-02 — Establish regression tests for implemented reusable modules.
+
+## 2026-09-18 — TTD-WF-02 — TV1 regression test suite
+
+- **Trạng thái:** done
+- **Đã làm:**
+  - Thiết lập regression test suite độc lập với canonical dataset cho 5 reusable modeling modules trong `tests/models/`: `test_preprocess_pipeline.py`, `test_data_split.py`, `test_evaluation.py`, `test_scoring.py`, `test_cost_optimization.py`.
+  - Thêm dependency `pytest>=7.4,<9` vào `requirements.txt`.
+  - Giữ nguyên 100% production source logic trong `src/models/`, không đổi business/model policy.
+  - Cập nhật lệnh validation `pytest tests/models -q` vào `docs/setup/tv1_setup.md`.
+- **File thay đổi:** `requirements.txt`, `docs/setup/tv1_setup.md`, `tests/__init__.py`, `tests/models/__init__.py`, `tests/models/test_preprocess_pipeline.py`, `tests/models/test_data_split.py`, `tests/models/test_evaluation.py`, `tests/models/test_scoring.py`, `tests/models/test_cost_optimization.py`, `logs/log_tv1.md`.
+- **Kiểm tra đã chạy:**
+  - `python -m pytest tests/models -v`: 53/53 tests passed (0 failed).
+  - `python -m py_compile` kiểm tra cú pháp toàn bộ file test và source.
+  - `git diff --check` và `git status --short`.
+- **Next step:** WAIT FOR TV2 CANONICAL DATA → Model Input Quality Gate.

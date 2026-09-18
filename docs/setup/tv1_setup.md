@@ -36,6 +36,12 @@ Model artifact và `data/processed/scored_dataset.parquet` theo
 
 ## Validation bắt buộc
 
+Chạy regression test suite cho các reusable modeling modules:
+
+```powershell
+pytest tests/models -q
+```
+
 TV1 phải ghi lại split strategy, metric (AUC/Precision/Recall/F1), model path và
 đảm bảo imputer/encoder/scaler chỉ fit trên train fold. Nếu thiếu canonical input,
-trạng thái là `BLOCKED`.
+trạng thái model training chính thức là `BLOCKED`.

@@ -14,9 +14,9 @@ alwaysApply: true
 
 ## Log bắt buộc
 
-- TV1 chỉ ghi docs/logs/log_tv1.md.
-- TV2 chỉ ghi docs/logs/log_tv2.md.
-- TV3 chỉ ghi docs/logs/log_tv3.md.
+- TV1 chỉ ghi logs/log_tv1.md.
+- TV2 chỉ ghi logs/log_tv2.md.
+- TV3 chỉ ghi logs/log_tv3.md.
 
 Append một entry sau mỗi task meaningful, gồm: ngày, task, trạng thái, tóm tắt việc làm, đường dẫn thay đổi, kiểm tra, và một next step/blocker. Không viết lại lịch sử cũ.
 
