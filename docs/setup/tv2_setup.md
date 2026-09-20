@@ -113,5 +113,88 @@ python -m pytest tests\features -v
 ```
 
 ### Giới hạn và bước kế tiếp
-- **Giới hạn:** DE-03 chỉ tạo đặc trưng row-local cho bảng application. Chưa thực hiện aggregate các bảng lịch sử (DE-04), chưa join đa bảng và chưa tạo tệp Parquet tổng hợp cuối cùng (DE-05).
+- **Giới hạn:** DE-03 chỉ tạo đặc trưng row-local cho bảng application.
 - **Bước kế tiếp:** `TV2-DE-04 — Historical Table Aggregation`.
+
+## Chạy DE-04 Historical Table Aggregation
+
+Module `src/data/aggregate.py` cung cấp tầng tổng hợp các bảng lịch sử (historical tables) thành một dòng duy nhất cho mỗi khách hàng (`SK_ID_CURR`), phục vụ chuẩn bị dữ liệu trước khi kết nối (join) ở DE-05.
+
+### Mục đích nhiệm vụ
+Chuyển đổi dữ liệu giao dịch và lịch sử nhiều dòng (1:N) từ 6 bảng thô thành các chỉ số tóm tắt cấp khách hàng (`SK_ID_CURR`), loại bỏ hoàn toàn nguy cơ nhân bản dòng hồ sơ ứng dụng chính, đồng thời tuân thủ nghiêm ngặt tính xác định và nguyên tắc chống rò rỉ dữ liệu.
+
+### Bảng đầu vào và tệp đầu ra
+
+| Bảng nguồn thô | Hạt dữ liệu nguồn | File đầu ra Parquet (`data/interim/`) | Tiền tố đặc trưng | Số đặc trưng phái sinh |
+| :--- | :--- | :--- | :--- | :--- |
+| `bureau.csv` + `bureau_balance.csv` | Khoản vay (`SK_ID_BUREAU`) + Kỳ dư nợ tháng | `bureau_aggregated.parquet` | `BUREAU_` | 20 |
+| `previous_application.csv` | Hồ sơ quá khứ (`SK_ID_PREV`) | `previous_application_aggregated.parquet` | `PREV_` | 15 |
+| `installments_payments.csv` | Đợt thanh toán trả góp | `installments_payments_aggregated.parquet` | `INSTAL_` | 10 |
+| `POS_CASH_balance.csv` | Hợp đồng - tháng (`SK_ID_PREV`, `MONTHS_BALANCE`) | `pos_cash_balance_aggregated.parquet` | `POS_` | 11 |
+| `credit_card_balance.csv` | Thẻ tín dụng - tháng (`SK_ID_PREV`, `MONTHS_BALANCE`) | `credit_card_balance_aggregated.parquet` | `CC_` | 18 |
+
+Tất cả các tệp Parquet và manifest tổng hợp `aggregation_manifest.json` được ghi nguyên tử (atomic write) vào thư mục `data/interim/` (thư mục này được gitignore).
+
+### Danh mục đặc trưng chi tiết
+- **BUREAU_ (20 đặc trưng):**
+  `BUREAU_CREDIT_COUNT`, `BUREAU_ACTIVE_COUNT`, `BUREAU_ACTIVE_RATE`, `BUREAU_CLOSED_COUNT`, `BUREAU_CLOSED_RATE`, `BUREAU_DAYS_CREDIT_MEAN`, `BUREAU_DAYS_CREDIT_MAX`, `BUREAU_CREDIT_DAY_OVERDUE_MEAN`, `BUREAU_CREDIT_DAY_OVERDUE_MAX`, `BUREAU_AMT_CREDIT_SUM_SUM`, `BUREAU_AMT_CREDIT_SUM_MEAN`, `BUREAU_AMT_DEBT_SUM`, `BUREAU_AMT_DEBT_MEAN`, `BUREAU_AMT_OVERDUE_SUM`, `BUREAU_AMT_OVERDUE_MAX`, `BUREAU_BB_MONTH_COUNT`, `BUREAU_BB_DELINQUENT_MONTH_COUNT`, `BUREAU_BB_DELINQUENT_MONTH_RATE`, `BUREAU_BB_SEVERE_MONTH_COUNT`, `BUREAU_BB_SEVERE_MONTH_RATE`.
+- **PREV_ (15 đặc trưng):**
+  `PREV_APPLICATION_COUNT`, `PREV_APPROVED_COUNT`, `PREV_APPROVED_RATE`, `PREV_REFUSED_COUNT`, `PREV_REFUSED_RATE`, `PREV_AMT_APPLICATION_SUM`, `PREV_AMT_APPLICATION_MEAN`, `PREV_AMT_APPLICATION_MAX`, `PREV_AMT_CREDIT_SUM`, `PREV_AMT_CREDIT_MEAN`, `PREV_AMT_CREDIT_MAX`, `PREV_AMT_ANNUITY_MEAN`, `PREV_CREDIT_TO_APPLICATION_RATIO_MEAN`, `PREV_DAYS_DECISION_MEAN`, `PREV_DAYS_DECISION_MAX`.
+- **INSTAL_ (10 đặc trưng):**
+  `INSTAL_INSTALLMENT_COUNT`, `INSTAL_LATE_COUNT`, `INSTAL_LATE_RATE`, `INSTAL_DELAY_DAYS_MEAN`, `INSTAL_DELAY_DAYS_MAX`, `INSTAL_UNDERPAYMENT_COUNT`, `INSTAL_UNDERPAYMENT_RATE`, `INSTAL_PAYMENT_SHORTFALL_SUM`, `INSTAL_PAYMENT_SHORTFALL_MEAN`, `INSTAL_PAYMENT_RATIO_MEAN`.
+- **POS_ (11 đặc trưng):**
+  `POS_RECORD_COUNT`, `POS_CONTRACT_COUNT`, `POS_MONTHS_BALANCE_MIN`, `POS_MONTHS_BALANCE_MAX`, `POS_DPD_MEAN`, `POS_DPD_MAX`, `POS_DPD_DEF_MEAN`, `POS_DPD_DEF_MAX`, `POS_LATE_MONTH_COUNT`, `POS_LATE_MONTH_RATE`, `POS_INSTALMENT_FUTURE_MEAN`.
+- **CC_ (18 đặc trưng):**
+  `CC_RECORD_COUNT`, `CC_CONTRACT_COUNT`, `CC_MONTHS_BALANCE_MIN`, `CC_MONTHS_BALANCE_MAX`, `CC_BALANCE_MEAN`, `CC_BALANCE_MAX`, `CC_CREDIT_LIMIT_MEAN`, `CC_CREDIT_LIMIT_MAX`, `CC_UTILIZATION_MEAN`, `CC_UTILIZATION_MAX`, `CC_DPD_MEAN`, `CC_DPD_MAX`, `CC_DPD_DEF_MEAN`, `CC_DPD_DEF_MAX`, `CC_LATE_MONTH_COUNT`, `CC_LATE_MONTH_RATE`, `CC_PAYMENT_TOTAL_SUM`, `CC_PAYMENT_TOTAL_MEAN`.
+
+### Quy tắc kiểm tra thời gian và chống rò rỉ (Temporal & Leakage Validation)
+Toàn bộ các trường thời gian phải đại diện cho các sự kiện xảy ra trước hoặc đúng thời điểm nộp đơn (`<= 0`):
+- `bureau.DAYS_CREDIT <= 0`
+- `bureau_balance.MONTHS_BALANCE <= 0`
+- `previous_application.DAYS_DECISION <= 0`
+- `installments_payments.DAYS_INSTALMENT <= 0`
+- `installments_payments.DAYS_ENTRY_PAYMENT <= 0`
+- `POS_CASH_balance.MONTHS_BALANCE <= 0`
+- `credit_card_balance.MONTHS_BALANCE <= 0`
+Nếu phát hiện bất kỳ giá trị dương nào (`> 0`), quy trình sẽ chặn thực thi (`BLOCKED`) và phát sinh lỗi chi tiết.
+
+### Xử lý thanh toán tách kỳ trong `installments_payments`
+Bảng `installments_payments` có 653,483 dòng trùng lặp tổ hợp khóa kỳ `(SK_ID_PREV, SK_ID_CURR, NUM_INSTALMENT_VERSION, NUM_INSTALMENT_NUMBER)` do người vay chia nhỏ các đợt thanh toán trả góp:
+- Quy trình kiểm tra tính nhất quán của ngày hẹn trả (`DAYS_INSTALMENT`) và số tiền đến hạn (`AMT_INSTALMENT`) trong từng nhóm kỳ trả góp.
+- Số tiền đến hạn định kỳ được lấy đơn lẻ một lần duy nhất (không cộng dồn gây nhân bản nghĩa vụ).
+- Số tiền thực trả (`AMT_PAYMENT`) được cộng dồn theo kỳ.
+- Ngày thanh toán thực tế là ngày muộn nhất (`max(DAYS_ENTRY_PAYMENT)`).
+- Chậm trả (`delay_days`) và thiếu nợ (`payment_shortfall`) được tính ở cấp độ kỳ hợp nhất, chặn dưới tại 0.
+
+### Xử lý bản ghi mồ côi (Orphan) trong `bureau_balance`
+Khoảng 43,041 mã `SK_ID_BUREAU` trong `bureau_balance` (tương ứng 3,120,184 dòng lịch sử) không tồn tại trong bảng `bureau`:
+- Quy trình tổng hợp `bureau_balance` theo `SK_ID_BUREAU` trước, sau đó `left join` vào `bureau`.
+- Các bản ghi mồ côi không có ánh xạ tới `SK_ID_CURR` nên bị loại khỏi bảng tổng hợp cấp khách hàng, đồng thời được ghi nhận vào báo cáo chẩn đoán và manifest dưới dạng cảnh báo nghiệp vụ đã ghi nhận.
+- Tỷ lệ trễ hạn cấp khách hàng được tính có trọng số: `tổng tháng trễ hạn / tổng tháng có số dư quan sát được`.
+
+### Hành vi tỷ lệ an toàn (Safe Ratios)
+Mọi phép chia đều sử dụng phép chia số thực (float division). Mẫu số bằng 0 hoặc khuyết thiếu sẽ tạo giá trị `NaN`, tuyệt đối không phát sinh giá trị vô cực `+inf`/`-inf` hay gán giá trị 0 giả tạo.
+
+### Chiến lược an toàn bộ nhớ (Memory Strategy)
+1. Xử lý tuần tự từng bảng dữ liệu một, giải phóng bộ nhớ (`del` và `gc.collect()`) ngay sau khi hoàn thành mỗi bảng.
+2. Sử dụng `usecols` để chỉ tải các cột cần thiết phục vụ tính toán và xác thực.
+3. Ép kiểu dữ liệu tối ưu (`int32`, `int16`, `float32`, `category`) giúp giảm dung lượng RAM sử dụng xuống dưới 500 MB cho mỗi bảng lớn.
+4. Ghi nguyên tử từng tệp Parquet ra đĩa và giải phóng bộ nhớ trước khi nạp bảng kế tiếp.
+
+### Lệnh thực thi
+```powershell
+python -m src.data.aggregate
+```
+
+### Lệnh kiểm thử
+```powershell
+python -m pytest tests\data\test_aggregate.py -v
+python -m pytest tests\data -v
+```
+
+### Cảnh báo dự kiến (Expected Warnings)
+1. `bureau_balance`: Chứa 43,041 mã `SK_ID_BUREAU` mồ côi (3,120,184 dòng) không có cha trong `bureau`.
+2. `installments_payments`: Chứa 653,483 dòng trả góp từng phần được hợp nhất bảo toàn.
+
+### Mối liên hệ với DE-05
+DE-04 chỉ tạo các tệp parquet tổng hợp trung gian tại `data/interim/`. Nhiệm vụ `TV2-DE-05 — Join and Canonical Dataset Publication` sẽ thực hiện left join các bảng tổng hợp này vào `application_train` và `application_test` (đã qua feature engineering ở DE-03) để tạo ra tập dữ liệu chính thức `data/processed/cleaned_dataset.parquet`.

@@ -151,3 +151,49 @@ Chỉ append entry mới theo quy trình trong docs/tasks/working-protocol.md.
   3. Các tiêu chuẩn Data Contract sau khi aggregate bảng lịch sử và kết nối bảng vẫn tiếp tục PENDING cho DE-04 và DE-05.
 - **File thay đổi:** `src/features/engineering.py`, `tests/features/__init__.py`, `tests/features/test_engineering.py`, `docs/setup/tv2_setup.md`, `logs/log_tv2.md`.
 - **Next step:** TV2-DE-04 — Historical Table Aggregation.
+
+## 2026-09-20 — TV2-DE-04: Historical Table Aggregation
+
+- **Trạng thái:** PASS WITH WARNINGS
+- **Đã làm:**
+  - Hiện thực module tổng hợp dữ liệu lịch sử chuẩn tắc `src/data/aggregate.py` chuyển đổi 6 bảng lịch sử 1:N thành 5 bảng tổng hợp cấp khách hàng (`SK_ID_CURR`) duy nhất, bảo toàn tính xác định (deterministic) và chống rò rỉ dữ liệu (leakage-safe).
+  - Xuất khẩu từ điển metadata `AGGREGATE_FEATURE_DEFINITIONS` cho toàn bộ 74 đặc trưng phái sinh.
+  - Hàm `validate_temporal_bounds` kiểm tra chặt chẽ điều kiện thời gian `<= 0` trên toàn bộ 6 bảng nguồn (0 vi phạm).
+  - Hàm `validate_customer_aggregate` kiểm định hợp đồng dữ liệu: `SK_ID_CURR` duy nhất không null, không có `TARGET`, không trùng tên cột, không vô cực (`inf`), tiền tố cột đúng chuẩn (`BUREAU_`, `PREV_`, `INSTAL_`, `POS_`, `CC_`), số đếm không âm, tỷ lệ trong `[0, 1]`.
+  - Tổng hợp `bureau` + `bureau_balance` (2 tầng): nhóm `bureau_balance` theo `SK_ID_BUREAU`, join vào `bureau`, nhóm theo `SK_ID_CURR`. Tỷ lệ trễ hạn được tính có trọng số; loại trừ an toàn 43,041 `SK_ID_BUREAU` mồ côi (3,120,184 dòng). Tạo 20 đặc trưng `BUREAU_`.
+  - Tổng hợp `previous_application`: tính tỷ lệ hạn mức/đơn xin cấp dòng an toàn, nhóm theo `SK_ID_CURR`. Tạo 15 đặc trưng `PREV_`.
+  - Tổng hợp `installments_payments`: hợp nhất bảo toàn 653,483 dòng trả góp từng phần trên hạt `(SK_ID_PREV, SK_ID_CURR, NUM_INSTALMENT_VERSION, NUM_INSTALMENT_NUMBER)`, không nhân đôi nghĩa vụ `AMT_INSTALMENT`, tính `delay_days` và `shortfall` chính xác. Tạo 10 đặc trưng `INSTAL_`.
+  - Tổng hợp `POS_CASH_balance`: đếm hợp đồng duy nhất, đo lường DPD và tháng trễ hạn. Tạo 11 đặc trưng `POS_`.
+  - Tổng hợp `credit_card_balance`: tính tỷ lệ sử dụng hạn mức (utilization) cấp dòng an toàn, đo lường dư nợ, hạn mức, DPD và thanh toán. Tạo 18 đặc trưng `CC_`.
+  - Chiến lược an toàn bộ nhớ: xử lý tuần tự từng bảng, chỉ nạp các cột cần thiết (`usecols`), tối ưu dtypes, giải phóng bộ nhớ và `gc.collect()`, ghi nguyên tử (atomic write) qua file tạm và `os.replace`.
+  - Viết bộ 23 unit tests toàn diện trong `tests/data/test_aggregate.py`.
+- **Đo đạc dữ liệu thực tế:**
+  - `bureau_aggregated.parquet`: 305,811 dòng, 21 cột (1 khóa + 20 đặc trưng), 12,825,653 bytes, SHA-256: `30aae00b224f8aea3d98d9cf5297bebc52881af40d257dbdf920552aecd2788f`.
+  - `previous_application_aggregated.parquet`: 338,857 dòng, 16 cột (1 khóa + 15 đặc trưng), 19,539,477 bytes, SHA-256: `976189184db31c1b458c4460f3bce6ee7767652520657dd916405b9a26819ef8`.
+  - `installments_payments_aggregated.parquet`: 339,587 dòng, 11 cột (1 khóa + 10 đặc trưng), 5,344,553 bytes, SHA-256: `9226525c74876d5b0171607728531e66619933ad14289aabe96a8cc1ce956041`.
+  - `pos_cash_balance_aggregated.parquet`: 337,252 dòng, 12 cột (1 khóa + 11 đặc trưng), 5,244,997 bytes, SHA-256: `6437be29f54d0b3b73f77e306ba679d186f44d19528f9b903a697d61d7099d77`.
+  - `credit_card_balance_aggregated.parquet`: 103,558 dòng, 19 cột (1 khóa + 18 đặc trưng), 5,639,629 bytes, SHA-256: `f4caaae57f25f0755eba7deb1e5c85b9f0ff42cd810d81bbeb5998a2dfe593cb`.
+  - `aggregation_manifest.json`: Lưu trữ đầy đủ siêu dữ liệu tại `data/interim/aggregation_manifest.json`.
+- **Chẩn đoán bản ghi mồ côi và trả góp:**
+  - `bureau_balance`: 43,041 mã `SK_ID_BUREAU` mồ côi (3,120,184 dòng) được loại khỏi cấp khách hàng đúng thiết kế.
+  - `installments_payments`: 13,605,401 dòng thô $\rightarrow$ 12,951,918 hạt trả góp duy nhất; 640,905 khóa lặp (1,294,388 dòng) được hợp nhất thành công.
+- **Bảo toàn checksum dữ liệu thô (SHA-256):**
+  - `bureau.csv`: `9d799143423f280720cf51c1bfbbab2a0422da8ff2763335bb30bf43155494f7` (match)
+  - `bureau_balance.csv`: `33e09f06174c26f0be6b8b7398886c69e7bf0abbb29b4122f7841ffe545729a9` (match)
+  - `installments_payments.csv`: `428c2e2496e4d6d697ee8270e98497e5213c41be16d882eed1bc95b133726797` (match)
+  - `previous_application.csv`: `5046cd657ee04df2eaa6dc8308ae86be6b3b1763674a3f63574886a2f2896505` (match)
+  - `POS_CASH_balance.csv`: `0e13bc573ffa8fc29b3f00d975e557143193a405d675b0e4694b06fbdffcb0cd` (match)
+  - `credit_card_balance.csv`: `a9cdc48900d55131c90f3128b991859aeb94ca1326fb5f4d1624b9fd03782247` (match)
+- **Kết quả kiểm thử:**
+  - `python -m py_compile src\data\aggregate.py`: PASS (mã thoát 0)
+  - `python -m pytest tests\data -v`: 45/45 passed
+  - `python -m pytest tests\features -q`: 37/37 passed
+  - `python -m pytest tests\models -q`: 53/53 passed
+  - `python -m pytest tests -q`: 135/135 passed
+  - `python -m src.data.aggregate`: PASS
+- **Cảnh báo chuyển tiếp (Carried-forward warnings):**
+  1. `bureau_balance` chứa 43,041 khóa ngoại `SK_ID_BUREAU` không tồn tại trong `bureau` (đã loại khỏi tổng hợp khách hàng).
+  2. `installments_payments` chứa 653,483 tổ hợp lặp hạt trả góp thể hiện các đợt thanh toán từng phần (đã hợp nhất bảo toàn).
+  3. Tiêu chuẩn Data Contract xuất bản tập dữ liệu hợp nhất cuối cùng tiếp tục PENDING cho DE-05.
+- **File thay đổi:** `src/data/aggregate.py`, `tests/data/test_aggregate.py`, `docs/setup/tv2_setup.md`, `logs/log_tv2.md`.
+- **Next step:** TV2-DE-05 — Join and Canonical Dataset Publication.
