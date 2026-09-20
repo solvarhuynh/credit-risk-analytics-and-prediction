@@ -274,3 +274,72 @@ Chỉ append entry mới theo quy trình trong docs/tasks/working-protocol.md.
   - DE-05 chưa được commit (`git commit` chưa chạy).
   - Không push lên bất kỳ remote repository nào.
 - **Next step:** TV2-DE-06 — Data Dictionary and Data Quality Report.
+
+## 2026-09-20 — TV2-DE-06: Data Dictionary and Data Quality Report (Updated TV2-DE-06C)
+
+- **Trạng thái:** PASS WITH WARNINGS
+- **Môi trường Python:** Python 3.13.5 (xác thực trực tiếp từ `& .\.venv\Scripts\python.exe --version`)
+- **Git state:**
+  - Branch: `tv2`
+  - Base HEAD: `2999510` (`feat(data): publish canonical customer dataset`)
+  - Tracked changes: Uncommitted for review (không commit, không push)
+  - Trạng thái tệp báo cáo: `reports/data_quality_report.md` là sản phẩm bàn giao dự kiến theo dõi (intended tracked deliverable) nhưng hiện vẫn ở trạng thái untracked (`??`) cho đến khi hoàn thành commit đánh giá DE-06.
+- **Đã làm:**
+  - Hiện thực module kiểm định chất lượng và sinh siêu dữ liệu chuẩn tắc `src/data/quality_report.py`.
+  - Tải và kiểm tra tính bất biến tuyệt đối của tập dữ liệu chuẩn tắc `data/processed/cleaned_dataset.parquet` và manifest `data/processed/cleaned_dataset_manifest.json` (SHA-256 hoàn toàn không đổi).
+  - Tích hợp siêu dữ liệu đa tầng theo thứ tự ưu tiên: Handcrafted feature definitions từ DE-02, DE-03, DE-04 $\rightarrow$ Kaggle descriptions từ `data/raw/HomeCredit_columns_description.csv` $\rightarrow$ Structured fallback logic.
+  - Xây dựng từ điển dữ liệu máy đọc `data/processed/data_dictionary.csv`:
+    * Đúng 203 dòng (1 dòng cho mỗi cột chuẩn tắc, bảo toàn đúng thứ tự cột trong parquet).
+    * Đúng 22 cột siêu dữ liệu theo quy định nghiêm ngặt của đề mục đã duyệt: `position`, `column_name`, `physical_dtype`, `logical_type`, `role`, `feature_group`, `source_table`, `source_columns`, `source_grain`, `canonical_grain`, `transformation_formula`, `unit`, `description`, `missing_value_meaning`, `valid_values_or_range`, `nullable`, `missing_count`, `missing_rate`, `unique_count`, `as_of_time_rule`, `leakage_note`, `modeling_note`.
+    * 0 giá trị NaN, 0 chuỗi rỗng trên toàn bộ 22 cột; 100% cột có mô tả tiếng Anh, công thức phái sinh và ngữ nghĩa khuyết thiếu rõ ràng.
+    * Phân nhóm vai trò chuẩn tắc (`role`): `identifier` (1), `target` (1), `feature` (201).
+    * Phân nhóm đặc trưng (`feature_group`): `application_raw` (120), `bureau` (20), `credit_card` (18), `previous_application` (15), `pos_cash` (11), `installments` (10), `application_derived` (6), `identifier` (1), `target` (1), `application_cleaning` (1). Tổng: 203/203 cột.
+    * Định dạng UTF-8 with BOM (`utf-8-sig`), kết thúc dòng LF (`\n`), kích thước 124,732 bytes, SHA-256: `efd1d1e1ad268f12ee38a901602f707a76b07a3b581ba99c25df9f6bd188ec39`.
+    * Được loại trừ an toàn khỏi Git theo `.gitignore` (`data/processed/*.csv`).
+  - Biên dịch báo cáo kiểm định chất lượng người đọc `reports/data_quality_report.md`:
+    * Gồm đúng 19 phần Markdown chuẩn tắc được đánh số rõ ràng (từ 1 đến 19).
+    * Loại bỏ hoàn toàn các phân tích tương quan với nhãn mục tiêu, xếp hạng dự báo và tương quan đa biến (chuyển về đúng phạm vi của nhiệm vụ DE-07 EDA).
+    * Phân định chính xác vai trò các thành viên hạ nguồn: TV1 phụ trách Modeling, TV3 phụ trách Dashboard & Application.
+    * Định dạng UTF-8, LF (`\n`), kích thước 16,740 bytes, SHA-256: `6330015da3379aec03c650870d19f5e364cdb0260567bcbbca157239ac274017`.
+  - Cập nhật tài liệu hợp đồng dữ liệu `docs/contracts/data_contract.md` lên Phiên bản 1.1 (Version 1.1) phản ánh chính xác các sản phẩm bàn giao, 22 trường từ điển, vai trò TV1/TV3, 18 cột số đếm điền 0, quy tắc thời gian và cổng chất lượng.
+  - Cập nhật hướng dẫn thiết lập kỹ thuật `docs/setup/tv2_setup.md` bổ sung tài liệu hướng dẫn vận hành, lược đồ và bàn giao hạ nguồn của DE-06.
+  - Viết bộ 18 unit tests toàn diện trong `tests/data/test_quality_report.py` kiểm định toàn diện việc sinh từ điển, các cổng kiểm soát chất lượng, kiểm toán khuyết thiếu, kiểm tra biên độ phân tầng, phân định rõ all-null / constant / near-constant (99.5%), các quy tắc thời gian và xuất bản nguyên tử.
+- **Bảo toàn checksum dữ liệu chuẩn tắc (SHA-256 Invariance):**
+  - `cleaned_dataset.parquet`: `e3cbf594a5a0a072fc1625baa11563c323b8c392afc90cb46bb17bf48c12de75` (trước: `e3cbf594a5a0a072...`, sau: `e3cbf594a5a0a072...` — TRÙNG KHỚP 100%, 64,213,549 bytes)
+  - `cleaned_dataset_manifest.json`: `e633885a14ad70b7f153cc27587722c77ee6c5b73ac03495872755df7a73d3f7` (trước: `e633885a14ad70b7...`, sau: `e633885a14ad70b7...` — TRÙNG KHỚP 100%, 17,082 bytes)
+- **Đo đạc kiểm định chất lượng dữ liệu thực tế (Measured Audit Results):**
+  - Quần thể: 307,511 dòng, 203 cột (1 `SK_ID_CURR`, 1 `TARGET`, 201 đặc trưng mô hình).
+  - Khóa chính `SK_ID_CURR`: 0 null, 0 duplicate, đơn điệu tăng dần từ 100,002 đến 456,255.
+  - Nhãn mục tiêu `TARGET`: 0 null, phân phối {0: 282,686, 1: 24,825}, tỷ lệ nợ xấu 8.0729%.
+  - Kiểm định Missing-History Policy: Đúng 18/18 cột số đếm có 0 missing (100% tuân thủ chính sách điền 0).
+  - Phân tầng ma trận giá trị khuyết thiếu (Missingness Buckets - 7 nhóm tất định, loại trừ lẫn nhau):
+    * `exactly 0%`: 73 cột (bao gồm `SK_ID_CURR`, `TARGET`, 18 cột số đếm lịch sử, các trường định danh và thông tin ứng dụng cơ bản).
+    * `greater than 0% and less than 5%`: 12 cột (`AMT_ANNUITY`, `AMT_GOODS_PRICE`, tỷ lệ tài chính DE-03).
+    * `greater than or equal to 5% and less than 20%`: 48 cột (`EXT_SOURCE_3` 19.83%, `DAYS_EMPLOYED` / `EMPLOYED_YEARS` 18.01% do sentinel, độ bao phủ `BUREAU_` gap 14.31%).
+    * `greater than or equal to 20% and less than 50%`: 9 cột (`OCCUPATION_TYPE` 31.35%, đặc tính tòa nhà).
+    * `greater than or equal to 50% and less than 80%`: 61 cột (`EXT_SOURCE_1` 56.38%, `COMMONAREA_AVG` 69.87%, đặc trưng thẻ tín dụng `CC_*` 71.74% do độ bao phủ chỉ đạt 28.26%).
+    * `greater than or equal to 80% and less than 100%`: 0 cột.
+    * `exactly 100%`: 0 cột.
+    * Tổng số cột phân tầng: Đúng 203/203 cột.
+  - Phân loại đặc trưng đơn trị và gần như hằng số:
+    * All-null (0 non-null values): 0 cột.
+    * Constant (1 unique non-null value): 0 cột.
+    * Near-constant (ngưỡng giá trị áp đảo >= 99.5%): Đúng 16 cột (14 cờ `FLAG_DOCUMENT_*`, `FLAG_MOBIL`, `FLAG_CONT_MOBILE`).
+    * Cờ dị biệt `DAYS_EMPLOYED_ANOM` có tỷ lệ áp đảo 81.9928%, hoàn toàn không thuộc nhóm near-constant và được giữ nguyên là cờ chất lượng dữ liệu và dị biệt quan trọng.
+  - Kiểm toán mốc thời gian: Toàn bộ các cột thời gian lịch sử (`DAYS_*`, `MONTHS_BALANCE_*`) đều bảo đảm giá trị `<= 0`, 0 rò rỉ tương lai.
+- **Kết quả kiểm thử:**
+  - `python -m py_compile src\data\quality_report.py`: PASS (mã thoát 0)
+  - `python -m pytest tests\data\test_quality_report.py -v`: 18/18 passed
+  - `python -m pytest tests\data -q`: 85/85 passed (18 quality_report + 22 build_pipeline + 23 aggregate + 22 cleaning)
+  - `python -m pytest tests\features -q`: 37/37 passed
+  - `python -m pytest tests\models -q`: 53/53 passed
+  - `python -m pytest tests -q`: 175/175 passed
+  - `git diff --check`: PASS (0 khoảng trắng thừa hoặc lỗi định dạng)
+- **Cảnh báo nghiệp vụ (Warnings):**
+  1. 16 đặc trưng gần như hằng số (tần suất giá trị phổ biến >= 99.5%) cần được TV1 xem xét khi lựa chọn mô hình dựa trên cây hoặc mô hình tuyến tính.
+  2. 61 cột có tỷ lệ missing từ 50% đến 80% (chủ yếu là thông tin tòa nhà và thẻ tín dụng), yêu cầu chiến lược xử lý missing cẩn trọng trong pipeline tiền xử lý của TV1.
+  3. Tỷ lệ thẻ tín dụng thấp (độ bao phủ 28.26%) phản ánh cấu trúc hành vi tiêu dùng tự nhiên của khách hàng.
+- **Trạng thái Git:**
+  - DE-06 chưa được commit (`git commit` chưa chạy).
+  - Không push lên bất kỳ remote repository nào.
+- **Next step:** TV2-DE-07 — Exploratory Data Analysis and Data Engineering Handoff.

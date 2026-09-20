@@ -280,7 +280,100 @@ python -m pytest tests -q
 ### Xác nhận phạm vi Data Dictionary
 Tệp từ điển dữ liệu `data_dictionary.csv` thuộc phạm vi công việc chuyên biệt của nhiệm vụ `TV2-DE-06 — Data Dictionary and Data Quality Report`. DE-05 không tạo tệp này.
 
-### Hướng dẫn cho TV1 (EDA) và TV3 (Modeling)
+#### Hướng dẫn cho TV1 (Modeling) và TV3 (Dashboard & Application)
 - **Tệp dữ liệu sử dụng:** Đọc trực tiếp từ `data/processed/cleaned_dataset.parquet` bằng `pd.read_parquet('data/processed/cleaned_dataset.parquet')`.
 - **Tính toán và huấn luyện:** Tệp đã được sắp xếp tăng dần theo `SK_ID_CURR`, bảo toàn trọn vẹn 307,511 dòng của tập huấn luyện đã được làm sạch và bổ sung đầy đủ 201 đặc trưng (bao gồm 74 đặc trưng lịch sử đa nguồn).
 - **Phân tách Cross-Validation:** Luôn sử dụng Stratified K-Fold dựa trên cột `TARGET` để đảm bảo tỷ lệ mất cân bằng (imbalance) ~8.07% được phản ánh đồng đều giữa các fold.
+
+## TV2-DE-06 — Data Dictionary and Data Quality Report
+
+### Mục đích (Purpose)
+Nhiệm vụ `TV2-DE-06` thực hiện biên dịch từ điển dữ liệu chuẩn tắc ở dạng bảng máy đọc (`data/processed/data_dictionary.csv`) và báo cáo kiểm định chất lượng dữ liệu toàn diện ở dạng văn bản người đọc (`reports/data_quality_report.md`) cho tập dữ liệu chuẩn tắc huấn luyện `data/processed/cleaned_dataset.parquet`.
+
+**Nguyên tắc bất biến:** Nhiệm vụ này là bước kiểm toán và lập tài liệu độc lập; tuyệt đối không tái tạo, không chỉnh sửa, không ghi đè lên `data/processed/cleaned_dataset.parquet` và `data/processed/cleaned_dataset_manifest.json`.
+
+### Dữ liệu đầu vào (Inputs)
+1. **Tập dữ liệu chuẩn tắc:** `data/processed/cleaned_dataset.parquet` (307,511 dòng, 203 cột).
+2. **Manifest kiểm định xuất bản:** `data/processed/cleaned_dataset_manifest.json`.
+3. **Mô tả gốc của Kaggle:** `data/raw/HomeCredit_columns_description.csv` (160 dòng mô tả trường thô của cuộc thi).
+
+### Tệp đầu ra xuất bản (Published Output Artifacts)
+1. **Machine-Readable Data Dictionary:** `data/processed/data_dictionary.csv`
+   - Đúng 203 dòng (1 dòng cho mỗi cột chuẩn tắc, không trùng lặp, không thiếu cột).
+   - Đúng 22 cột siêu dữ liệu theo đúng thứ tự quy định của đề mục đã khóa.
+   - Định dạng mã hóa: UTF-8 with BOM (`utf-8-sig`), ký tự ngắt dòng LF (`\n`).
+   - Tệp này được loại trừ khỏi Git theo quy tắc `.gitignore` (`data/processed/*.csv`).
+2. **Human-Readable Data Quality Report:** `reports/data_quality_report.md`
+   - Gồm đúng 19 phần Markdown chuẩn tắc được đánh số rõ ràng (từ 1 đến 19).
+   - Trình bày toàn diện các phát hiện kiểm toán chất lượng dữ liệu thực tế đo đạc từ 307,511 dòng.
+   - Định dạng mã hóa: UTF-8, ký tự ngắt dòng LF (`\n`).
+   - Trạng thái Git: Là sản phẩm bàn giao dự kiến theo dõi (intended tracked deliverable) nhưng giữ trạng thái untracked (`??`) cho đến khi hoàn thành commit đánh giá DE-06.
+
+### Lược đồ 22 cột của Data Dictionary (Approved 22-Column Schema)
+Toàn bộ 203 cột trong tập dữ liệu chuẩn tắc được mô tả tuần tự theo đúng 22 trường:
+1. `position`: Vị trí chỉ mục cột từ 0 đến 202, liên tục và đơn điệu.
+2. `column_name`: Tên cột chuẩn tắc (khớp 100% với tên cột trong parquet).
+3. `physical_dtype`: Kiểu dữ liệu lưu trữ vật lý trong Parquet (`int64`, `int32`, `float64`, `float32`, `category`).
+4. `logical_type`: Kiểu logic (`identifier`, `binary`, `categorical`, `ordinal`, `count`, `continuous`, `currency`, `duration`, `rate`, `ratio`, `flag`).
+5. `role`: Vai trò nghiệp vụ chuẩn tắc (`identifier`, `target`, `feature`).
+6. `feature_group`: Phân nhóm đặc trưng (`identifier`, `target`, `application_raw`, `application_cleaning`, `application_derived`, `bureau`, `previous_application`, `installments`, `pos_cash`, `credit_card`).
+7. `source_table`: Tên bảng nguồn phát sinh cột (`application_train`, `bureau`, `previous_application`,...).
+8. `source_columns`: Tên cột nguồn tương ứng trước khi phái sinh/làm sạch.
+9. `source_grain`: Hạt dữ liệu nguồn (`application`, `credit_loan`, `cash_loan_month`,...).
+10. `canonical_grain`: Hạt dữ liệu chuẩn tắc (`customer (SK_ID_CURR)`).
+11. `transformation_formula`: Công thức phái sinh hoặc logic biến đổi (`cleaned identity`, `replace(...)`, công thức tài chính/tổng hợp).
+12. `unit`: Đơn vị đo lường (`currency (CZK)`, `years`, `days`, `ratio`, `rate [0.0, 1.0]`, `count`, `unitless`).
+13. `description`: Mô tả ngữ nghĩa nghiệp vụ bằng tiếng Anh (không được để trống).
+14. `missing_value_meaning`: Ý nghĩa khi giá trị bị khuyết thiếu (ví dụ: `no_credit_history_fill_zero`, `not_applicable_complete`,...).
+15. `valid_values_or_range`: Miền giá trị cho phép hoặc danh mục hợp lệ (đặc biệt phân biệt rõ rate `[0.0, 1.0]` và ratio `unbounded`).
+16. `nullable`: Cờ logic cho biết cột có chứa giá trị khuyết thiếu trong tập dữ liệu hay không (`True` hoặc `False`).
+17. `missing_count`: Số lượng giá trị khuyết thiếu thực tế quan sát được trong 307,511 dòng.
+18. `missing_rate`: Tỷ lệ khuyết thiếu thực tế (làm tròn 6 chữ số thập phân).
+19. `unique_count`: Số lượng giá trị phân biệt thực tế (không tính NaN).
+20. `as_of_time_rule`: Quy tắc mốc thời gian chống rò rỉ (sự kiện lịch sử xảy ra tại thời điểm hoặc trước khi nộp đơn, `DAYS <= 0`).
+21. `leakage_note`: Ghi chú an toàn chống rò rỉ dữ liệu nhãn mục tiêu.
+22. `modeling_note`: Hướng dẫn kỹ thuật tiền xử lý dành cho mô hình hóa của TV1.
+
+### Phân tầng tỷ lệ khuyết thiếu (Missingness Buckets Partition)
+Quy trình áp dụng 7 nhóm phân tầng khuyết thiếu tất định, loại trừ lẫn nhau và bao phủ toàn bộ:
+- `exactly 0%`: 73 cột (gồm `SK_ID_CURR`, `TARGET`, 18 cột số đếm lịch sử điền 0, và các trường hồ sơ đầy đủ).
+- `greater than 0% and less than 5%`: 12 cột (`AMT_ANNUITY`, `AMT_GOODS_PRICE`, tỷ lệ tài chính DE-03).
+- `greater than or equal to 5% and less than 20%`: 48 cột (`EXT_SOURCE_3` 19.83%, `DAYS_EMPLOYED` / `EMPLOYED_YEARS` 18.01%, thiếu lịch sử `BUREAU_` 14.31%).
+- `greater than or equal to 20% and less than 50%`: 9 cột (`OCCUPATION_TYPE` 31.35%, đặc tính tòa nhà).
+- `greater than or equal to 50% and less than 80%`: 61 cột (`EXT_SOURCE_1` 56.38%, `COMMONAREA_AVG` 69.87%, đặc trưng thẻ tín dụng `CC_*` 71.74% do độ bao phủ chỉ đạt 28.26%).
+- `greater than or equal to 80% and less than 100%`: 0 cột.
+- `exactly 100%`: 0 cột.
+- **Tổng số cột phân tầng:** Đúng 203/203 cột.
+
+### Phân loại đặc trưng hằng số và gần như hằng số
+- **All-null (0 non-null values):** 0 cột.
+- **Constant (1 unique non-null value):** 0 cột.
+- **Near-constant (Tần suất giá trị áp đảo >= 99.5%):** Đúng 16 cột (gồm các cờ tài liệu `FLAG_DOCUMENT_*` và cờ điện thoại `FLAG_MOBIL`, `FLAG_CONT_MOBILE`).
+- **Ghi chú về `DAYS_EMPLOYED_ANOM`:** Cờ dị biệt này có tần suất giá trị phổ biến là ~81.99% (giá trị 0 khi không phát hiện sentinel 365243, 18.01% giá trị 1 khi phát hiện sentinel), do đó không thuộc nhóm near-constant và được giữ nguyên là một cờ chất lượng dữ liệu và dị biệt quan trọng.
+
+### Phạm vi loại trừ (Exclusions from DE-06)
+Các phân tích tương quan với nhãn mục tiêu, xếp hạng dự báo đặc trưng và phân tích tương quan đa biến nâng cao được loại trừ hoàn toàn khỏi DE-06 và thuộc phạm vi chuyên biệt của `TV2-DE-07 — Exploratory Data Analysis and Data Engineering Handoff`. DE-06 chỉ kiểm toán tính toàn vẹn của nhãn mục tiêu (kiểu dữ liệu, số lượng lớp, tỷ lệ mất cân bằng).
+
+### Lệnh thực thi & Tái tạo
+```powershell
+& .\.venv\Scripts\python.exe -m src.data.quality_report
+```
+
+### Lệnh kiểm thử
+```powershell
+& .\.venv\Scripts\python.exe -m pytest tests\data\test_quality_report.py -v
+& .\.venv\Scripts\python.exe -m pytest tests\data -q
+& .\.venv\Scripts\python.exe -m pytest tests -q
+```
+
+### Hướng dẫn sử dụng cho các thành viên hạ nguồn (Downstream Handoff)
+- **TV1 (Modeling):**
+  * Nhận các tệp: `data/processed/cleaned_dataset.parquet`, `data/processed/data_dictionary.csv`, `reports/data_quality_report.md`.
+  * Bắt buộc tách `SK_ID_CURR` khỏi ma trận đặc trưng `X`.
+  * Bắt buộc tách `TARGET` làm vector nhãn `y` (không đưa vào pipeline biến đổi).
+  * Luôn sử dụng `StratifiedKFold` dựa trên tỷ lệ nợ xấu ~8.07%.
+  * Thực hiện fit toàn bộ bộ biến đổi (imputer, scaler, encoder, selector) **duy nhất trên train fold** của mỗi fold.
+  * Tự chủ ra quyết định về chiến lược lựa chọn đặc trưng và loại bỏ các cột near-constant trong quy trình mô hình hóa.
+- **TV3 (Dashboard & Application):**
+  * Sử dụng `cleaned_dataset.parquet` và `data_dictionary.csv` để tra cứu nhãn giao diện, phân loại và ngữ nghĩa đặc trưng.
+  * Đối với các biểu đồ và giao diện liên quan đến kết quả dự báo mô hình, điểm số rủi ro và xếp hạng decile, TV3 sẽ đợi sản phẩm `data/processed/scored_dataset.parquet` từ TV1.
