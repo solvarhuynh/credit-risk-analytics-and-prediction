@@ -100,3 +100,54 @@ Chỉ append entry mới theo quy trình trong docs/tasks/working-protocol.md.
   3. Các tiêu chuẩn Data Contract sau khi tạo đặc trưng và kết nối bảng vẫn tiếp tục PENDING cho DE-03, DE-04 và DE-05.
 - **File thay đổi:** `src/data/cleaning.py`, `tests/data/__init__.py`, `tests/data/test_cleaning.py`, `docs/setup/tv2_setup.md`, `logs/log_tv2.md`.
 - **Next step:** TV2-DE-03 — Application-Level Feature Engineering.
+
+## 2026-09-20 — TV2-DE-03: Application-Level Feature Engineering
+
+- **Trạng thái:** PASS WITH WARNINGS
+- **Đã làm:**
+  - Hiện thực module tạo đặc trưng cấp hồ sơ ứng dụng `src/features/engineering.py` tuân thủ nguyên tắc không biến đổi (immutable) DataFrame đầu vào, thuần túy từng dòng (row-local) và chống rò rỉ (leakage-safe).
+  - Định nghĩa metadata chuẩn tắc `APPLICATION_FEATURE_DEFINITIONS` cho 6 đặc trưng phái sinh bắt buộc:
+    1. `AGE_YEARS`: Chuyển đổi `-DAYS_BIRTH / 365.25` (float64), phạm vi hợp lệ `[18, 100]`, giá trị < 18 hoặc > 100 chuyển thành missing (NaN).
+    2. `AGE_GROUP`: Phân nhóm độ tuổi thành biến categorical có thứ tự theo các bin chuẩn `[18, 25, 35, 45, 55, 65, 101]` với nhãn chính xác `['Under 25', '25-34', '35-44', '45-54', '55-64', '65+']`.
+    3. `EMPLOYED_YEARS`: Chuyển đổi `-DAYS_EMPLOYED / 365.25`, bảo toàn chính xác giá trị missing (NaN) xuất phát từ sentinel DE-02 và cờ bất thường `DAYS_EMPLOYED_ANOM`.
+    4. `CREDIT_TO_INCOME_RATIO`: Tỷ lệ `AMT_CREDIT / AMT_INCOME_TOTAL`.
+    5. `ANNUITY_TO_INCOME_RATIO`: Tỷ lệ `AMT_ANNUITY / AMT_INCOME_TOTAL`.
+    6. `CREDIT_TO_ANNUITY_RATIO`: Tỷ lệ `AMT_CREDIT / AMT_ANNUITY`.
+  - Hiện thực hàm `safe_ratio` xử lý an toàn mẫu số 0, missing và giá trị không hợp lệ; đảm bảo tuyệt đối không phát sinh giá trị vô cực `+inf`/`-inf` mà chuyển thành `NaN`.
+  - Tuân thủ nghiêm ngặt nguyên tắc chống rò rỉ: không gộp train/test, không tính toán thống kê toàn cục hay theo nhóm (mean/median/std), không sử dụng biến mục tiêu `TARGET`, không thực hiện điền khuyết thống kê (imputation).
+  - Bảo toàn tuyệt đối số lượng dòng, thứ tự dòng và tập khóa chính `SK_ID_CURR`.
+  - Cung cấp hàm `validate_feature_parity` kiểm tra tính tương đồng giữa train và test: 128 đặc trưng chung có kiểu dữ liệu đồng nhất; `TARGET` chỉ xuất hiện trên `application_train`.
+  - Xây dựng bộ unit test toàn diện 37 test cases trong `tests/features/test_engineering.py` (chứng minh tường minh 14 điều kiện biên tuổi và phân nhóm).
+  - Thực hiện kiểm toán dữ liệu thực tế tuần tự trên toàn bộ `application_train` và `application_test` thông qua `audit_application_features`.
+- **Đo đạc dữ liệu thực tế:**
+  - `application_train`: 307,511 dòng, 123 cột vào (đã qua clean DE-02) → 307,511 dòng, 129 cột ra (thêm 6 đặc trưng); 0 infinity;
+    * `AGE_YEARS`: min 20.50, max 69.07, median 43.14, 0 missing (0.0%), 0 giá trị nguồn không hợp lệ, 0 tuổi ngoài phạm vi [18, 100] (0 dưới 18, 0 trên 100).
+    * `AGE_GROUP`: 0 missing (0.0%); phân bố: `Under 25`: 12,233; `25-34`: 72,429; `35-44`: 84,261; `45-54`: 70,190; `55-64`: 60,522; `65+`: 7,876.
+    * `EMPLOYED_YEARS`: min 0.00, max 49.07, median 6.07, 55,374 missing (18.0072% — khớp chính xác 55,374 sentinel DE-02).
+    * `CREDIT_TO_INCOME_RATIO`: min 0.048, max 84.74, median 3.27, 0 missing (0.0%).
+    * `ANNUITY_TO_INCOME_RATIO`: min 0.0002, max 1.88, median 0.16, 12 missing (0.0039% — do thiếu `AMT_ANNUITY` gốc).
+    * `CREDIT_TO_ANNUITY_RATIO`: min 2.00, max 43.08, median 20.00, 12 missing (0.0039% — do thiếu `AMT_ANNUITY` gốc).
+  - `application_test`: 48,744 dòng, 122 cột vào (đã qua clean DE-02) → 48,744 dòng, 128 cột ra (thêm 6 đặc trưng); 0 infinity;
+    * `AGE_YEARS`: min 20.09, max 68.98, median 43.10, 0 missing (0.0%), 0 giá trị nguồn không hợp lệ, 0 tuổi ngoài phạm vi [18, 100] (0 dưới 18, 0 trên 100).
+    * `AGE_GROUP`: 0 missing (0.0%); phân bố: `Under 25`: 1,880; `25-34`: 11,288; `35-44`: 13,475; `45-54`: 11,322; `55-64`: 9,545; `65+`: 1,234.
+    * `EMPLOYED_YEARS`: min 0.00, max 47.85, median 6.13, 9,274 missing (19.0259% — khớp chính xác 9,274 sentinel DE-02).
+    * `CREDIT_TO_INCOME_RATIO`: min 0.17, max 38.89, median 3.14, 0 missing (0.0%).
+    * `ANNUITY_TO_INCOME_RATIO`: min 0.0051, max 1.25, median 0.16, 24 missing (0.0492% — do thiếu `AMT_ANNUITY` gốc).
+    * `CREDIT_TO_ANNUITY_RATIO`: min 2.18, max 39.88, median 20.00, 24 missing (0.0492% — do thiếu `AMT_ANNUITY` gốc).
+  - Tính tương đồng Train/Test (Parity): PASS (128 cột chung, khớp 100% dtype, `TARGET` chỉ có trong train).
+- **Bảo toàn checksum dữ liệu thô (SHA-256):**
+  - `application_train.csv`: `52e96b895b1112e1c853f670e58372719c8441c5ed1c57ac2f7fad559d784f5f` (trùng khớp 100%)
+  - `application_test.csv`: `a36161331d839150a67b6216d4de066f543a3b01a34061507d40e76612e0dec8` (trùng khớp 100%)
+- **Kết quả kiểm thử:**
+  - `python -m py_compile src\features\engineering.py`: PASS (mã thoát 0)
+  - `python -m pytest tests\features -v`: 37/37 passed
+  - `python -m pytest tests\data -q`: 22/22 passed
+  - `python -m pytest tests\models -q`: 53/53 passed
+  - `python -m pytest tests -q`: 112/112 passed
+  - `python -m src.features.engineering`: PASS (toàn bộ kiểm toán train, test và parity thành công)
+- **Cảnh báo chuyển tiếp (Carried-forward warnings):**
+  1. `bureau_balance` chứa 43,041 khóa ngoại `SK_ID_BUREAU` không tồn tại trong `bureau`.
+  2. `installments_payments` chứa 653,483 tổ hợp lặp hạt trả góp thể hiện các đợt thanh toán từng phần; không được khử trùng lặp tùy tiện.
+  3. Các tiêu chuẩn Data Contract sau khi aggregate bảng lịch sử và kết nối bảng vẫn tiếp tục PENDING cho DE-04 và DE-05.
+- **File thay đổi:** `src/features/engineering.py`, `tests/features/__init__.py`, `tests/features/test_engineering.py`, `docs/setup/tv2_setup.md`, `logs/log_tv2.md`.
+- **Next step:** TV2-DE-04 — Historical Table Aggregation.

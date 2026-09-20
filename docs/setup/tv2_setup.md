@@ -78,8 +78,40 @@ python -m pytest tests\data -v
 - **Output:** Trả DataFrame đã làm sạch và từ điển báo cáo trong memory/console. Chưa lưu trữ tệp dataset cuối cùng (chưa tạo `data/processed/cleaned_dataset.parquet`).
 - **Giới hạn:** Không thực hiện join, không aggregate bảng lịch sử, không tạo các đặc trưng phái sinh cấp cao (DTI, tỷ lệ khoản vay...).
 
-## Output và bước kế tiếp
+## Chạy DE-03 Application-Level Feature Engineering
 
-DE-01 và DE-02 đã hoàn thành kiểm toán và tầng làm sạch cơ sở. Bước kế tiếp
-là `TV2-DE-03 — Application-Level Feature Engineering`; sau đó tiếp tục theo
-roadmap trong `logs/log_tv2.md`.
+Module `src/features/engineering.py` cung cấp tầng tạo đặc trưng cấp hồ sơ ứng dụng (application-level), xác định (deterministic), thuần túy từng dòng (row-local) và chống rò rỉ (leakage-safe).
+
+### Danh mục đặc trưng và nguyên tắc
+Tạo đúng 6 đặc trưng trên `application_train` và `application_test`:
+1. `AGE_YEARS`: `-DAYS_BIRTH / 365.25` (phạm vi hợp lệ `[18, 100]`; tuổi < 18 hoặc > 100 trở thành missing `NaN`).
+2. `AGE_GROUP`: Phân nhóm độ tuổi thành categorical có thứ tự theo các bin nửa đóng nửa mở chuẩn `[18, 25, 35, 45, 55, 65, 101]` (tức `[18, 25)`, `[25, 35)`, `[35, 45)`, `[45, 55)`, `[55, 65)`, `[65, 101)`) với nhãn chính xác `['Under 25', '25-34', '35-44', '45-54', '55-64', '65+']`. Missing hoặc tuổi ngoài phạm vi hợp lệ sẽ tạo missing `AGE_GROUP`.
+3. `EMPLOYED_YEARS`: `-DAYS_EMPLOYED / 365.25` (bảo toàn missing NaN từ sentinel DE-02 và cờ `DAYS_EMPLOYED_ANOM`).
+4. `CREDIT_TO_INCOME_RATIO`: `AMT_CREDIT / AMT_INCOME_TOTAL`.
+5. `ANNUITY_TO_INCOME_RATIO`: `AMT_ANNUITY / AMT_INCOME_TOTAL`.
+6. `CREDIT_TO_ANNUITY_RATIO`: `AMT_CREDIT / AMT_ANNUITY`.
+
+### Nguyên tắc an toàn dữ liệu và chống rò rỉ
+- **Không thay đổi DataFrame đầu vào:** Trả về bản sao DataFrame mới, không thay đổi đối tượng đầu vào.
+- **Phép chia an toàn (Safe ratio):** Mọi mẫu số bằng 0, missing hoặc không hợp lệ đều chuyển thành `NaN`, tuyệt đối không phát sinh giá trị vô cực `+inf`/`-inf`.
+- **Row-local & Leakage-safe:** Tính toán hoàn toàn độc lập trên từng dòng; tuyệt đối không ghép train/test; không tính toán thống kê gộp (mean/median/std); không sử dụng biến mục tiêu `TARGET`; không điền khuyết thống kê.
+- **Bảo toàn hạt dữ liệu và thứ tự:** Giữ nguyên 100% số dòng, danh sách khóa `SK_ID_CURR` và thứ tự ban đầu.
+- **Tính tương đồng Train/Test (Parity):** Đảm bảo cả hai tập dữ liệu đều sở hữu 128 đặc trưng chung với kiểu dữ liệu đồng nhất; `TARGET` chỉ xuất hiện trên `application_train`.
+
+### Lệnh chạy kiểm toán dữ liệu thực tế (Real-data audit)
+Từ repository root:
+
+```powershell
+python -m src.features.engineering
+```
+
+Lệnh thực hiện làm sạch và tạo đặc trưng tuần tự trên `application_train` và `application_test`, xác thực tỷ lệ missing, phạm vi giá trị, kiểm tra tính tương đồng (parity) và in báo cáo JSON chi tiết.
+
+### Lệnh kiểm thử tự động
+```powershell
+python -m pytest tests\features -v
+```
+
+### Giới hạn và bước kế tiếp
+- **Giới hạn:** DE-03 chỉ tạo đặc trưng row-local cho bảng application. Chưa thực hiện aggregate các bảng lịch sử (DE-04), chưa join đa bảng và chưa tạo tệp Parquet tổng hợp cuối cùng (DE-05).
+- **Bước kế tiếp:** `TV2-DE-04 — Historical Table Aggregation`.
