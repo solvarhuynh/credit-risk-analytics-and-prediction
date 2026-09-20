@@ -377,3 +377,55 @@ Các phân tích tương quan với nhãn mục tiêu, xếp hạng dự báo đ
 - **TV3 (Dashboard & Application):**
   * Sử dụng `cleaned_dataset.parquet` và `data_dictionary.csv` để tra cứu nhãn giao diện, phân loại và ngữ nghĩa đặc trưng.
   * Đối với các biểu đồ và giao diện liên quan đến kết quả dự báo mô hình, điểm số rủi ro và xếp hạng decile, TV3 sẽ đợi sản phẩm `data/processed/scored_dataset.parquet` từ TV1.
+
+## TV2-DE-07 — Exploratory Data Analysis and Data Engineering Handoff
+
+### Mục đích (Purpose)
+Nhiệm vụ `TV2-DE-07` hoàn thành giai đoạn phân tích khám phá dữ liệu chuẩn tắc (EDA) và thiết lập giao ước bàn giao kỹ thuật chính thức từ TV2 (Data Engineering) cho TV1 (Modeling) và TV3 (Dashboard). Nhiệm vụ tạo ra 5 biểu đồ tĩnh chuẩn xuất bản, báo cáo phân tích chi tiết, cập nhật notebook và bàn giao tập dữ liệu chuẩn tắc 307,511 dòng.
+
+### Điều kiện tiên quyết (Prerequisites)
+- Hoàn thành DE-05: `data/processed/cleaned_dataset.parquet` (SHA-256: `e3cbf594...`) và manifest.
+- Hoàn thành DE-06: `data/processed/data_dictionary.csv` (203 dòng, 22 cột) và `reports/data_quality_report.md`.
+- Dữ liệu thô: `data/raw/application_train.csv` (dùng để kiểm toán sentinel `DAYS_EMPLOYED`).
+
+### Lệnh thực thi EDA chuẩn tắc
+```powershell
+& .\.venv\Scripts\python.exe -m src.data.eda
+```
+
+### Tệp đầu vào dự kiến (Expected Inputs)
+- `data/processed/cleaned_dataset.parquet`
+- `data/processed/cleaned_dataset_manifest.json`
+- `data/processed/data_dictionary.csv`
+- `data/raw/application_train.csv`
+
+### Tệp đầu ra xuất bản (Generated Outputs)
+1. **5 biểu đồ chuẩn xuất bản trong `reports/figures/eda/`:**
+   - `01_income_distribution_by_target.png`: Phân phối thu nhập theo nhãn mục tiêu (log scale và density clipped p99 tại 472,500 CZK).
+   - `02_default_rate_by_age_group.png`: Tỷ lệ nợ xấu theo 6 nhóm tuổi cố định (giảm từ 12.29% cho Under 25 xuống 3.66% cho 65+).
+   - `03_default_rate_by_occupation_and_contract.png`: Tỷ lệ nợ xấu theo 19 nhóm nghề nghiệp (bảo toàn Missing/Unknown) và 2 loại hợp đồng vay.
+   - `04_key_numeric_spearman_heatmap.png`: Ma trận tương quan hạng Spearman cho 12 biến số kinh doanh trọng yếu (bỏ qua `TARGET`).
+   - `05_days_employed_before_after.png`: Kiểm toán trực quan trước/sau làm sạch giá trị sentinel 365,243 ngày.
+2. **Báo cáo phân tích khám phá:** `reports/eda_report.md` (15 mục chuẩn tắc dựa trên số liệu thực nghiệm).
+3. **Biên bản bàn giao kỹ thuật:** `docs/data/tv2_data_handoff.md`.
+4. **Notebook minh chứng:** `notebooks/03_eda_statistical.ipynb`.
+
+### Lệnh kiểm thử & Xác thực
+```powershell
+& .\.venv\Scripts\python.exe -m py_compile src\data\eda.py
+& .\.venv\Scripts\python.exe -m pytest tests\data\test_eda.py -v
+& .\.venv\Scripts\python.exe -m pytest tests -q
+& .\.venv\Scripts\python.exe -m src.data.eda
+git diff --check
+git status --short
+```
+
+### Tính bất biến và Khả năng tái lập (Idempotency)
+Lệnh thực thi hoàn toàn bất biến và có thể chạy lại nhiều lần mà không làm thay đổi các tạo tác ngược nguồn (`cleaned_dataset.parquet`, `cleaned_dataset_manifest.json`, `data_dictionary.csv`). Checksum của tập dữ liệu chuẩn tắc được bảo toàn nguyên vẹn byte-for-byte.
+
+### Giới hạn kỹ thuật, Quy tắc Handoff và Tuyên bố phi nhân quả
+1. **Phi nhân quả:** Toàn bộ quan sát trong EDA chỉ phản ánh tương quan thống kê trên tập dữ liệu lịch sử, không suy diễn quan hệ nhân quả.
+2. **Không suy diễn danh tính (Proxy Restriction):** Tuyệt đối không suy diễn cờ `DAYS_EMPLOYED_ANOM` hay dữ liệu khuyết `OCCUPATION_TYPE` là người nghỉ hưu hay thất nghiệp.
+3. **Diễn giải Spearman:** Ngưỡng $|\rho| \ge 0.70$ là ngưỡng mô tả tương quan đơn điệu, không tự ý loại bỏ biến hay coi là đa cộng tuyến nếu chưa thẩm định qua mô hình.
+4. **Đặc trưng chuẩn tắc AGE_GROUP:** `AGE_GROUP` là đặc trưng phái sinh chuẩn tắc đã được lưu trữ sẵn trong `cleaned_dataset.parquet` (vị trí thứ 124, thuộc nhóm `application_derived`). TV3 nên sử dụng trực tiếp cột `AGE_GROUP` chuẩn tắc này để phân nhóm dashboard. Các ngưỡng phân nhóm nửa mở từ `AGE_YEARS` `[0, 25, 35, 45, 55, 65, 120]` với `right=False` (nhãn: `'Under 25'`, `'25-34'`, `'35-44'`, `'45-54'`, `'55-64'`, `'65+'`) là quy chuẩn cấu trúc có thẩm quyền (authoritative construction rule). Việc tái phái sinh `AGE_GROUP` từ `AGE_YEARS` chỉ dùng cho kiểm định tính nhất quán hoặc làm phương án dự phòng (fallback/validation), không phải chỉ dẫn bàn giao chính.
+5. **Trạng thái DE-08:** Nhiệm vụ `TV2-DE-08 — Model-Informed Fairness and Threshold Analysis` hiện đang ở trạng thái **BLOCKED / PENDING** cho đến khi TV1 hoàn tất huấn luyện mô hình và cung cấp xác suất dự báo trên tập validation/test.

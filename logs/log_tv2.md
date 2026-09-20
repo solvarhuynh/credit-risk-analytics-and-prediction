@@ -340,6 +340,102 @@ Chỉ append entry mới theo quy trình trong docs/tasks/working-protocol.md.
   2. 61 cột có tỷ lệ missing từ 50% đến 80% (chủ yếu là thông tin tòa nhà và thẻ tín dụng), yêu cầu chiến lược xử lý missing cẩn trọng trong pipeline tiền xử lý của TV1.
   3. Tỷ lệ thẻ tín dụng thấp (độ bao phủ 28.26%) phản ánh cấu trúc hành vi tiêu dùng tự nhiên của khách hàng.
 - **Trạng thái Git:**
-  - DE-06 chưa được commit (`git commit` chưa chạy).
-  - Không push lên bất kỳ remote repository nào.
+  - DE-06 đã được commit tại HEAD `704755a` (`feat(data): publish data dictionary and quality report`).
 - **Next step:** TV2-DE-07 — Exploratory Data Analysis and Data Engineering Handoff.
+
+## 2026-09-20 — TV2-DE-07 / TV2-DE-07C: Exploratory Data Analysis and Data Engineering Handoff
+
+- **Trạng thái:** PASS
+- **Môi trường Python:** Python 3.13.5 (xác thực trực tiếp từ `& .\.venv\Scripts\python.exe --version`)
+- **Git state:**
+  - Branch: `tv2`
+  - Base HEAD: `704755a` (`feat(data): publish data dictionary and quality report`)
+  - Tracked changes: Uncommitted for review (không commit, không push)
+- **Đã làm:**
+  - Hiện thực module phân tích khám phá dữ liệu chuẩn tắc `src/data/eda.py` theo kiến trúc module hóa, tái lập và độc lập với giao diện đồ họa.
+  - Phái sinh chiều hiển thị `AGE_GROUP` động từ `AGE_YEARS` theo các ngưỡng cố định `[0, 25, 35, 45, 55, 65, 120]` (nhãn: `'Under 25'`, `'25-34'`, `'35-44'`, `'45-54'`, `'55-64'`, `'65+'`), bảo đảm đối soát chuẩn xác 100% không làm mất dòng dữ liệu và không bắt buộc cột tồn tại sẵn trong dữ liệu đầu vào.
+  - Viết bộ 19 unit tests toàn diện trong `tests/data/test_eda.py` (sử dụng 100% synthetic fixtures, kiểm thử tính đối soát, ngưỡng biên, không suy diễn danh tính, bảo toàn bất biến dataframe).
+  - Tạo lập và xuất bản đúng 5 biểu đồ tĩnh chuẩn xuất bản trong `reports/figures/eda/`:
+    * `01_income_distribution_by_target.png`: Phân phối thu nhập theo nhãn mục tiêu (log-scale boxplot và density plot clipped p99 tại 472,500 CZK).
+    * `02_default_rate_by_age_group.png`: Tỷ lệ nợ xấu theo 6 nhóm tuổi cố định (giảm từ 12.29% cho Under 25 xuống 3.66% cho 65+).
+    * `03_default_rate_by_occupation_and_contract.png`: Tỷ lệ nợ xấu theo 19 nhóm nghề nghiệp (bảo toàn Missing/Unknown) và 2 loại hợp đồng vay.
+    * `04_key_numeric_spearman_heatmap.png`: Ma trận tương quan hạng Spearman cho 12 biến số kinh doanh trọng yếu (bỏ qua `TARGET`).
+    * `05_days_employed_before_after.png`: Kiểm toán trước/sau xử lý sentinel 365,243 ngày làm việc (chuyển thành NaN, cờ `DAYS_EMPLOYED_ANOM=1`, giữ nguyên số ngày có dấu <=0).
+  - Biên dịch báo cáo phân tích khám phá chuẩn Markdown `reports/eda_report.md` (15 mục chuẩn tắc dựa trên số liệu thực nghiệm đo đạc từ 307,511 dòng, tích hợp bảng đối soát và checksum các tạo tác).
+  - Cập nhật notebook `notebooks/03_eda_statistical.ipynb` theo đúng chuẩn JSON, đường dẫn tương đối, tái sử dụng các hàm từ `src.data.eda`, không lưu vết lỗi hay đường dẫn tuyệt đối.
+  - Soạn thảo biên bản bàn giao kỹ thuật chính thức `docs/data/tv2_data_handoff.md` thiết lập quy cách dữ liệu, chính sách missing, diễn giải tương quan Spearman là tương quan hạng mô tả (không tự ý loại bỏ đặc trưng), và hướng dẫn phân tách fold chống rò rỉ cho TV1 và TV3.
+  - Cập nhật tài liệu hướng dẫn kỹ thuật `docs/setup/tv2_setup.md` bổ sung hướng dẫn chạy, xác thực và giới hạn của DE-07.
+- **Bảo toàn checksum dữ liệu chuẩn tắc (SHA-256 Invariance):**
+  - `cleaned_dataset.parquet`: `e3cbf594a5a0a072fc1625baa11563c323b8c392afc90cb46bb17bf48c12de75` (64,213,549 bytes — TRÙNG KHỚP 100%)
+  - `cleaned_dataset_manifest.json`: `e633885a14ad70b7f153cc27587722c77ee6c5b73ac03495872755df7a73d3f7` (17,082 bytes — TRÙNG KHỚP 100%)
+  - `data_dictionary.csv`: `efd1d1e1ad268f12ee38a901602f707a76b07a3b581ba99c25df9f6bd188ec39` (124,732 bytes — TRÙNG KHỚP 100%)
+- **Tạo tác đầu ra DE-07 (Sizes & SHA-256):**
+  - `reports/eda_report.md`: 12,781 B | `bdda55b116ac4ff36bced1ac50c760db5ba19ef73b4ea03ded63642ee37da4a5`
+  - `reports/figures/eda/01_income_distribution_by_target.png`: 400,315 B | `263e84e199e9dc6cf8c2e26687c2cd636d7a9e527e439788d031f9a632b956e6`
+  - `reports/figures/eda/02_default_rate_by_age_group.png`: 198,222 B | `3d1b4352beb8862d815ebbcd2c8ff8758ff3c4872c5228dbb5478608742fc7df`
+  - `reports/figures/eda/03_default_rate_by_occupation_and_contract.png`: 462,301 B | `cb2826c968f08787e361b6cacf615552c4b6df7dca0947452fbf87e63eb88bb1`
+  - `reports/figures/eda/04_key_numeric_spearman_heatmap.png`: 488,137 B | `a7914f619916e59b445382359b14bfc429bc6de9fc559552a0c18f651ce5858b`
+  - `reports/figures/eda/05_days_employed_before_after.png`: 295,138 B | `d8a669f6094e8541002fc3babf88deae0860e0ca876c3b4a3ec2f696f4386315`
+- **Số liệu thực nghiệm đo đạc chính và Đối soát (Reconciled Audit Metrics):**
+  - Quần thể: 307,511 dòng, 203 cột, 0 null khóa chính `SK_ID_CURR`.
+  - Nhãn mục tiêu: 282,686 khách hàng không vỡ nợ (91.93%), 24,825 khách hàng vỡ nợ (8.07%).
+  - Thu nhập: Trung vị nhóm tốt là 148,500 CZK (IQR: 90,000), nhóm xấu là 135,000 CZK (IQR: 90,000). Ngưỡng p99 clip hiển thị: 472,500 CZK (3,014 dòng bị ảnh hưởng, chiếm 0.98%).
+  - Bảng đối soát nhóm tuổi (Age Group Reconciliation):
+    * `Under 25`: N = 12,233 | Defaults = 1,504 | Non-Defaults = 10,729 | Rate = 12.29%
+    * `25-34`: N = 72,429 | Defaults = 7,721 | Non-Defaults = 64,708 | Rate = 10.66%
+    * `35-44`: N = 84,261 | Defaults = 7,085 | Non-Defaults = 77,176 | Rate = 8.41%
+    * `45-54`: N = 70,190 | Defaults = 4,946 | Non-Defaults = 65,244 | Rate = 7.05%
+    * `55-64`: N = 60,522 | Defaults = 3,281 | Non-Defaults = 57,241 | Rate = 5.42%
+    * `65+`: N = 7,876 | Defaults = 288 | Non-Defaults = 7,588 | Rate = 3.66%
+    * Tổng cộng: Customers = 307,511 | Defaults = 24,825 | Non-Defaults = 282,686 (Đối soát: 24,825 + 282,686 == 307,511).
+  - Nghề nghiệp: Low-skill Laborers (17.15%), Drivers (11.33%), Waiters/barmen (11.28%); Accountants (4.83%), High skill tech (6.16%), Managers (6.21%). Nhóm Missing/Unknown chiếm 96,391 dòng (31.35%) có tỷ lệ nợ xấu 6.51% (không suy diễn danh tính).
+  - Hợp đồng: Vay tiền mặt (Cash loans) nợ xấu 8.35% (N = 278,232), Vay thấu chi/tuần hoàn (Revolving loans) nợ xấu 5.48% (N = 29,279).
+  - Tương quan: Tương quan hạng Spearman mạnh giữa `AMT_CREDIT` và `AMT_GOODS_PRICE` (ρ = 0.9849), `AMT_CREDIT` và `AMT_ANNUITY` (ρ = 0.8302). Ngưỡng |ρ| >= 0.70 là ngưỡng mô tả, không phải bằng chứng chứng minh đa cộng tuyến hay lý do tự động loại bỏ đặc trưng.
+  - Sentinel: 55,374 dòng (18.01%) mang giá trị 365243 ở tập thô được chuyển thành NaN ở tập sạch và lưu giữ trong cờ `DAYS_EMPLOYED_ANOM=1`. Các giá trị hợp lệ giữ nguyên số ngày có dấu <= 0.
+- **Kết quả kiểm thử:**
+  - `python -m py_compile src\data\eda.py`: PASS (mã thoát 0)
+  - `python -m pytest tests\data\test_eda.py -v`: 19/19 passed
+  - `python -m pytest tests\data -q`: 104/104 passed
+  - `python -m pytest tests -q`: 194/194 passed
+  - `git diff --check`: PASS (0 khoảng trắng thừa hoặc lỗi định dạng)
+- **Đường dẫn thay đổi:**
+  - `src/data/eda.py`
+  - `tests/data/test_eda.py`
+  - `reports/eda_report.md`
+  - `reports/figures/eda/01_income_distribution_by_target.png`
+  - `reports/figures/eda/02_default_rate_by_age_group.png`
+  - `reports/figures/eda/03_default_rate_by_occupation_and_contract.png`
+  - `reports/figures/eda/04_key_numeric_spearman_heatmap.png`
+  - `reports/figures/eda/05_days_employed_before_after.png`
+  - `notebooks/03_eda_statistical.ipynb`
+  - `docs/data/tv2_data_handoff.md`
+  - `docs/setup/tv2_setup.md`
+  - `logs/log_tv2.md`
+- **Trạng thái Git:**
+  - DE-07 chưa được commit (`git commit` chưa chạy).
+  - Không push lên bất kỳ remote repository nào.
+- **Next step:** Hand off the DE-07 artifacts to TV1 and TV3, obtain consumer acknowledgement, and wait for TV1 model outputs before starting TV2-DE-08.
+
+---
+
+## TV2-DE-07C — Handoff Contract and AGE_GROUP Canonical Alignment (2026-09-20)
+
+- **Mục tiêu:** Đồng bộ hóa định nghĩa và giao ước của `AGE_GROUP` thành đặc trưng phái sinh chuẩn tắc đã lưu trữ (`persisted canonical derived feature`) theo đúng bằng chứng thực nghiệm schema:
+  - Cột `AGE_YEARS` nằm ở vị trí 123.
+  - Cột `AGE_GROUP` nằm ở vị trí 124 (`role = feature`, `feature_group = application_derived`).
+  - Cột `EMPLOYED_YEARS` nằm ở vị trí 125.
+- **Quy tắc giao ước được chuẩn hóa:**
+  1. `AGE_GROUP` tồn tại sẵn trong `cleaned_dataset.parquet` và được định danh chuẩn xác là một đặc trưng phái sinh chuẩn tắc đã lưu trữ (`persisted canonical derived feature`).
+  2. TV3 được chỉ dẫn sử dụng trực tiếp cột `AGE_GROUP` chuẩn tắc này để phân nhóm hiển thị trên dashboard.
+  3. Các ngưỡng phân nhóm nửa mở từ `AGE_YEARS` `[0, 25, 35, 45, 55, 65, 120]` với `right=False` (nhãn: `'Under 25'`, `'25-34'`, `'35-44'`, `'45-54'`, `'55-64'`, `'65+'`) là quy chuẩn cấu trúc có thẩm quyền (`authoritative construction rule`).
+  4. Việc tái phái sinh `AGE_GROUP` từ `AGE_YEARS` chỉ dùng cho mục đích kiểm định tính nhất quán hoặc làm phương án dự phòng (fallback/validation), không phải là chỉ dẫn bàn giao chính.
+  5. Hàm tiện ích `compute_age_group_summary` trong `src/data/eda.py` ưu tiên sử dụng `AGE_GROUP` chuẩn tắc, và hỗ trợ fallback/validate bằng `AGE_YEARS`.
+  6. Bảo toàn nguyên vẹn byte-for-byte các tệp dữ liệu chuẩn tắc (`cleaned_dataset.parquet`, `cleaned_dataset_manifest.json`, `data_dictionary.csv`).
+  7. Giữ nguyên 100% các số liệu thực nghiệm và hình ảnh biểu đồ EDA đã kiểm định.
+- **Kiểm thử bổ sung:**
+  - Bổ sung kiểm thử `test_canonical_age_group_agrees_with_derived` trong `tests/data/test_eda.py`, xác nhận `AGE_GROUP` chuẩn tắc khớp 100% với phân nhóm tạo từ `AGE_YEARS`.
+- **Trạng thái Git:**
+  - Không commit (`git commit` chưa chạy).
+  - Không stage (`git add` chưa chạy).
+  - Không push lên bất kỳ remote nào.
+- **Next step:** Hand off the DE-07 artifacts to TV1 and TV3, obtain consumer acknowledgement, and wait for TV1 model outputs before starting TV2-DE-08.
