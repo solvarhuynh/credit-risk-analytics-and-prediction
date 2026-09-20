@@ -65,3 +65,38 @@ Chỉ append entry mới theo quy trình trong docs/tasks/working-protocol.md.
   - `git status --short`
 - **File thay đổi:** `logs/log_tv2.md`.
 - **Next step:** TV2-DE-02 — Data Cleaning & Sentinel/Missing Handling.
+
+## 2026-09-20 — TV2-DE-02: Data Cleaning & Sentinel/Missing Handling
+
+- **Trạng thái:** done
+- **Đã làm:**
+  - Hiện thực module làm sạch chuẩn tắc `src/data/cleaning.py` tuân thủ nguyên tắc không biến đổi (immutable) DataFrame đầu vào và chính sách chống rò rỉ (leakage-safe).
+  - Áp dụng chính sách missing value: không suy diễn thống kê (mean/median/mode); giữ nguyên genuine missing values; các imputer mô hình dành riêng cho TV1 fit trên training fold sau split.
+  - Cung cấp hàm `summarize_missingness` tóm tắt missing count và percentage cho mọi cột.
+  - Xử lý sentinel `DAYS_EMPLOYED == 365243` trên `application_train` và `application_test`: chuyển thành missing (NaN) và tạo cờ bất thường `DAYS_EMPLOYED_ANOM` (`int8`, nhận 0 hoặc 1). Số cờ tạo ra khớp chính xác với số sentinel ban đầu.
+  - Xử lý sentinel ngày trên `previous_application`: chuyển `365243` thành missing trên đúng 5 cột ngày theo thiết kế: `DAYS_FIRST_DRAWING`, `DAYS_FIRST_DUE`, `DAYS_LAST_DUE_1ST_VERSION`, `DAYS_LAST_DUE`, `DAYS_TERMINATION`.
+  - Xử lý vô cực: nhận diện `+inf`/`-inf` trên các cột số và chuẩn hóa về NaN.
+  - Chuẩn hóa chuỗi bảo toàn: cắt khoảng trắng đầu/cuối, giữ nguyên chữ hoa/thường và khoảng trắng nội bộ; chuỗi rỗng sau khi cắt chuyển thành missing; bảo toàn các nhãn nghiệp vụ `XNA` và `Unknown`.
+  - Chính sách duplicate: phát hiện và báo cáo duplicate tuyệt đối, không xóa dòng tự động nhằm bảo toàn các giao dịch trả góp hợp lệ trong `installments_payments`.
+  - Xác thực hợp đồng: kiểm tra khóa chính duy nhất không null (`SK_ID_CURR`, `SK_ID_BUREAU`, `SK_ID_PREV`), kiểm tra nhãn `TARGET` nhị phân {0, 1} trên train và không có `TARGET` trên test.
+  - Tạo bộ unit test toàn diện 22 test cases trong `tests/data/test_cleaning.py`.
+  - Thực hiện kiểm toán dữ liệu thực tế trên toàn bộ 3 bảng chứa sentinel (`application_train`, `application_test`, `previous_application`) thông qua hàm `audit_sentinel_bearing_raw_tables`.
+- **Đo đạc dữ liệu thực tế:**
+  - `application_train`: 307,511 dòng, 122 cột vào → 307,511 dòng, 123 cột ra; 0 duplicate; `DAYS_EMPLOYED` sentinel: 55,374 thay thế, 0 còn lại; cờ `DAYS_EMPLOYED_ANOM` = 55,374; trạng thái: VALIDATED.
+  - `application_test`: 48,744 dòng, 121 cột vào → 48,744 dòng, 122 cột ra; 0 duplicate; `DAYS_EMPLOYED` sentinel: 9,274 thay thế, 0 còn lại; cờ `DAYS_EMPLOYED_ANOM` = 9,274; trạng thái: VALIDATED.
+  - `previous_application`: 1,670,214 dòng, 37 cột vào → 1,670,214 dòng, 37 cột ra; 0 duplicate; sentinel thay thế: `DAYS_FIRST_DRAWING`: 934,444; `DAYS_FIRST_DUE`: 40,645; `DAYS_LAST_DUE_1ST_VERSION`: 93,864; `DAYS_LAST_DUE`: 211,221; `DAYS_TERMINATION`: 225,913; 0 sentinel còn lại trên cả 5 cột; trạng thái: VALIDATED.
+- **Bảo toàn checksum dữ liệu thô (SHA-256):**
+  - `application_train.csv`: `52e96b895b1112e1c853f670e58372719c8441c5ed1c57ac2f7fad559d784f5f` (trùng khớp 100%)
+  - `application_test.csv`: `a36161331d839150a67b6216d4de066f543a3b01a34061507d40e76612e0dec8` (trùng khớp 100%)
+  - `previous_application.csv`: `5046cd657ee04df2eaa6dc8308ae86be6b3b1763674a3f63574886a2f2896505` (trùng khớp 100%)
+- **Kết quả kiểm thử:**
+  - `python -m py_compile src\data\cleaning.py`: PASS (mã thoát 0)
+  - `python -m pytest tests\data -v`: 22/22 passed
+  - `python -m pytest tests\models -q`: 53/53 passed
+  - `python -m src.data.cleaning`: PASS (toàn bộ 3 bảng được kiểm toán thành công)
+- **Cảnh báo chuyển tiếp (Carried-forward warnings):**
+  1. `bureau_balance` chứa 43,041 khóa ngoại `SK_ID_BUREAU` không tồn tại trong `bureau`.
+  2. `installments_payments` chứa 653,483 tổ hợp lặp hạt trả góp thể hiện các đợt thanh toán từng phần; không được khử trùng lặp tùy tiện.
+  3. Các tiêu chuẩn Data Contract sau khi tạo đặc trưng và kết nối bảng vẫn tiếp tục PENDING cho DE-03, DE-04 và DE-05.
+- **File thay đổi:** `src/data/cleaning.py`, `tests/data/__init__.py`, `tests/data/test_cleaning.py`, `docs/setup/tv2_setup.md`, `logs/log_tv2.md`.
+- **Next step:** TV2-DE-03 — Application-Level Feature Engineering.
