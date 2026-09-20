@@ -197,4 +197,90 @@ python -m pytest tests\data -v
 2. `installments_payments`: Chứa 653,483 dòng trả góp từng phần được hợp nhất bảo toàn.
 
 ### Mối liên hệ với DE-05
-DE-04 chỉ tạo các tệp parquet tổng hợp trung gian tại `data/interim/`. Nhiệm vụ `TV2-DE-05 — Join and Canonical Dataset Publication` sẽ thực hiện left join các bảng tổng hợp này vào `application_train` và `application_test` (đã qua feature engineering ở DE-03) để tạo ra tập dữ liệu chính thức `data/processed/cleaned_dataset.parquet`.
+DE-04 chỉ tạo các tệp parquet tổng hợp trung gian tại `data/interim/`. Nhiệm vụ `TV2-DE-05 — Join and Canonical Dataset Publication` thực hiện left join các bảng tổng hợp này vào `application_train` (đã qua tiền xử lý ở DE-02 và feature engineering ở DE-03) để tạo ra tập dữ liệu chính thức `data/processed/cleaned_dataset.parquet`.
+
+## TV2-DE-05 — Join and Canonical Dataset Publication
+
+### Mục đích (Purpose)
+Xuất bản tập dữ liệu chuẩn tắc gắn nhãn phục vụ huấn luyện mô hình (`data/processed/cleaned_dataset.parquet`) và tệp siêu dữ liệu kiểm định (`data/processed/cleaned_dataset_manifest.json`) thông qua module điều phối chuẩn hóa `src/data/build_pipeline.py`.
+
+### Quần thể chuẩn tắc gắn nhãn (Canonical Labeled Population)
+- Quần thể chuẩn tắc duy nhất được phép tham gia huấn luyện là `data/raw/application_train.csv` gồm đúng 307,511 khách hàng có nhãn `TARGET` (0 hoặc 1).
+- **Loại trừ tuyệt đối `application_test.csv`:** Tập dữ liệu kiểm thử (48,744 dòng, không có `TARGET`) tuyệt đối không được đưa vào tập dữ liệu chuẩn tắc huấn luyện để ngăn chặn hoàn toàn rủi ro rò rỉ dữ liệu (data leakage) và ô nhiễm nhãn.
+
+### Dữ liệu đầu vào & Tái sử dụng tầng tiền xử lý
+1. **Dữ liệu thô:** `data/raw/application_train.csv` (307,511 dòng, 122 cột).
+2. **Tái sử dụng DE-02:** Làm sạch giá trị sentinel (365,243 ngày làm việc $\rightarrow$ `NaN` và cờ `DAYS_EMPLOYED_ANOM`), chuẩn hóa chuỗi và kiểu dữ liệu qua `src/data/cleaning.py`.
+3. **Tái sử dụng DE-03:** Phái sinh 6 đặc trưng tài chính và nhân khẩu học cấp hồ sơ ứng viên (`AGE_YEARS`, `AGE_GROUP`, `EMPLOYED_YEARS`, `CREDIT_TO_INCOME_RATIO`, `ANNUITY_TO_INCOME_RATIO`, `CREDIT_TO_ANNUITY_RATIO`) qua `src/features/engineering.py`. Kết hợp cùng cờ `DAYS_EMPLOYED_ANOM` từ DE-02 tạo thành nhóm 7 đặc trưng phái sinh cấp hồ sơ ứng viên.
+4. **Tái sử dụng DE-04:** 5 tệp Parquet tổng hợp trung gian cấp khách hàng (`SK_ID_CURR`) duy nhất từ `data/interim/`:
+   - `bureau_aggregated.parquet` (20 đặc trưng `BUREAU_`)
+   - `previous_application_aggregated.parquet` (15 đặc trưng `PREV_`)
+   - `installments_payments_aggregated.parquet` (10 đặc trưng `INSTAL_`)
+   - `pos_cash_balance_aggregated.parquet` (11 đặc trưng `POS_`)
+   - `credit_card_balance_aggregated.parquet` (18 đặc trưng `CC_`)
+
+### Thứ tự Left Join xác định (Deterministic Join Order) & Lực lượng (Cardinality)
+Thực hiện phép nối trái (left join) 1-to-1 tuần tự theo đúng thứ tự:
+1. `BUREAU` (độ bao phủ: 85.6851%, 263,491 khớp / 44,020 không khớp)
+2. `PREV` (độ bao phủ: 94.6493%, 291,057 khớp / 16,454 không khớp)
+3. `INSTAL` (độ bao phủ: 94.8399%, 291,643 khớp / 15,868 không khớp)
+4. `POS` (độ bao phủ: 94.1248%, 289,444 khớp / 18,067 không khớp)
+5. `CC` (độ bao phủ: 28.2608%, 86,905 khớp / 220,606 không khớp)
+
+Khóa nối `SK_ID_CURR` trên các bảng aggregate được kiểm định nghiêm ngặt tính duy nhất (1-to-1), đảm bảo tuyệt đối không làm mất dòng hoặc nhân đôi số dòng (bảo toàn đúng 307,511 dòng).
+
+### Chính sách xử lý khuyết thiếu lịch sử tín dụng (Missing-History Policy)
+- **Cột số đếm chuẩn tắc (Count features - đúng 18 cột đã phê duyệt):** Đối với khách hàng không có lịch sử ở bảng tương ứng, điền giá trị `0` (nghiệp vụ: không có giao dịch/hồ sơ phát sinh).
+  - `BUREAU`: `BUREAU_CREDIT_COUNT`, `BUREAU_ACTIVE_COUNT`, `BUREAU_CLOSED_COUNT`, `BUREAU_BB_MONTH_COUNT`, `BUREAU_BB_DELINQUENT_MONTH_COUNT`, `BUREAU_BB_SEVERE_MONTH_COUNT`.
+  - `PREV`: `PREV_APPLICATION_COUNT`, `PREV_APPROVED_COUNT`, `PREV_REFUSED_COUNT`.
+  - `INSTAL`: `INSTAL_INSTALLMENT_COUNT`, `INSTAL_LATE_COUNT`, `INSTAL_UNDERPAYMENT_COUNT`.
+  - `POS`: `POS_RECORD_COUNT`, `POS_CONTRACT_COUNT`, `POS_LATE_MONTH_COUNT`.
+  - `CC`: `CC_RECORD_COUNT`, `CC_CONTRACT_COUNT`, `CC_LATE_MONTH_COUNT`.
+- **Cột tỷ lệ, số tiền và thống kê (Rates, Amounts, Statistics):** Giữ nguyên giá trị khuyết thiếu thực tế `NaN`, tuyệt đối không điền 0 giả tạo gây méo mó phân phối.
+
+### Cổng kiểm soát chất lượng (Quality Gates - 28 quy tắc)
+Bộ kiểm định chất lượng tự động thực thi 28 quy tắc kiểm tra nghiêm ngặt trước khi cho phép xuất bản:
+1. Đúng 307,511 dòng.
+2. Đúng 203 cột chuẩn tắc (1 `SK_ID_CURR` + 1 `TARGET` + 120 cột thô sạch + 7 cột DE-02/DE-03 + 74 cột aggregate DE-04).
+3. `SK_ID_CURR` duy nhất 100%, không null, sắp xếp tăng dần.
+4. `TARGET` nhị phân {0: 282,686; 1: 24,825}, không null, bất biến so với bảng thô.
+5. Không có giá trị vô cực (`+inf` hoặc `-inf`).
+6. Không có xung đột tên cột hoặc cột hậu tố `_x`/`_y`.
+7. Đầy đủ các nhóm tiền tố `BUREAU_`, `PREV_`, `INSTAL_`, `POS_`, `CC_`.
+8. Đầy đủ các cột giao ước bắt buộc (`data_contract.md`): `SK_ID_CURR`, `TARGET`, `AMT_INCOME_TOTAL`, `AMT_CREDIT`, `AMT_ANNUITY`, `AMT_GOODS_PRICE`, `CODE_GENDER`, `NAME_CONTRACT_TYPE`, `AGE_YEARS`, `AGE_GROUP`, `ANNUITY_TO_INCOME_RATIO`, `CREDIT_TO_INCOME_RATIO`, `EMPLOYED_YEARS`, `DAYS_EMPLOYED_ANOM`.
+9. **Kiểm định tỷ lệ chính xác:** Chỉ 10 cột tỷ lệ chuẩn tắc (`BUREAU_ACTIVE_RATE`, `BUREAU_CLOSED_RATE`, `BUREAU_BB_DELINQUENT_MONTH_RATE`, `BUREAU_BB_SEVERE_MONTH_RATE`, `PREV_APPROVED_RATE`, `PREV_REFUSED_RATE`, `INSTAL_LATE_RATE`, `INSTAL_UNDERPAYMENT_RATE`, `POS_LATE_MONTH_RATE`, `CC_LATE_MONTH_RATE`) bị chặn trong `[0, 1]`. Các tỷ lệ tài chính như `CREDIT_TO_INCOME_RATIO`, `ANNUITY_TO_INCOME_RATIO`, `CREDIT_TO_ANNUITY_RATIO`, `PREV_CREDIT_TO_APPLICATION_RATIO_MEAN`, `INSTAL_PAYMENT_RATIO_MEAN`, `CC_UTILIZATION_MEAN/MAX` được phép lớn hơn 1 hợp lệ theo bản chất tài chính.
+
+### Xuất bản nguyên tử (Atomic Publication) & Artifacts
+- **Đường dẫn Parquet:** `data/processed/cleaned_dataset.parquet` (64,213,549 bytes, SHA-256: `e3cbf594a5a0a072fc1625baa11563c323b8c392afc90cb46bb17bf48c12de75`).
+- **Đường dẫn Manifest:** `data/processed/cleaned_dataset_manifest.json` (17,082 bytes, SHA-256: `e633885a14ad70b7f153cc27587722c77ee6c5b73ac03495872755df7a73d3f7`).
+- **Cơ chế nguyên tử:** Ghi ra tệp tạm `.tmp` tại cùng thư mục, thực hiện kiểm định đọc lại (read-back validation), sau đó thực hiện `os.replace` nguyên tử nhằm tránh tình trạng tệp hỏng khi có sự cố ngắt quãng.
+
+### Lệnh thực thi & Tùy chọn tái tạo
+- **Thực thi chuẩn tắc (sử dụng aggregate có sẵn):**
+```powershell
+python -m src.data.build_pipeline
+```
+- **Tùy chọn ép buộc tái tạo aggregate từ dữ liệu thô (`--rebuild-aggregates`):**
+```powershell
+python -m src.data.build_pipeline --rebuild-aggregates
+```
+
+### Lệnh kiểm thử
+```powershell
+python -m pytest tests\data\test_build_pipeline.py -v
+python -m pytest tests\data -v
+python -m pytest tests -q
+```
+
+### Cảnh báo nghiệp vụ dự kiến (Expected Warnings)
+1. Tỷ lệ bao phủ lịch sử < 100% là đặc tính nghiệp vụ tự nhiên (ví dụ thẻ tín dụng chỉ có 28.26% khách hàng sử dụng).
+2. Bản ghi mồ côi `bureau_balance` (43,041 mã) và các đợt thanh toán trả góp từng phần (653,483 dòng) được xử lý an toàn từ DE-04 và ghi nhận lại trong manifest.
+3. Các chỉ số thống kê của khách hàng không có lịch sử được bảo toàn giá trị `NaN` thực tế.
+
+### Xác nhận phạm vi Data Dictionary
+Tệp từ điển dữ liệu `data_dictionary.csv` thuộc phạm vi công việc chuyên biệt của nhiệm vụ `TV2-DE-06 — Data Dictionary and Data Quality Report`. DE-05 không tạo tệp này.
+
+### Hướng dẫn cho TV1 (EDA) và TV3 (Modeling)
+- **Tệp dữ liệu sử dụng:** Đọc trực tiếp từ `data/processed/cleaned_dataset.parquet` bằng `pd.read_parquet('data/processed/cleaned_dataset.parquet')`.
+- **Tính toán và huấn luyện:** Tệp đã được sắp xếp tăng dần theo `SK_ID_CURR`, bảo toàn trọn vẹn 307,511 dòng của tập huấn luyện đã được làm sạch và bổ sung đầy đủ 201 đặc trưng (bao gồm 74 đặc trưng lịch sử đa nguồn).
+- **Phân tách Cross-Validation:** Luôn sử dụng Stratified K-Fold dựa trên cột `TARGET` để đảm bảo tỷ lệ mất cân bằng (imbalance) ~8.07% được phản ánh đồng đều giữa các fold.

@@ -197,3 +197,80 @@ Chỉ append entry mới theo quy trình trong docs/tasks/working-protocol.md.
   3. Tiêu chuẩn Data Contract xuất bản tập dữ liệu hợp nhất cuối cùng tiếp tục PENDING cho DE-05.
 - **File thay đổi:** `src/data/aggregate.py`, `tests/data/test_aggregate.py`, `docs/setup/tv2_setup.md`, `logs/log_tv2.md`.
 - **Next step:** TV2-DE-05 — Join and Canonical Dataset Publication.
+
+## 2026-09-20 — TV2-DE-05: Join and Canonical Dataset Publication (Updated TV2-DE-05C)
+
+- **Trạng thái:** PASS WITH WARNINGS
+- **Git history chuẩn xác:**
+  - `6984c30` feat(data): aggregate historical credit records
+  - `8c81727` feat(features): add application-level financial features
+  - `4cabd50` feat(data): implement leakage-safe cleaning layer
+  - `c51a511` docs(data): record raw preflight revalidation
+  - `30659ab` feat(testing): establish regression test suite for modeling modules and normalize canonical logs
+- **Đã làm:**
+  - Hiện thực module điều phối và xuất bản tập dữ liệu chuẩn tắc `src/data/build_pipeline.py`.
+  - Thiết lập hàm `join_customer_aggregates`: thực thi left join tuần tự 5 bảng aggregate trung gian (`BUREAU` $\rightarrow$ `PREV` $\rightarrow$ `INSTAL` $\rightarrow$ `POS` $\rightarrow$ `CC`) vào quần thể gắn nhãn `application_train`, kiểm định nghiêm ngặt lực lượng 1-to-1, ngăn ngừa nhân đôi dòng hoặc rơi rụng bản ghi.
+  - Áp dụng chính sách xử lý khuyết thiếu lịch sử tín dụng (Missing-History Policy): chỉ điền giá trị `0` cho đúng 18 cột số đếm nghiệp vụ đã được phê duyệt (`BUREAU_CREDIT_COUNT`, `BUREAU_ACTIVE_COUNT`, `BUREAU_CLOSED_COUNT`, `BUREAU_BB_MONTH_COUNT`, `BUREAU_BB_DELINQUENT_MONTH_COUNT`, `BUREAU_BB_SEVERE_MONTH_COUNT`, `PREV_APPLICATION_COUNT`, `PREV_APPROVED_COUNT`, `PREV_REFUSED_COUNT`, `INSTAL_INSTALLMENT_COUNT`, `INSTAL_LATE_COUNT`, `INSTAL_UNDERPAYMENT_COUNT`, `POS_RECORD_COUNT`, `POS_CONTRACT_COUNT`, `POS_LATE_MONTH_COUNT`, `CC_RECORD_COUNT`, `CC_CONTRACT_COUNT`, `CC_LATE_MONTH_COUNT`); bảo toàn `NaN` cho các cột tỷ lệ, số tiền và thống kê.
+  - Hiện thực cổng kiểm soát chất lượng dữ liệu `validate_canonical_dataset` với 28 quy tắc kiểm định toàn diện: bảo toàn số dòng (307,511), thứ tự cột chuẩn tắc (203 cột), tính duy nhất và đơn điệu tăng dần của `SK_ID_CURR`, tính bất biến của phân phối `TARGET` {0: 282,686; 1: 24,825}, không chứa giá trị vô cực (`inf`), tiền tố hợp lệ.
+  - Bảo đảm đầy đủ các cột bắt buộc theo Data Contract (`AGE_YEARS`, `AGE_GROUP`, `EMPLOYED_YEARS`, `DAYS_EMPLOYED_ANOM`, `ANNUITY_TO_INCOME_RATIO`, `CREDIT_TO_INCOME_RATIO`,...).
+  - Chuẩn hóa kiểm định tỷ lệ: chỉ 10 cột tỷ lệ xác định (`BOUNDED_RATE_COLUMNS`) bị chặn trong `[0, 1]`; các tỷ lệ tài chính như `CREDIT_TO_INCOME_RATIO`, `ANNUITY_TO_INCOME_RATIO`, `CREDIT_TO_ANNUITY_RATIO`, `PREV_CREDIT_TO_APPLICATION_RATIO_MEAN`, `INSTAL_PAYMENT_RATIO_MEAN`, `CC_UTILIZATION_MEAN/MAX` được phép lớn hơn 1 hợp lệ.
+  - Hiện thực cơ chế xuất bản nguyên tử `write_canonical_dataset_atomic`: ghi tệp `.tmp`, thực hiện kiểm định đọc lại (read-back validation), hoán đổi an toàn bằng `os.replace`.
+  - Tự động sinh tệp siêu dữ liệu kiểm định `cleaned_dataset_manifest.json` ghi nhận đầy đủ checksum, số liệu kiểm định join audit, phân phối nhãn và cảnh báo.
+  - Cập nhật `.gitignore` loại trừ cục bộ `data/processed/cleaned_dataset_manifest.json`.
+  - Viết bộ 22 unit tests cô lập trong `tests/data/test_build_pipeline.py` sử dụng dữ liệu giả lập (synthetic fixtures), kiểm thử toàn diện mọi tình huống biên, rò rỉ nhãn, tính bất biến, tỷ lệ không bị chặn và hợp đồng dữ liệu.
+- **Đo đạc dữ liệu thực tế:**
+  - `application_train` nạp vào: 307,511 dòng, 122 cột.
+  - Sau làm sạch DE-02: 307,511 dòng, 123 cột.
+  - Sau feature engineering DE-03: 307,511 dòng, 129 cột.
+  - Sau left join `BUREAU`: 307,511 dòng, 149 cột.
+  - Sau left join `PREV`: 307,511 dòng, 164 cột.
+  - Sau left join `INSTAL`: 307,511 dòng, 174 cột.
+  - Sau left join `POS`: 307,511 dòng, 185 cột.
+  - Sau left join `CC`: 307,511 dòng, 203 cột.
+  - Số dòng cuối cùng: 307,511 dòng (không mất dòng, không nhân đôi dòng).
+  - Số cột cuối cùng: 203 cột (1 `SK_ID_CURR` + 1 `TARGET` + 120 cột thô sạch + 7 cột DE-02/DE-03 + 74 cột aggregate DE-04).
+  - Số đặc trưng phục vụ mô hình: 201 đặc trưng (184 số trị, 17 phân loại/chuỗi).
+  - Phân phối `TARGET`: {0: 282,686; 1: 24,825} (trùng khớp 100% so với dữ liệu gốc).
+  - Số lượng khóa null: 0; Số lượng khóa trùng lặp: 0.
+  - Số giá trị vô cực (`inf`): 0.
+- **Độ bao phủ theo nguồn lịch sử (Per-Source Coverage):**
+  - `BUREAU`: Khớp 263,491 (85.6851%), không khớp 44,020, chỉ có ở aggregate (test set) 42,320.
+  - `PREV`: Khớp 291,057 (94.6493%), không khớp 16,454, chỉ có ở aggregate (test set) 47,800.
+  - `INSTAL`: Khớp 291,643 (94.8399%), không khớp 15,868, chỉ có ở aggregate (test set) 47,944.
+  - `POS`: Khớp 289,444 (94.1248%), không khớp 18,067, chỉ có ở aggregate (test set) 47,808.
+  - `CC`: Khớp 86,905 (28.2608%), không khớp 220,606, chỉ có ở aggregate (test set) 16,653.
+- **Bảo toàn checksum dữ liệu thô (SHA-256):**
+  - `application_train.csv`: `52e96b895b1112e1c853f670e58372719c8441c5ed1c57ac2f7fad559d784f5f` (match)
+  - `bureau.csv`: `9d799143423f280720cf51c1bfbbab2a0422da8ff2763335bb30bf43155494f7` (match)
+  - `bureau_balance.csv`: `33e09f06174c26f0be6b8b7398886c69e7bf0abbb29b4122f7841ffe545729a9` (match)
+  - `previous_application.csv`: `5046cd657ee04df2eaa6dc8308ae86be6b3b1763674a3f63574886a2f2896505` (match)
+  - `installments_payments.csv`: `428c2e2496e4d6d697ee8270e98497e5213c41be16d882eed1bc95b133726797` (match)
+  - `POS_CASH_balance.csv`: `0e13bc573ffa8fc29b3f00d975e557143193a405d675b0e4694b06fbdffcb0cd` (match)
+  - `credit_card_balance.csv`: `a9cdc48900d55131c90f3128b991859aeb94ca1326fb5f4d1624b9fd03782247` (match)
+- **Kiểm định checksum bảng tổng hợp trung gian (SHA-256):**
+  - `bureau_aggregated.parquet`: `30aae00b224f8aea3d98d9cf5297bebc52881af40d257dbdf920552aecd2788f` (match)
+  - `previous_application_aggregated.parquet`: `976189184db31c1b458c4460f3bce6ee7767652520657dd916405b9a26819ef8` (match)
+  - `installments_payments_aggregated.parquet`: `9226525c74876d5b0171607728531e66619933ad14289aabe96a8cc1ce956041` (match)
+  - `pos_cash_balance_aggregated.parquet`: `6437be29f54d0b3b73f77e306ba679d186f44d19528f9b903a697d61d7099d77` (match)
+  - `credit_card_balance_aggregated.parquet`: `f4caaae57f25f0755eba7deb1e5c85b9f0ff42cd810d81bbeb5998a2dfe593cb` (match)
+- **Tệp xuất bản chính thức (Published Output Artifacts):**
+  - Parquet: `data/processed/cleaned_dataset.parquet` (64,213,549 bytes, SHA-256: `e3cbf594a5a0a072fc1625baa11563c323b8c392afc90cb46bb17bf48c12de75`).
+  - Manifest: `data/processed/cleaned_dataset_manifest.json` (17,082 bytes, SHA-256: `e633885a14ad70b7f153cc27587722c77ee6c5b73ac03495872755df7a73d3f7`).
+- **Lệnh thực thi & Kiểm thử:**
+  - `python -m py_compile src\data\build_pipeline.py`: PASS (mã thoát 0)
+  - `python -m pytest tests\data\test_build_pipeline.py -v`: 22/22 passed
+  - `python -m pytest tests\data -v`: 67/67 passed
+  - `python -m pytest tests\features -q`: 37/37 passed
+  - `python -m pytest tests\models -q`: 53/53 passed
+  - `python -m pytest tests -q`: 157/157 passed
+  - `git diff --check`: PASS (không lỗi định dạng)
+  - `python -m src.data.build_pipeline`: SUCCESS
+- **Cảnh báo nghiệp vụ (Warnings):**
+  1. Độ bao phủ lịch sử < 100% phản ánh đúng bản chất tín dụng khách hàng (đặc biệt `CC` chỉ đạt 28.26%).
+  2. 43,041 mã mồ côi `bureau_balance` được loại trừ an toàn từ DE-04.
+  3. 653,483 dòng trả góp từng phần được hợp nhất bảo toàn từ DE-04.
+  4. Các đặc trưng tỷ lệ/thống kê của khách hàng không có lịch sử giữ nguyên `NaN` thực tế.
+- **Trạng thái Git:**
+  - DE-05 chưa được commit (`git commit` chưa chạy).
+  - Không push lên bất kỳ remote repository nào.
+- **Next step:** TV2-DE-06 — Data Dictionary and Data Quality Report.

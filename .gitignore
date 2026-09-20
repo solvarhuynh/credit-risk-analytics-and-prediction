@@ -9,6 +9,7 @@ data/interim/*
 !data/interim/.gitkeep
 data/processed/*.csv
 data/processed/*.parquet
+data/processed/cleaned_dataset_manifest.json
 !data/processed/.gitkeep
 
 # 2. Model artifacts nang (>50MB)
