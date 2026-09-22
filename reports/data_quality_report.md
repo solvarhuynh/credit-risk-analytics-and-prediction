@@ -13,13 +13,13 @@
 | Artifact Item | Value |
 | :--- | :--- |
 | **Dataset Path** | `data/processed/cleaned_dataset.parquet` |
-| **Dataset Size** | 64,213,549 bytes (~61.24 MB) |
-| **Dataset SHA-256** | `e3cbf594a5a0a072fc1625baa11563c323b8c392afc90cb46bb17bf48c12de75` |
+| **Dataset Size** | 64,520,535 bytes (~61.53 MB) |
+| **Dataset SHA-256** | `6460999371297ff2f83418a8341b0c85d4a2e4dc6c29b29e793edd2a0c755c96` |
 | **Manifest Path** | `data/processed/cleaned_dataset_manifest.json` |
-| **Manifest Size** | 17,082 bytes |
-| **Manifest SHA-256** | `e633885a14ad70b7f153cc27587722c77ee6c5b73ac03495872755df7a73d3f7` |
-| **Base Git Commit** | `6984c30` |
-| **Generation Timestamp (UTC)** | `2026-09-20T09:18:05.526366+00:00` |
+| **Manifest Size** | 17,361 bytes |
+| **Manifest SHA-256** | `33496d28258458501ee95b77c5f16aaede80501d6cb18d9130c802e8619a14e4` |
+| **Base Git Commit** | `67499751ba6f7e705a0a63ede1e5a623c75a79b5` |
+| **Generation Timestamp (UTC)** | `2026-09-22T20:38:19.875680+00:00` |
 | **Population Scope** | `application_train_only` (labeled application population) |
 | **Application Test Excluded** | `Yes (verified strictly excluded)` |
 
@@ -70,7 +70,7 @@
 
 ## 7. Missingness analysis
 - **Total Dataset Cells:** 62,424,733
-- **Total Missing Cells:** 14,515,902 (23.25%)
+- **Total Missing Cells:** 14,515,910 (23.25%)
 - **Columns with Missingness:** 130 of 203
 - **Columns without Missingness:** 73 of 203
 - **Fully Missing Columns:** 0 (Zero fully missing columns)

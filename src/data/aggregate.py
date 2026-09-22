@@ -23,7 +23,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from src.data.load_data import default_raw_dir, validate_raw_files
+from src.data.load_data import project_root, validate_raw_files
 
 KNOWN_RAW_CHECKSUMS: dict[str, str] = {
     "bureau.csv": "9d799143423f280720cf51c1bfbbab2a0422da8ff2763335bb30bf43155494f7",
@@ -369,20 +369,20 @@ AGGREGATE_FEATURE_DEFINITIONS: dict[str, dict[str, str]] = {
     "INSTAL_LATE_COUNT": {
         "source_table": "installments_payments",
         "source_grain": "consolidated installment",
-        "formula": "sum(delay_days > 0)",
+        "formula": "sum(DAYS_ENTRY_PAYMENT > DAYS_INSTALMENT for rows with both timing fields observed)",
         "unit": "count",
-        "business_meaning": "Number of installments paid after scheduled due date",
-        "missing_value_interpretation": "Zero if customer has installments but none paid late",
-        "as_of_leakage_note": "delay_days = max(DAYS_ENTRY_PAYMENT - DAYS_INSTALMENT, 0)",
+        "business_meaning": "Number of observed installments paid after scheduled due date",
+        "missing_value_interpretation": "Zero if customer has installments but no confirmed late payment; installments with unknown payment or due date are excluded from the late count and rate denominator",
+        "as_of_leakage_note": "Late timing is evaluated only when both DAYS_ENTRY_PAYMENT and DAYS_INSTALMENT are observed and <= 0; delay_days = max(DAYS_ENTRY_PAYMENT - DAYS_INSTALMENT, 0)",
     },
     "INSTAL_LATE_RATE": {
         "source_table": "installments_payments",
         "source_grain": "customer",
-        "formula": "INSTAL_LATE_COUNT / INSTAL_INSTALLMENT_COUNT",
+        "formula": "count(DAYS_ENTRY_PAYMENT > DAYS_INSTALMENT) / count(rows with both timing fields observed)",
         "unit": "rate [0, 1]",
-        "business_meaning": "Proportion of installments paid late",
-        "missing_value_interpretation": "Missing if customer has zero installments",
-        "as_of_leakage_note": "Installment payment discipline indicator",
+        "business_meaning": "Proportion of timing-observed installments paid late",
+        "missing_value_interpretation": "Missing if there is no observed timing denominator (no installment with both payment and due dates observed); 0 when observed timing exists but none were late; unknown timing is never treated as on-time",
+        "as_of_leakage_note": "Installment payment discipline indicator using only as-of valid timing observations",
     },
     "INSTAL_DELAY_DAYS_MEAN": {
         "source_table": "installments_payments",
@@ -871,6 +871,17 @@ def aggregate_bureau(
     if missing_bb:
         raise ValueError(f"bureau_balance is missing required columns: {missing_bb}")
 
+    # The bureau table is loan-grain: each SK_ID_BUREAU must identify exactly
+    # one loan before it is joined to the one-row-per-loan balance aggregate.
+    if bureau["SK_ID_BUREAU"].isna().any():
+        raise ValueError("bureau 'SK_ID_BUREAU' contains null values.")
+    if bureau["SK_ID_BUREAU"].duplicated().any():
+        raise ValueError("bureau 'SK_ID_BUREAU' contains duplicate values.")
+    if bureau["SK_ID_CURR"].isna().any():
+        raise ValueError("bureau 'SK_ID_CURR' contains null values.")
+    if bureau_balance["SK_ID_BUREAU"].isna().any():
+        raise ValueError("bureau_balance 'SK_ID_BUREAU' contains null values.")
+
     # 2. Validate temporal bounds
     validate_temporal_bounds(bureau, "DAYS_CREDIT", "bureau")
     validate_temporal_bounds(bureau_balance, "MONTHS_BALANCE", "bureau_balance")
@@ -909,7 +920,14 @@ def aggregate_bureau(
 
     # 5. Stage 2: Join loan-level balance aggregate to bureau
     b_df = bureau[req_bureau].copy()
-    b_joined = b_df.merge(bb_agg, on="SK_ID_BUREAU", how="left")
+    if bb_agg["SK_ID_BUREAU"].duplicated().any():
+        raise ValueError("bureau_balance aggregate contains duplicate SK_ID_BUREAU values.")
+    b_joined = b_df.merge(
+        bb_agg,
+        on="SK_ID_BUREAU",
+        how="left",
+        validate="one_to_one",
+    )
 
     # 6. Stage 3: Aggregate by SK_ID_CURR
     b_joined["is_active"] = (b_joined["CREDIT_ACTIVE"] == "Active").astype(int)
@@ -1144,7 +1162,10 @@ def aggregate_installments_payments(
 
     d_min = grouped_raw[("DAYS_INSTALMENT", "min")]
     d_max = grouped_raw[("DAYS_INSTALMENT", "max")]
-    date_conflicts = int((d_min != d_max).sum())
+    # A wholly unknown scheduled date is not an internal conflict.  Compare
+    # only installment keys for which at least one scheduled date is observed;
+    # this preserves unknown timing for the later late-payment calculation.
+    date_conflicts = int(((d_min.notna() | d_max.notna()) & d_min.ne(d_max)).sum())
     if date_conflicts > 0:
         raise ValueError(
             f"installments_payments has {date_conflicts} installment keys with conflicting DAYS_INSTALMENT."
@@ -1172,8 +1193,25 @@ def aggregate_installments_payments(
     repeated_key_count = int((df.groupby(key_cols).size() > 1).sum())
     rows_in_repeated_keys = raw_row_count - unique_grain_count + repeated_key_count
 
-    # Calculate metrics on consolidated installments
-    delay_days = (consolidated["DAYS_ENTRY_PAYMENT"] - consolidated["DAYS_INSTALMENT"]).clip(lower=0.0)
+    # Calculate metrics on consolidated installments. Missing payment timing is
+    # unknown, never an implicit on-time payment. It is excluded from the late
+    # count and its rate denominator.
+    due_day = pd.to_numeric(consolidated["DAYS_INSTALMENT"], errors="coerce")
+    payment_day = pd.to_numeric(consolidated["DAYS_ENTRY_PAYMENT"], errors="coerce")
+    valid_timing = (
+        due_day.notna()
+        & payment_day.notna()
+        & np.isfinite(due_day)
+        & np.isfinite(payment_day)
+    )
+    delay_days = pd.Series(np.nan, index=consolidated.index, dtype="float64")
+    delay_days.loc[valid_timing] = (
+        payment_day.loc[valid_timing] - due_day.loc[valid_timing]
+    ).clip(lower=0.0)
+    late_indicator = pd.Series(np.nan, index=consolidated.index, dtype="float64")
+    late_indicator.loc[valid_timing] = (
+        payment_day.loc[valid_timing] > due_day.loc[valid_timing]
+    ).astype("int64")
     shortfall = (consolidated["AMT_INSTALMENT"] - consolidated["AMT_PAYMENT"]).clip(lower=0.0)
 
     valid_sched = (consolidated["AMT_INSTALMENT"] > 0) & np.isfinite(consolidated["AMT_INSTALMENT"])
@@ -1183,9 +1221,10 @@ def aggregate_installments_payments(
     )
 
     consolidated["delay_days"] = delay_days
+    consolidated["late_indicator"] = late_indicator
+    consolidated["has_valid_timing"] = valid_timing.astype("int64")
     consolidated["shortfall"] = shortfall
     consolidated["payment_ratio"] = payment_ratio
-    consolidated["is_late"] = (delay_days > 0).astype(int)
     consolidated["is_underpaid"] = (shortfall > 0).astype(int)
 
     def agg_sum(s: pd.Series) -> Any:
@@ -1195,7 +1234,8 @@ def aggregate_installments_payments(
     cust_grouped = consolidated.groupby("SK_ID_CURR")
     res = cust_grouped.agg(
         INSTAL_INSTALLMENT_COUNT=("SK_ID_PREV", "count"),
-        INSTAL_LATE_COUNT=("is_late", "sum"),
+        INSTAL_LATE_COUNT=("late_indicator", lambda s: s.fillna(0).sum()),
+        _INSTAL_VALID_TIMING_COUNT=("has_valid_timing", "sum"),
         INSTAL_DELAY_DAYS_MEAN=("delay_days", "mean"),
         INSTAL_DELAY_DAYS_MAX=("delay_days", "max"),
         INSTAL_UNDERPAYMENT_COUNT=("is_underpaid", "sum"),
@@ -1204,7 +1244,14 @@ def aggregate_installments_payments(
         INSTAL_PAYMENT_RATIO_MEAN=("payment_ratio", "mean"),
     ).reset_index()
 
-    res["INSTAL_LATE_RATE"] = res["INSTAL_LATE_COUNT"] / res["INSTAL_INSTALLMENT_COUNT"]
+    res["INSTAL_LATE_COUNT"] = res["INSTAL_LATE_COUNT"].astype("int64")
+    valid_late_denominator = res["_INSTAL_VALID_TIMING_COUNT"] > 0
+    late_rate = pd.Series(np.nan, index=res.index, dtype="float64")
+    late_rate.loc[valid_late_denominator] = (
+        res.loc[valid_late_denominator, "INSTAL_LATE_COUNT"]
+        / res.loc[valid_late_denominator, "_INSTAL_VALID_TIMING_COUNT"]
+    )
+    res["INSTAL_LATE_RATE"] = late_rate
     res["INSTAL_UNDERPAYMENT_RATE"] = (
         res["INSTAL_UNDERPAYMENT_COUNT"] / res["INSTAL_INSTALLMENT_COUNT"]
     )
@@ -1231,6 +1278,8 @@ def aggregate_installments_payments(
         "unique_installment_grains": unique_grain_count,
         "repeated_installment_keys": repeated_key_count,
         "rows_in_repeated_keys": rows_in_repeated_keys,
+        "valid_timing_installment_count": int(valid_timing.sum()),
+        "unknown_timing_installment_count": int((~valid_timing).sum()),
         "unique_customers": len(res),
     }
     return res, diagnostics
@@ -1497,7 +1546,7 @@ def run_historical_aggregation(
         ValueError: On checksum mismatch, schema violation, or leakage.
     """
     raw_paths = validate_raw_files(raw_dir)
-    target_interim = Path(interim_dir) if interim_dir else Path("data/interim")
+    target_interim = Path(interim_dir) if interim_dir else project_root() / "data" / "interim"
     target_interim.mkdir(parents=True, exist_ok=True)
 
     # 1. Preflight raw file checksums

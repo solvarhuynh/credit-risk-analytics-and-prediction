@@ -3,11 +3,11 @@
 ## 1. Tệp bàn giao chính thức (Deliverables)
 
 - `data/processed/cleaned_dataset.parquet`: Tập dữ liệu chuẩn tắc gắn nhãn phục vụ huấn luyện (307,511 dòng, 203 cột, 1 dòng trên 1 `SK_ID_CURR`).
-  - SHA-256: `e3cbf594a5a0a072fc1625baa11563c323b8c392afc90cb46bb17bf48c12de75`
+  - SHA-256 (TV2-DE-FIX-01 rerun): `6460999371297ff2f83418a8341b0c85d4a2e4dc6c29b29e793edd2a0c755c96`
 - `data/processed/data_dictionary.csv`: Từ điển dữ liệu chuẩn tắc (203 dòng, 22 cột) mô tả chi tiết toàn bộ đặc trưng.
-  - SHA-256: `efd1d1e1ad268f12ee38a901602f707a76b07a3b581ba99c25df9f6bd188ec39`
+  - SHA-256 (TV2-DE-FIX-01 rerun): `a588feff89b1e5be684fea77ce8add79b0caa27c4c8a87e41f3be3b711abc151`
 - `reports/data_quality_report.md`: Báo cáo kiểm định chất lượng dữ liệu chuẩn tắc (19 phần toàn diện).
-  - SHA-256: `6330015da3379aec03c650870d19f5e364cdb0260567bcbbca157239ac274017`
+  - SHA-256 (TV2-DE-FIX-01 rerun): `2720572c74a48646412fc165c0ce46a9f56c81ac5c9b60361e1bb90157e0fd38`
 
 ## 2. Cột tối thiểu bắt buộc (Mandatory Columns)
 
@@ -48,9 +48,15 @@ Toàn bộ 203 cột trong tập dữ liệu chuẩn tắc được mô tả tu�
 1. `SK_ID_CURR` không null và duy nhất (307,511 dòng); `TARGET` nhị phân {0: 282,686; 1: 24,825}.
 2. Phép nối trái 1-to-1 tuần tự không làm mất hoặc nhân đôi dòng; không có cột hậu tố `_x`, `_y`.
 3. `DAYS_EMPLOYED == 365243` được chuyển thành `NaN` và lưu giữ cờ bất thường `DAYS_EMPLOYED_ANOM`.
-4. Tuyệt đối không chứa `+inf`, `-inf`, sentinel dạng chuỗi (`NULL`, `-999`), hoặc cột trùng lặp.
+4. Tuyệt đối không chứa `+inf`, `-inf`, sentinel **dạng chuỗi** (`NULL`, `null`, `N/A`, `NA`, `-999`), hoặc cột trùng lặp. Giá trị số `-999` trong trường ngày tương đối hợp lệ (`DAYS_*`) được giữ nguyên với nghĩa 999 ngày trước thời điểm nộp đơn; đây không phải quy tắc sentinel số toàn cục.
 5. Mẫu số bằng 0 trong các phép chia tỷ lệ cho kết quả `NaN`, không sinh vô cực.
 6. 10 đặc trưng tỷ lệ có biên (`BOUNDED_RATE_COLUMNS`) được kiểm tra chặt trong `[0.0, 1.0]`. Các tỷ lệ tài chính không bị chặn trên (`CREDIT_TO_INCOME_RATIO`, `CC_UTILIZATION_MEAN`,...) được phép lớn hơn 1 hợp lệ.
+
+## 7.1. Ngữ nghĩa thời điểm thanh toán trả góp
+
+- `INSTAL_LATE_COUNT` chỉ đếm kỳ có đủ cả `DAYS_ENTRY_PAYMENT` và `DAYS_INSTALMENT`; kỳ thiếu một trong hai mốc thời gian là chưa biết trạng thái đúng hạn, không được coi là trả đúng hạn.
+- `INSTAL_LATE_RATE` dùng mẫu số là số kỳ có đủ hai mốc thời gian. Nếu khách hàng không có kỳ nào quan sát được đầy đủ, tỷ lệ là `NaN`.
+- `DAYS_EMPLOYED == 365243` là sentinel số đã được phê duyệt duy nhất trong cột `DAYS_EMPLOYED`: được chuyển thành `NaN` và giữ cờ `DAYS_EMPLOYED_ANOM`. Các sentinel ngày tài liệu đã định nghĩa riêng ở `previous_application` vẫn được xử lý theo DE-02.
 ## 8. Hướng dẫn tiền xử lý cho TV1 (Downstream Preprocessing Rule)
 
 TV1 phải thực hiện fit toàn bộ các bộ biến đổi (`OneHotEncoder`, `OrdinalEncoder`, `SimpleImputer`, `StandardScaler`, v.v.) **duy nhất trên train fold** của từng fold cross-validation, sau đó mới transform trên validation/test folds để chống rò rỉ thông tin phân phối (data leakage).

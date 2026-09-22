@@ -164,7 +164,8 @@ Bảng `installments_payments` có 653,483 dòng trùng lặp tổ hợp khóa k
 - Số tiền đến hạn định kỳ được lấy đơn lẻ một lần duy nhất (không cộng dồn gây nhân bản nghĩa vụ).
 - Số tiền thực trả (`AMT_PAYMENT`) được cộng dồn theo kỳ.
 - Ngày thanh toán thực tế là ngày muộn nhất (`max(DAYS_ENTRY_PAYMENT)`).
-- Chậm trả (`delay_days`) và thiếu nợ (`payment_shortfall`) được tính ở cấp độ kỳ hợp nhất, chặn dưới tại 0.
+- Chậm trả (`delay_days`) và thiếu nợ (`payment_shortfall`) được tính ở cấp độ kỳ hợp nhất, chặn dưới tại 0. Một kỳ chỉ có trạng thái chậm/đúng hạn khi có đủ cả ngày đến hạn và ngày thanh toán; kỳ thiếu một trong hai mốc thời gian được giữ là không xác định, không bị coi là đúng hạn.
+- `INSTAL_LATE_COUNT` chỉ đếm kỳ chậm đã xác định. `INSTAL_LATE_RATE` dùng mẫu số là số kỳ có đủ hai mốc thời gian và là `NaN` khi khách hàng không có kỳ quan sát thời điểm hợp lệ.
 
 ### Xử lý bản ghi mồ côi (Orphan) trong `bureau_balance`
 Khoảng 43,041 mã `SK_ID_BUREAU` trong `bureau_balance` (tương ứng 3,120,184 dòng lịch sử) không tồn tại trong bảng `bureau`:
@@ -251,19 +252,21 @@ Bộ kiểm định chất lượng tự động thực thi 28 quy tắc kiểm 
 9. **Kiểm định tỷ lệ chính xác:** Chỉ 10 cột tỷ lệ chuẩn tắc (`BUREAU_ACTIVE_RATE`, `BUREAU_CLOSED_RATE`, `BUREAU_BB_DELINQUENT_MONTH_RATE`, `BUREAU_BB_SEVERE_MONTH_RATE`, `PREV_APPROVED_RATE`, `PREV_REFUSED_RATE`, `INSTAL_LATE_RATE`, `INSTAL_UNDERPAYMENT_RATE`, `POS_LATE_MONTH_RATE`, `CC_LATE_MONTH_RATE`) bị chặn trong `[0, 1]`. Các tỷ lệ tài chính như `CREDIT_TO_INCOME_RATIO`, `ANNUITY_TO_INCOME_RATIO`, `CREDIT_TO_ANNUITY_RATIO`, `PREV_CREDIT_TO_APPLICATION_RATIO_MEAN`, `INSTAL_PAYMENT_RATIO_MEAN`, `CC_UTILIZATION_MEAN/MAX` được phép lớn hơn 1 hợp lệ theo bản chất tài chính.
 
 ### Xuất bản nguyên tử (Atomic Publication) & Artifacts
-- **Đường dẫn Parquet:** `data/processed/cleaned_dataset.parquet` (64,213,549 bytes, SHA-256: `e3cbf594a5a0a072fc1625baa11563c323b8c392afc90cb46bb17bf48c12de75`).
-- **Đường dẫn Manifest:** `data/processed/cleaned_dataset_manifest.json` (17,082 bytes, SHA-256: `e633885a14ad70b7f153cc27587722c77ee6c5b73ac03495872755df7a73d3f7`).
+- **Đường dẫn Parquet:** `data/processed/cleaned_dataset.parquet` (64,520,535 bytes trong lần tái tạo TV2-DE-FIX-01; SHA-256: `6460999371297ff2f83418a8341b0c85d4a2e4dc6c29b29e793edd2a0c755c96`).
+- **Đường dẫn Manifest:** `data/processed/cleaned_dataset_manifest.json` (SHA-256 lần tái tạo TV2-DE-FIX-01: `d311f6fce176fcfb3374d278dca79e2da31481baa59e5a43705c791c1efc390d`).
 - **Cơ chế nguyên tử:** Ghi ra tệp tạm `.tmp` tại cùng thư mục, thực hiện kiểm định đọc lại (read-back validation), sau đó thực hiện `os.replace` nguyên tử nhằm tránh tình trạng tệp hỏng khi có sự cố ngắt quãng.
 
 ### Lệnh thực thi & Tùy chọn tái tạo
 - **Thực thi chuẩn tắc (sử dụng aggregate có sẵn):**
 ```powershell
-python -m src.data.build_pipeline
+& .\.venv\Scripts\python.exe -m src.data.build_pipeline
 ```
 - **Tùy chọn ép buộc tái tạo aggregate từ dữ liệu thô (`--rebuild-aggregates`):**
 ```powershell
-python -m src.data.build_pipeline --rebuild-aggregates
+& .\.venv\Scripts\python.exe -m src.data.build_pipeline --rebuild-aggregates
 ```
+
+Các đường dẫn mặc định `data/interim/` và `data/processed/` được suy ra từ repository root, nên hai lệnh trên không phụ thuộc CWD của tiến trình gọi. Khi tái tạo để kiểm định thay đổi trong `aggregate.py`, dùng `--rebuild-aggregates` để không tái sử dụng aggregate interim cũ. Manifest lấy branch, commit HEAD, cờ dirty worktree và hash patch động từ Git; nếu Git không khả dụng, các trường provenance được ghi `null` thay vì giá trị lịch sử giả.
 
 ### Lệnh kiểm thử
 ```powershell
@@ -384,7 +387,7 @@ Các phân tích tương quan với nhãn mục tiêu, xếp hạng dự báo đ
 Nhiệm vụ `TV2-DE-07` hoàn thành giai đoạn phân tích khám phá dữ liệu chuẩn tắc (EDA) và thiết lập giao ước bàn giao kỹ thuật chính thức từ TV2 (Data Engineering) cho TV1 (Modeling) và TV3 (Dashboard). Nhiệm vụ tạo ra 5 biểu đồ tĩnh chuẩn xuất bản, báo cáo phân tích chi tiết, cập nhật notebook và bàn giao tập dữ liệu chuẩn tắc 307,511 dòng.
 
 ### Điều kiện tiên quyết (Prerequisites)
-- Hoàn thành DE-05: `data/processed/cleaned_dataset.parquet` (SHA-256: `e3cbf594...`) và manifest.
+- Hoàn thành DE-05: `data/processed/cleaned_dataset.parquet` (lần tái tạo TV2-DE-FIX-01: SHA-256 `6460999371...`) và manifest.
 - Hoàn thành DE-06: `data/processed/data_dictionary.csv` (203 dòng, 22 cột) và `reports/data_quality_report.md`.
 - Dữ liệu thô: `data/raw/application_train.csv` (dùng để kiểm toán sentinel `DAYS_EMPLOYED`).
 
