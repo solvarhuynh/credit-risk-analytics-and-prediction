@@ -32,6 +32,9 @@ __pycache__/
 *.class
 *.so
 .pytest_cache/
+.pytest_tmp/
+.pytest_tmp*/
+.audit_tmp/
 .mypy_cache/
 
 # 5. Jupyter Notebook Checkpoints
@@ -56,3 +59,6 @@ desktop.ini
 
 # 8. Logs
 *.log
+
+# 9. Local TV1 human runbook (never commit)
+TV1_AGENT_RUNBOOK.local.md

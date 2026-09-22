@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.models.data_split import create_development_split
+from src.models.data_split import create_development_split, create_frozen_test_split
 
 
 @pytest.fixture
@@ -180,3 +180,35 @@ def test_invalid_random_state_rejected(
             random_state=None,  # type: ignore[arg-type]
         )
 
+
+def test_frozen_test_split_is_deterministic_and_leakage_safe(
+    sample_development_dataset: pd.DataFrame,
+) -> None:
+    """Development/frozen-test split giữ test tách biệt và tái lập theo seed."""
+    first = create_frozen_test_split(sample_development_dataset, random_state=20260922)
+    second = create_frozen_test_split(sample_development_dataset, random_state=20260922)
+
+    pd.testing.assert_series_equal(first.development.ids, second.development.ids)
+    pd.testing.assert_series_equal(first.frozen_test.ids, second.frozen_test.ids)
+    assert len(set(first.development.ids).intersection(first.frozen_test.ids)) == 0
+    assert set(first.development.ids).union(first.frozen_test.ids) == set(
+        sample_development_dataset["SK_ID_CURR"]
+    )
+    assert first.row_counts == {"development": 80, "frozen_test": 20}
+    for partition in (first.development, first.frozen_test):
+        assert "TARGET" not in partition.X.columns
+        assert "SK_ID_CURR" not in partition.X.columns
+
+
+@pytest.mark.parametrize("test_size", [0.0, 1.0])
+def test_invalid_frozen_test_size_rejected(
+    sample_development_dataset: pd.DataFrame,
+    test_size: float,
+) -> None:
+    """Frozen test fraction phải nằm trong khoảng mở (0, 1)."""
+    with pytest.raises(ValueError, match="test_size phải nằm trong khoảng"):
+        create_frozen_test_split(
+            sample_development_dataset,
+            random_state=42,
+            test_size=test_size,
+        )

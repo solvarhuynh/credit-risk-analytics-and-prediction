@@ -93,3 +93,49 @@ Chỉ append entry mới theo quy trình trong docs/tasks/working-protocol.md.
   - `python -m py_compile` kiểm tra cú pháp toàn bộ file test và source.
   - `git diff --check` và `git status --short`.
 - **Next step:** WAIT FOR TV2 CANONICAL DATA → Model Input Quality Gate.
+
+## 2026-09-22 — TV1-AUDIT-DE — Review TV2 canonical data handoff
+
+- **Trạng thái:** done with FAIL gate / HIGH review items
+- **Git range reviewed:** merge `6749975` (`Merge pull request #1 from solvarhuynh/tv2`), TV2 first parent `30659ab`, TV2 range `30659ab..22b9fc6`; 27 files changed, no processed Parquet committed.
+- **Đã làm:** reviewed source-of-truth docs, rules, TV1/TV2 logs, TV2 diff, loader/cleaning/features/aggregation/build/quality-report code, join grain, temporal constraints, canonical Parquet, data dictionary and manifest. The supplied `data/processed.zip` was preserved; its artifact was compared with a fresh pipeline regeneration.
+- **Kết quả:** canonical pipeline command succeeded (`307,511 x 203`, target `{0: 282,686; 1: 24,825}`, unique `SK_ID_CURR`, no null/duplicate key, no infinity). Regenerated output was semantically equivalent to the supplied artifact; byte hash differed because Parquet serialization changed. Data dictionary had 203/203 entries, 22 metadata columns, no duplicates or measured metadata mismatches. `-999` remains in 474 numeric cells without documented sentinel semantics; `DAYS_REGISTRATION` and `DAYS_ID_PUBLISH` dictionary entries incorrectly report no missing values. Manifest row/column/hash/size cross-checks passed, but its serialized schema labels differ from read-back pandas dtypes and it omits self-hash/version fields; branch/base commit are hard-coded historical provenance.
+- **File thay đổi:** `logs/log_tv1.md`; ignored regenerated artifacts under `data/interim/` and `data/processed/` are local validation outputs; untracked `data/processed.zip` was not modified or removed.
+- **Kiểm tra đã chạy:** `python -m pytest tests/data tests/features -q` → 142 passed; `python -m src.data.build_pipeline` → SUCCESS; `python -m src.data.quality_report` → PASS WITH WARNINGS; `git diff --check` (no whitespace errors, line-ending warning only). No model training, SMOTE, model preprocessing fit, dashboard change, commit or push.
+- **MODEL_INPUT_GATE:** FAIL until the unresolved `-999` sentinel semantics/handling and related dictionary documentation are reviewed; grain, target and pipeline reproducibility gates pass.
+- **Next step:** Fix the highest-severity Data Engineering blocker and rerun this gate.
+
+## 2026-09-22 — TV1-AUDIT-DE re-review decision
+
+- **Trạng thái:** `MODEL_INPUT_GATE = PASS_WITH_WARNINGS`.
+- **Quyết định:** re-review xác nhận `-999` là giá trị ngày tương đối hợp lệ trong 8 cột được phát hiện, không phải sentinel cần thay thế. Sau khi TV2 sửa ngữ nghĩa `INSTAL_LATE_RATE`, integrity merge bureau, path/provenance manifest và tái tạo artifacts, dataset đạt grain/target/schema/dictionary/infinity gates.
+- **Kiểm tra chứng cứ:** 147 tests data/features passed; canonical rebuild và quality report hoàn tất; 307,511 × 203, `SK_ID_CURR` unique/non-null, TARGET `{0: 282686, 1: 24825}`, dictionary 203/203 thống kê khớp và manifest current run chứa `main`/HEAD động.
+- **Cảnh báo giao cho Modeling:** review bằng pipeline chỉ fit trên train fold các phân phối đuôi dài hợp lệ (`CREDIT_TO_INCOME_RATIO`, `INSTAL_PAYMENT_RATIO_MEAN`, một số ít `CC_UTILIZATION_MEAN` âm); không phải blocker Data Engineering.
+- **Ownership:** implementation fixes do TV2 thực hiện; entry này chỉ ghi nhận quyết định re-review của TV1.
+- **Next step:** bắt đầu TV1 modeling theo `model_contract.md`.
+
+## 2026-09-22 — TV1-MASTER Gates A–B — Canonical input and leakage-safe feature boundary
+
+- **Trạng thái:** done.
+- **Đã làm:** tái kiểm tra trực tiếp canonical snapshot TV2 và chấp nhận dataset 307,511 × 203, SHA-256 `6460999371297ff2f83418a8341b0c85d4a2e4dc6c29b29e793edd2a0c755c96`; định nghĩa `y=TARGET`, loại `SK_ID_CURR` và toàn bộ output downstream cấm khỏi `X`, giữ 184 numeric + 17 categorical feature có role dictionary hợp lệ.
+- **Kiểm tra:** key unique/non-null, target `{0: 282686, 1: 24825}`, infinity = 0, dictionary 203/203, manifest hash/schema/current provenance khớp.
+- **File thay đổi:** `.gitignore`, `TV1_AGENT_RUNBOOK.local.md` (ignored), `logs/log_tv1.md`.
+- **Next step:** Gate C — freeze 80/20 development/frozen-test split trước khi fit bất kỳ preprocessing hoặc model nào.
+
+## 2026-09-23 — TV1-MASTER — Gated modeling pipeline and TV3 handoff
+
+- **Trạng thái:** done — Gates A–Q PASS.
+- **Đã làm:** khóa split 80/20 (`seed=20260922`), chọn `xgboost_depth6` bằng development-only CV, khóa threshold OOF F1 = `0.16`, đánh giá frozen test đúng một lần, sau đó refit production pipeline trên toàn bộ 307,511 dòng labeled và xuất handoff cho TV3.
+- **Kết quả frozen test:** ROC-AUC `0.780060`; PR-AUC `0.270385`; Precision `0.272622`; Recall `0.426586`; F1 `0.332653`; confusion matrix `[[50887, 5651], [2847, 2118]]`.
+- **Artifacts:** `models/full_inference_pipeline.joblib` và `data/processed/scored_dataset.parquet` (ignored local artifacts); `reports/model_card.md`, `reports/model_integration_profiles.csv`, `reports/figures/modeling/`.
+- **Kiểm tra:** full suite `206 passed`; production verification PASS; `git diff --check` PASS.
+- **Next step:** TV3 consumes `scored_dataset.parquet` and `model_integration_profiles.csv`; TV2 may consume held-out outputs only if a fairness task is explicitly authorized.
+
+## 2026-09-23 — FINAL-REVIEW-FIX — Cross-owner handoff and production-artifact review
+
+- **Trạng thái:** done — TV2_FIX_GATE = PASS; TV1_GATE = PASS_WITH_WARNINGS.
+- **Đã review/sửa:** xác nhận không có global numeric `-999` replacement, late-payment denominator chỉ dùng timing hợp lệ, bureau merge one-to-one, root-relative paths và manifest provenance. Bugbot phát hiện Gate Q trước đây chỉ báo cáo inference không deterministic và có thể chấp nhận score artifact stale; đã sửa để fail closed, đối chiếu full-population PD/threshold/recommendation/model version với artifact loaded, và lưu frozen-test record versioned cùng hashes artifact. Manifest hiện ghi rõ dirty worktree và hash patch thay vì gán nhầm output local vào một commit clean.
+- **File thay đổi chính:** `src/data/build_pipeline.py`, `src/models/modeling_pipeline.py`, tests data/model liên quan, `.gitignore`, `reports/frozen_test_evaluation_record.json`, `docs/setup/tv1_setup.md`, `docs/setup/tv2_setup.md`, `reports/model_card.md`.
+- **Kiểm tra:** `pytest -q --basetemp .pytest_tmp_final_review` → 209 passed (6 third-party deprecation warnings); `compileall -q src` → PASS; canonical rebuild và quality report được chạy lại; `--verify-only` → PASS với deterministic=true và unknown category safe=true.
+- **Giới hạn:** LGD/EAD, score tiers và threshold vẫn là technical assumptions; frozen record binds local ignored artifacts by hash, nên handoff artifact phải được chuyển ngoài Git cùng record/model card.
+- **Next step:** Commit các nhóm đã review lên đúng branch owner và tạo PR để cross-review trước khi bất kỳ thay đổi nào vào `main`.

@@ -47,6 +47,24 @@ class DevelopmentSplitResult:
     metadata: SplitMetadata
 
 
+@dataclass(frozen=True)
+class FrozenTestSplitResult:
+    """Fixed development-pool/frozen-test split for a complete modeling run.
+
+    The development pool is the only population available for cross-validation,
+    candidate selection and threshold selection.  ``frozen_test`` is retained
+    untouched until the configuration is locked.
+    """
+
+    development: ModelingPartition
+    frozen_test: ModelingPartition
+    random_state: int
+    test_size: float
+    row_counts: Mapping[str, int]
+    target_rates: Mapping[str, float]
+    target_counts: Mapping[str, Mapping[int, int]]
+
+
 def create_development_split(
     dataset: pd.DataFrame,
     *,
@@ -124,6 +142,68 @@ def create_development_split(
     return result
 
 
+def create_frozen_test_split(
+    dataset: pd.DataFrame,
+    *,
+    random_state: int,
+    test_size: float = 0.20,
+    target_column: str = "TARGET",
+    id_column: str = "SK_ID_CURR",
+) -> FrozenTestSplitResult:
+    """Create a deterministic stratified development/frozen-test partition.
+
+    This is the canonical 80/20 boundary for a modeling run.  It deliberately
+    does not create a validation set: callers must use stratified CV solely on
+    the returned development partition.  Both ``TARGET`` and ``SK_ID_CURR``
+    are removed from returned feature frames.
+    """
+    _validate_dataset(dataset, target_column=target_column, id_column=id_column)
+    _validate_frozen_test_size(test_size)
+    _validate_random_state(random_state)
+    random_state = int(random_state)
+
+    try:
+        development_frame, frozen_test_frame = train_test_split(
+            dataset,
+            test_size=test_size,
+            random_state=random_state,
+            stratify=dataset[target_column],
+        )
+    except ValueError as exc:
+        raise ValueError(
+            "Dataset không đủ samples cho stratified development/frozen-test split."
+        ) from exc
+
+    frames = {"development": development_frame, "frozen_test": frozen_test_frame}
+    result = FrozenTestSplitResult(
+        development=_to_partition(
+            development_frame,
+            target_column=target_column,
+            id_column=id_column,
+        ),
+        frozen_test=_to_partition(
+            frozen_test_frame,
+            target_column=target_column,
+            id_column=id_column,
+        ),
+        random_state=random_state,
+        test_size=float(test_size),
+        row_counts={name: len(frame) for name, frame in frames.items()},
+        target_rates={
+            name: float(frame[target_column].mean()) for name, frame in frames.items()
+        },
+        target_counts={
+            name: {
+                0: int((frame[target_column] == 0).sum()),
+                1: int((frame[target_column] == 1).sum()),
+            }
+            for name, frame in frames.items()
+        },
+    )
+    _validate_frozen_test_split_result(result, dataset[id_column])
+    return result
+
+
 def _validate_dataset(
     dataset: pd.DataFrame,
     *,
@@ -171,6 +251,12 @@ def _validate_split_sizes(*, test_size: float, validation_size: float) -> None:
         raise ValueError("validation_size phải nằm trong khoảng (0, 1).")
     if test_size + validation_size >= 1:
         raise ValueError("test_size + validation_size phải nhỏ hơn 1.")
+
+
+def _validate_frozen_test_size(test_size: float) -> None:
+    """Validate the single held-out test fraction for a frozen split."""
+    if not 0 < test_size < 1:
+        raise ValueError("test_size phải nằm trong khoảng (0, 1).")
 
 
 def _validate_random_state(random_state: int) -> None:
@@ -247,3 +333,16 @@ def _validate_split_result(
     combined_ids = set().union(*split_ids.values())
     if combined_ids != set(input_ids):
         raise RuntimeError("Split result không phủ đúng toàn bộ SK_ID_CURR đầu vào.")
+
+
+def _validate_frozen_test_split_result(
+    result: FrozenTestSplitResult,
+    input_ids: pd.Series,
+) -> None:
+    """Ensure the two frozen partitions are disjoint and exhaustive."""
+    development_ids = set(result.development.ids)
+    frozen_test_ids = set(result.frozen_test.ids)
+    if development_ids.intersection(frozen_test_ids):
+        raise RuntimeError("Frozen-test split có SK_ID_CURR overlap giữa development và test.")
+    if development_ids.union(frozen_test_ids) != set(input_ids):
+        raise RuntimeError("Frozen-test split không phủ đúng toàn bộ SK_ID_CURR đầu vào.")

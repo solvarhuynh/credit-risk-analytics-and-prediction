@@ -168,13 +168,20 @@ def test_scale_numeric_flag_works() -> None:
         scale_numeric=False,
     )
 
-    numeric_steps_scaled = [
-        name for name, _ in prep_scaled.named_transformers["numeric"].steps
-    ]
-    numeric_steps_unscaled = [
-        name for name, _ in prep_unscaled.named_transformers["numeric"].steps
-    ]
+    # ``named_transformers_`` is fitted-only in current sklearn versions; the
+    # unfitted factory contract is inspected through its public transformers list.
+    numeric_scaled = next(
+        transformer
+        for name, transformer, _ in prep_scaled.transformers
+        if name == "numeric"
+    )
+    numeric_unscaled = next(
+        transformer
+        for name, transformer, _ in prep_unscaled.transformers
+        if name == "numeric"
+    )
+    numeric_steps_scaled = [name for name, _ in numeric_scaled.steps]
+    numeric_steps_unscaled = [name for name, _ in numeric_unscaled.steps]
 
     assert "scaler" in numeric_steps_scaled
     assert "scaler" not in numeric_steps_unscaled
-
