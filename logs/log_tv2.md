@@ -465,3 +465,11 @@ Chỉ append entry mới theo quy trình trong docs/tasks/working-protocol.md.
 - **Kiểm tra đã chạy:** đối chiếu SHA-256 thực tế của dataset/manifest/data dictionary; kiểm tra artifact TV1 và schema `scored_dataset.parquet`; xác nhận commit TV1 local `f10cfd6` cùng lệnh `--verify-only` tồn tại.
 - **Blocker:** commit TV1 chưa được push lên remote; fairness/threshold analysis DE-08 vẫn chưa thực hiện.
 - **Next step:** push branch `tv1`, sau đó chạy DE-08 trên output model đã khóa.
+
+## 2026-09-23 — TV2-DOC-REPORT — Đưa báo cáo sửa lỗi handoff vào docs/data
+
+- **Trạng thái:** done
+- **Đã làm:** lưu báo cáo kết quả sửa lỗi handoff tại `docs/data/tv2_handoff_fix_report.md`, giữ nguyên số liệu, checksum, liên kết file và cảnh báo provenance manifest.
+- **File thay đổi:** `docs/data/tv2_handoff_fix_report.md`, `logs/log_tv2.md`.
+- **Kiểm tra:** rà soát Markdown và xác nhận các đường dẫn nội bộ trong báo cáo trỏ đúng các artifact hiện có.
+- **Next step:** chốt lại provenance manifest trước handoff cuối nếu cần tuyên bố trạng thái hoàn toàn sạch.
