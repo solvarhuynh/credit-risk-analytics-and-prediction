@@ -131,6 +131,14 @@ Chỉ append entry mới theo quy trình trong docs/tasks/working-protocol.md.
 - **Kiểm tra:** full suite `206 passed`; production verification PASS; `git diff --check` PASS.
 - **Next step:** TV3 consumes `scored_dataset.parquet` and `model_integration_profiles.csv`; TV2 may consume held-out outputs only if a fairness task is explicitly authorized.
 
+## 2026-09-23 — TV1-MASTER — Post-sync verification
+
+- **Trạng thái:** done — verification PASS.
+- **Đã làm:** đồng bộ commit modeling lên nền `origin/tv1`; xác nhận gated modeling outputs và frozen-test record vẫn khớp canonical snapshot.
+- **Kiểm tra:** `pytest -q --basetemp .pytest_tmp_full` → **209 passed**, 6 cảnh báo deprecation từ thư viện seaborn/matplotlib; `pytest tests/models -q --basetemp .pytest_tmp_tv1` → **61 passed**; `python -m src.models.modeling_pipeline --verify-only` → `SUCCESS`, deterministic và unknown-category safe đều `true`, 307,511 dòng.
+- **File thay đổi:** `logs/log_tv1.md`.
+- **Next step:** push branch `tv1`; chờ TV3 đối soát integration profiles và TV2 thực hiện DE-08.
+
 ## 2026-09-23 — FINAL-REVIEW-FIX — Cross-owner handoff and production-artifact review
 
 - **Trạng thái:** done — TV2_FIX_GATE = PASS; TV1_GATE = PASS_WITH_WARNINGS.
