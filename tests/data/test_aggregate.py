@@ -239,6 +239,18 @@ def test_aggregate_bureau_missing_columns_raises() -> None:
         aggregate_bureau(bad_bureau, bad_bb)
 
 
+def test_aggregate_bureau_duplicate_loan_key_rejected(
+    synthetic_bureau: pd.DataFrame, synthetic_bureau_balance: pd.DataFrame
+) -> None:
+    """A duplicated bureau loan key must fail before the one-to-one internal merge."""
+    duplicate_bureau = pd.concat(
+        [synthetic_bureau, synthetic_bureau.iloc[[0]]], ignore_index=True
+    )
+
+    with pytest.raises(ValueError, match="SK_ID_BUREAU.*duplicate values"):
+        aggregate_bureau(duplicate_bureau, synthetic_bureau_balance)
+
+
 # ---------------------------------------------------------------------------
 # Previous Application Aggregation Tests
 # ---------------------------------------------------------------------------
@@ -360,6 +372,35 @@ def test_aggregate_installments_conflicting_dates_rejected() -> None:
     )
     with pytest.raises(ValueError, match="conflicting DAYS_INSTALMENT"):
         aggregate_installments_payments(bad_df)
+
+
+def test_aggregate_installments_excludes_unknown_timing_from_late_rate() -> None:
+    """Missing payment or due dates are unknown, not implicit on-time installments."""
+    frame = pd.DataFrame(
+        {
+            "SK_ID_PREV": [701, 701, 701, 701],
+            "SK_ID_CURR": [101, 101, 101, 101],
+            "NUM_INSTALMENT_VERSION": [1.0, 1.0, 1.0, 1.0],
+            "NUM_INSTALMENT_NUMBER": [1, 2, 3, 4],
+            "DAYS_INSTALMENT": [-100.0, -80.0, -60.0, np.nan],
+            "DAYS_ENTRY_PAYMENT": [-90.0, -80.0, np.nan, -40.0],
+            "AMT_INSTALMENT": [1000.0, 1000.0, 1000.0, 1000.0],
+            "AMT_PAYMENT": [1000.0, 1000.0, 1000.0, 1000.0],
+        }
+    )
+
+    result, diagnostics = aggregate_installments_payments(frame)
+    row = result.iloc[0]
+
+    # The first two installments are observed: one late and one on time.
+    # The other two have unknown timing and are excluded from the denominator.
+    assert row["INSTAL_INSTALLMENT_COUNT"] == 4
+    assert row["INSTAL_LATE_COUNT"] == 1
+    assert row["INSTAL_LATE_RATE"] == pytest.approx(1 / 2)
+    assert row["INSTAL_DELAY_DAYS_MEAN"] == pytest.approx(5.0)
+    assert row["INSTAL_DELAY_DAYS_MAX"] == pytest.approx(10.0)
+    assert diagnostics["valid_timing_installment_count"] == 2
+    assert diagnostics["unknown_timing_installment_count"] == 2
 
 
 # ---------------------------------------------------------------------------

@@ -17,6 +17,7 @@ import gc
 import hashlib
 import json
 import os
+import subprocess
 import sys
 import uuid
 from collections.abc import Collection, Mapping
@@ -33,7 +34,7 @@ from src.data.aggregate import (
     run_historical_aggregation,
 )
 from src.data.cleaning import clean_table
-from src.data.load_data import default_raw_dir, validate_raw_files
+from src.data.load_data import project_root, validate_raw_files
 from src.features.engineering import ENGINEERED_FEATURE_NAMES, engineer_application_features
 
 # ---------------------------------------------------------------------------
@@ -147,6 +148,60 @@ APPLICATION_DERIVED_ORDER: tuple[str, ...] = (
     "ANNUITY_TO_INCOME_RATIO",
     "CREDIT_TO_ANNUITY_RATIO",
 )
+
+
+def default_pipeline_dirs() -> tuple[Path, Path]:
+    """Return canonical interim and processed paths anchored to the repository root."""
+
+    root = project_root()
+    return root / "data" / "interim", root / "data" / "processed"
+
+
+def get_git_provenance(repo_root: Path | None = None) -> dict[str, str | bool | None]:
+    """Return commit identity plus explicit dirty-tree evidence for a build."""
+
+    root = Path(repo_root) if repo_root is not None else project_root()
+
+    def read_git_raw(*args: str) -> str | None:
+        try:
+            result = subprocess.run(
+                ["git", "-C", str(root), *args],
+                capture_output=True,
+                check=True,
+                text=True,
+            )
+        except (OSError, subprocess.CalledProcessError):
+            return None
+        return result.stdout
+
+    def read_git(*args: str) -> str | None:
+        value = read_git_raw(*args)
+        if value is None:
+            return None
+        value = value.strip()
+        return value or None
+
+    branch = read_git("branch", "--show-current")
+    commit = read_git("rev-parse", "HEAD")
+    if commit is None:
+        return {
+            "git_branch": branch,
+            "base_commit": None,
+            "git_worktree_dirty": None,
+            "git_worktree_diff_sha256": None,
+        }
+    status = read_git("status", "--porcelain")
+    dirty = status is not None
+    patch = read_git_raw("diff", "--binary", "HEAD") if dirty else None
+
+    return {
+        "git_branch": branch,
+        "base_commit": commit,
+        "git_worktree_dirty": dirty,
+        "git_worktree_diff_sha256": (
+            hashlib.sha256(patch.encode("utf-8")).hexdigest() if patch is not None else None
+        ),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -560,6 +615,7 @@ def write_canonical_dataset_atomic(
 
         row_count = len(read_back)
         col_count = len(read_back.columns)
+        output_schema = {column: str(read_back[column].dtype) for column in read_back.columns}
         del read_back
 
         os.replace(temp_path, destination)
@@ -577,6 +633,7 @@ def write_canonical_dataset_atomic(
         "output_sha256": file_sha256,
         "row_count": row_count,
         "column_count": col_count,
+        "output_schema": output_schema,
     }
 
 
@@ -604,8 +661,9 @@ def run_build_pipeline(
         Canonical build manifest dict.
     """
     raw_paths = validate_raw_files(raw_dir)
-    target_interim = Path(interim_dir) if interim_dir else Path("data/interim")
-    target_processed = Path(processed_dir) if processed_dir else Path("data/processed")
+    default_interim, default_processed = default_pipeline_dirs()
+    target_interim = Path(interim_dir) if interim_dir else default_interim
+    target_processed = Path(processed_dir) if processed_dir else default_processed
     target_processed.mkdir(parents=True, exist_ok=True)
 
     app_train_path = raw_paths["application_train"]
@@ -698,17 +756,20 @@ def run_build_pipeline(
     numeric_cols = [c for c in feature_cols if pd.api.types.is_numeric_dtype(canonical_df[c])]
     categorical_cols = [c for c in feature_cols if not pd.api.types.is_numeric_dtype(canonical_df[c])]
 
-    output_schema = {c: str(canonical_df[c].dtype) for c in final_cols}
     del canonical_df
     gc.collect()
+
+    git_provenance = get_git_provenance()
 
     manifest: dict[str, Any] = {
         "task_id": "TV2-DE-05",
         "generation_timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "population": "application_train_only",
         "application_test_included": False,
-        "git_branch": "tv2",
-        "base_commit": "6984c30",
+        "git_branch": git_provenance["git_branch"],
+        "base_commit": git_provenance["base_commit"],
+        "git_worktree_dirty": git_provenance["git_worktree_dirty"],
+        "git_worktree_diff_sha256": git_provenance["git_worktree_diff_sha256"],
         "command": "python -m src.data.build_pipeline",
         "raw_input_paths": {
             "application_train": str(app_train_path),
@@ -766,7 +827,7 @@ def run_build_pipeline(
         "output_path": str(output_parquet_path),
         "output_size_bytes": pub_meta["output_size_bytes"],
         "output_sha256": pub_meta["output_sha256"],
-        "output_schema": output_schema,
+        "output_schema": pub_meta["output_schema"],
         "quality_gate_results": quality_gate,
         "warnings": [
             "Historical aggregate coverage is below 100% for all sources (expected domain behavior).",

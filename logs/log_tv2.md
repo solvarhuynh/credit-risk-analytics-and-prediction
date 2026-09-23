@@ -439,3 +439,20 @@ Chỉ append entry mới theo quy trình trong docs/tasks/working-protocol.md.
   - Không stage (`git add` chưa chạy).
   - Không push lên bất kỳ remote nào.
 - **Next step:** Hand off the DE-07 artifacts to TV1 and TV3, obtain consumer acknowledgement, and wait for TV1 model outputs before starting TV2-DE-08.
+
+---
+
+## 2026-09-22 — TV2-DE-FIX-01 — Resolve handoff audit findings and regenerate model input
+
+- **Trạng thái:** done — `MODEL_INPUT_GATE = PASS_WITH_WARNINGS`.
+- **Đã làm:**
+  - Phân loại lại toàn bộ 474 giá trị số `-999`: 8 cột đều là ngày tương đối trước thời điểm nộp đơn (`DAYS_*`), nên là dữ liệu hợp lệ chứ không phải sentinel. Không thay thế toàn cục `-999`; sentinel `DAYS_EMPLOYED == 365243` vẫn được chuẩn hóa thành `NaN` và giữ cờ `DAYS_EMPLOYED_ANOM`.
+  - Sửa aggregation trả góp: mốc ngày thiếu được biểu diễn là timing không xác định, không bị tính là đúng hạn; `INSTAL_LATE_RATE` chỉ dùng các kỳ có đủ ngày đến hạn và ngày thanh toán. Sửa thêm kiểm tra xung đột ngày đến hạn để một nhóm có ngày đến hạn hoàn toàn thiếu không bị báo xung đột giả.
+  - Bổ sung ràng buộc uniqueness/not-null và merge validation `one_to_one` cho luồng `bureau_balance` → `bureau`; chuẩn hóa default paths theo repository root; provenance Git trong manifest được lấy động hoặc ghi `null` khi Git không sẵn có; schema manifest được lấy từ Parquet read-back.
+  - Cập nhật dictionary/contract/setup theo ngữ nghĩa timing mới, sentinel ngày tương đối và lần tái tạo hiện hành.
+- **Kiểm tra đã chạy:** focused tests 68 passed; `pytest tests/data tests/features -q --basetemp .pytest_tmp` → 147 passed (6 cảnh báo deprecation bên thứ ba); `python -m src.data.build_pipeline --rebuild-aggregates` → SUCCESS; `python -m src.data.quality_report` → PASS WITH WARNINGS.
+- **Tạo tác tái tạo:** `cleaned_dataset.parquet` 307,511 × 203, SHA-256 `6460999371297ff2f83418a8341b0c85d4a2e4dc6c29b29e793edd2a0c755c96`; manifest `d311f6fce176fcfb3374d278dca79e2da31481baa59e5a43705c791c1efc390d`; dictionary 203 × 22, SHA-256 `a588feff89b1e5be684fea77ce8add79b0caa27c4c8a87e41f3be3b711abc151`.
+- **Kết quả audit:** key không null/unique, TARGET `{0: 282686, 1: 24825}`, không infinity, đủ 74 feature lịch sử và dictionary khớp chính xác missing count/rate/unique count của cả 203 cột. Manifest thể hiện `main` và HEAD `67499751ba6f7e705a0a63ede1e5a623c75a79b5`.
+- **Cảnh báo còn lại:** giá trị đuôi dài hợp lệ cần TV1 xem xét trong modeling (`CREDIT_TO_INCOME_RATIO` max 84.74; `INSTAL_PAYMENT_RATIO_MEAN` max 9189.32; 28 giá trị âm nhỏ của `CC_UTILIZATION_MEAN`); missing history là đặc tính coverage nguồn.
+- **Phạm vi an toàn:** không sửa raw CSV/TARGET, không train/SMOTE, không commit/push.
+- **Next step:** TV1 có thể bắt đầu modeling theo `model_contract.md`, fit toàn bộ preprocessing trên train folds và đánh giá các extreme values theo pipeline modeling.

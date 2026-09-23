@@ -3,18 +3,23 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
 import pytest
 
+import src.data.build_pipeline as build_pipeline_module
 from src.data.aggregate import AGGREGATE_FEATURE_DEFINITIONS
 from src.data.build_pipeline import (
     APPLICATION_DERIVED_ORDER,
     BOUNDED_RATE_COLUMNS,
     MINIMUM_CONTRACT_COLUMNS,
     UNMATCHED_ZERO_COUNT_COLUMNS,
+    default_pipeline_dirs,
+    get_git_provenance,
     join_customer_aggregates,
     validate_canonical_dataset,
     write_canonical_dataset_atomic,
@@ -436,6 +441,68 @@ def test_write_canonical_dataset_atomic(
     read_back = pd.read_parquet(out_file)
     assert len(read_back) == 3
     pd.testing.assert_frame_equal(read_back, joined)
+    assert pub_meta["output_schema"] == {
+        column: str(read_back[column].dtype) for column in read_back.columns
+    }
+
+
+def test_default_pipeline_dirs_do_not_depend_on_current_working_directory(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Default publication directories remain rooted at the repository."""
+    monkeypatch.chdir(tmp_path)
+
+    interim_dir, processed_dir = default_pipeline_dirs()
+    repo_root = Path(__file__).resolve().parents[2]
+
+    assert interim_dir == repo_root / "data" / "interim"
+    assert processed_dir == repo_root / "data" / "processed"
+
+
+def test_get_git_provenance_returns_explicit_nulls_when_git_is_unavailable(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Manifest provenance must not fabricate historical Git values."""
+
+    def unavailable_git(*args: object, **kwargs: object) -> object:
+        raise OSError("git unavailable")
+
+    monkeypatch.setattr(build_pipeline_module.subprocess, "run", unavailable_git)
+
+    assert get_git_provenance(tmp_path) == {
+        "git_branch": None,
+        "base_commit": None,
+        "git_worktree_dirty": None,
+        "git_worktree_diff_sha256": None,
+    }
+
+
+def test_get_git_provenance_marks_and_fingerprints_dirty_worktree(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """A dirty build identifies the exact tracked patch instead of a clean commit."""
+
+    patch = "diff --git a/src/data/example.py b/src/data/example.py\n"
+
+    def fake_git(command: list[str], **kwargs: object) -> SimpleNamespace:
+        git_args = tuple(command[3:])
+        stdout_by_args = {
+            ("branch", "--show-current"): "tv2\n",
+            ("rev-parse", "HEAD"): "abc123\n",
+            ("status", "--porcelain"): " M src/data/example.py\n",
+            ("diff", "--binary", "HEAD"): patch,
+        }
+        return SimpleNamespace(stdout=stdout_by_args[git_args])
+
+    monkeypatch.setattr(build_pipeline_module.subprocess, "run", fake_git)
+
+    assert get_git_provenance(tmp_path) == {
+        "git_branch": "tv2",
+        "base_commit": "abc123",
+        "git_worktree_dirty": True,
+        "git_worktree_diff_sha256": hashlib.sha256(patch.encode("utf-8")).hexdigest(),
+    }
 
 
 # ---------------------------------------------------------------------------

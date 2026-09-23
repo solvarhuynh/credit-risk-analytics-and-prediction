@@ -513,6 +513,24 @@ def test_bureau_bb_delinquent_month_rate_metadata(
     assert "zero delinquent months produces rate 0" in row["missing_value_meaning"]
 
 
+def test_installment_late_metadata_excludes_unknown_timing(
+    synthetic_canonical_dataset: pd.DataFrame,
+    synthetic_manifest: dict[str, object],
+) -> None:
+    """Dictionary must not represent an unknown payment date as an on-time observation."""
+    dictionary = build_data_dictionary(synthetic_canonical_dataset, manifest=synthetic_manifest)
+
+    late_count = dictionary[dictionary["column_name"] == "INSTAL_LATE_COUNT"].iloc[0]
+    late_rate = dictionary[dictionary["column_name"] == "INSTAL_LATE_RATE"].iloc[0]
+
+    assert "both timing fields are observed" in late_count["transformation_formula"]
+    assert "excluded from this count and the late-rate denominator" in late_count[
+        "missing_value_meaning"
+    ]
+    assert "both timing fields observed" in late_rate["transformation_formula"]
+    assert "Unknown timing is not treated as on-time" in late_rate["missing_value_meaning"]
+
+
 def test_all_aggregate_rows_have_non_key_source_operands(
     synthetic_canonical_dataset: pd.DataFrame,
     synthetic_manifest: dict[str, object],
