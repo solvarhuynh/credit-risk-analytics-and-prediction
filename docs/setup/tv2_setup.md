@@ -253,7 +253,7 @@ Bộ kiểm định chất lượng tự động thực thi 28 quy tắc kiểm 
 
 ### Xuất bản nguyên tử (Atomic Publication) & Artifacts
 - **Đường dẫn Parquet:** `data/processed/cleaned_dataset.parquet` (64,520,535 bytes trong lần tái tạo TV2-DE-FIX-01; SHA-256: `6460999371297ff2f83418a8341b0c85d4a2e4dc6c29b29e793edd2a0c755c96`).
-- **Đường dẫn Manifest:** `data/processed/cleaned_dataset_manifest.json` (SHA-256 lần tái tạo TV2-DE-FIX-01: `d311f6fce176fcfb3374d278dca79e2da31481baa59e5a43705c791c1efc390d`).
+- **Đường dẫn Manifest:** `data/processed/cleaned_dataset_manifest.json` (SHA-256 snapshot hiện tại: `33496d28258458501ee95b77c5f16aaede80501d6cb18d9130c802e8619a14e4`).
 - **Cơ chế nguyên tử:** Ghi ra tệp tạm `.tmp` tại cùng thư mục, thực hiện kiểm định đọc lại (read-back validation), sau đó thực hiện `os.replace` nguyên tử nhằm tránh tình trạng tệp hỏng khi có sự cố ngắt quãng.
 
 ### Lệnh thực thi & Tùy chọn tái tạo
@@ -302,7 +302,7 @@ Nhiệm vụ `TV2-DE-06` thực hiện biên dịch từ điển dữ liệu chu
 
 ### Tệp đầu ra xuất bản (Published Output Artifacts)
 1. **Machine-Readable Data Dictionary:** `data/processed/data_dictionary.csv`
-   - Đúng 203 dòng (1 dòng cho mỗi cột chuẩn tắc, không trùng lặp, không thiếu cột).
+   - Đúng 203 dòng (1 dòng cho mỗi cột chuẩn tắc, không trùng lặp, không thiếu cột); kích thước snapshot hiện tại 125,061 byte, SHA-256 `a588feff89b1e5be684fea77ce8add79b0caa27c4c8a87e41f3be3b711abc151`.
    - Đúng 22 cột siêu dữ liệu theo đúng thứ tự quy định của đề mục đã khóa.
    - Định dạng mã hóa: UTF-8 with BOM (`utf-8-sig`), ký tự ngắt dòng LF (`\n`).
    - Tệp này được loại trừ khỏi Git theo quy tắc `.gitignore` (`data/processed/*.csv`).
@@ -383,10 +383,10 @@ Các phân tích tương quan với nhãn mục tiêu, xếp hạng dự báo đ
 
 ## TV2-DE-07 — Exploratory Data Analysis and Data Engineering Handoff
 
-### Mục đích (Purpose)
+### Mục đích
 Nhiệm vụ `TV2-DE-07` hoàn thành giai đoạn phân tích khám phá dữ liệu chuẩn tắc (EDA) và thiết lập giao ước bàn giao kỹ thuật chính thức từ TV2 (Data Engineering) cho TV1 (Modeling) và TV3 (Dashboard). Nhiệm vụ tạo ra 5 biểu đồ tĩnh chuẩn xuất bản, báo cáo phân tích chi tiết, cập nhật notebook và bàn giao tập dữ liệu chuẩn tắc 307,511 dòng.
 
-### Điều kiện tiên quyết (Prerequisites)
+### Điều kiện tiên quyết
 - Hoàn thành DE-05: `data/processed/cleaned_dataset.parquet` (lần tái tạo TV2-DE-FIX-01: SHA-256 `6460999371...`) và manifest.
 - Hoàn thành DE-06: `data/processed/data_dictionary.csv` (203 dòng, 22 cột) và `reports/data_quality_report.md`.
 - Dữ liệu thô: `data/raw/application_train.csv` (dùng để kiểm toán sentinel `DAYS_EMPLOYED`).
@@ -409,7 +409,7 @@ Nhiệm vụ `TV2-DE-07` hoàn thành giai đoạn phân tích khám phá dữ l
    - `03_default_rate_by_occupation_and_contract.png`: Tỷ lệ nợ xấu theo 19 nhóm nghề nghiệp (bảo toàn Missing/Unknown) và 2 loại hợp đồng vay.
    - `04_key_numeric_spearman_heatmap.png`: Ma trận tương quan hạng Spearman cho 12 biến số kinh doanh trọng yếu (bỏ qua `TARGET`).
    - `05_days_employed_before_after.png`: Kiểm toán trực quan trước/sau làm sạch giá trị sentinel 365,243 ngày.
-2. **Báo cáo phân tích khám phá:** `reports/eda_report.md` (15 mục chuẩn tắc dựa trên số liệu thực nghiệm).
+2. **Báo cáo phân tích khám phá:** `reports/eda_report.md` (10 mục chuẩn tắc dựa trên số liệu thực nghiệm).
 3. **Biên bản bàn giao kỹ thuật:** `docs/data/tv2_data_handoff.md`.
 4. **Notebook minh chứng:** `notebooks/03_eda_statistical.ipynb`.
 
@@ -431,4 +431,38 @@ Lệnh thực thi hoàn toàn bất biến và có thể chạy lại nhiều l�
 2. **Không suy diễn danh tính (Proxy Restriction):** Tuyệt đối không suy diễn cờ `DAYS_EMPLOYED_ANOM` hay dữ liệu khuyết `OCCUPATION_TYPE` là người nghỉ hưu hay thất nghiệp.
 3. **Diễn giải Spearman:** Ngưỡng $|\rho| \ge 0.70$ là ngưỡng mô tả tương quan đơn điệu, không tự ý loại bỏ biến hay coi là đa cộng tuyến nếu chưa thẩm định qua mô hình.
 4. **Đặc trưng chuẩn tắc AGE_GROUP:** `AGE_GROUP` là đặc trưng phái sinh chuẩn tắc đã được lưu trữ sẵn trong `cleaned_dataset.parquet` (vị trí thứ 124, thuộc nhóm `application_derived`). TV3 nên sử dụng trực tiếp cột `AGE_GROUP` chuẩn tắc này để phân nhóm dashboard. Các ngưỡng phân nhóm nửa mở từ `AGE_YEARS` `[0, 25, 35, 45, 55, 65, 120]` với `right=False` (nhãn: `'Under 25'`, `'25-34'`, `'35-44'`, `'45-54'`, `'55-64'`, `'65+'`) là quy chuẩn cấu trúc có thẩm quyền (authoritative construction rule). Việc tái phái sinh `AGE_GROUP` từ `AGE_YEARS` chỉ dùng cho kiểm định tính nhất quán hoặc làm phương án dự phòng (fallback/validation), không phải chỉ dẫn bàn giao chính.
-5. **Trạng thái DE-08:** Nhiệm vụ `TV2-DE-08 — Model-Informed Fairness and Threshold Analysis` hiện đang ở trạng thái **BLOCKED / PENDING** cho đến khi TV1 hoàn tất huấn luyện mô hình và cung cấp xác suất dự báo trên tập validation/test.
+5. **Trạng thái DE-08:** Nhiệm vụ `TV2-DE-08 — Model-Informed Fairness and Threshold Analysis` đã đủ điều kiện đầu vào sau khi TV1 cung cấp model card, frozen-test record, scored dataset và integration profiles; phần kiểm định fairness/threshold vẫn **PENDING** cho đến khi TV2 thực hiện task DE-08.
+
+## TV1-MASTER — Trạng thái đầu ra mô hình và bàn giao
+
+TV1 đã có implementation gated trên cùng snapshot canonical SHA-256
+`6460999371297ff2f83418a8341b0c85d4a2e4dc6c29b29e793edd2a0c755c96`. Commit
+local `f10cfd6` (`feat(modeling): add credit risk modeling workflow`) đã hoàn tất
+phần modeling cần thiết và đang chờ được push/merge vào remote branch `tv1`.
+
+### Tạo tác TV1 đã có
+
+- `models/full_inference_pipeline.joblib`: pipeline inference đầy đủ, nhận đúng 201 feature và hỗ trợ `predict_proba`.
+- `data/processed/scored_dataset.parquet`: 307,511 dòng, khóa 1-1 với canonical dataset, gồm PD, threshold, recommendation, credit score, risk tier và expected loss.
+- `reports/model_card.md`: split, seed, feature policy, metric, threshold, giới hạn và giả định scoring/expected loss.
+- `reports/frozen_test_evaluation_record.json`: record frozen-test có fingerprint dataset, split hash, model, threshold và metric.
+- `reports/model_integration_profiles.csv`: 2 hồ sơ ẩn danh để TV3 đối soát output Python.
+- `reports/figures/modeling/`: ROC, PR và SHAP global/local.
+
+### Kết quả frozen-test đã khóa
+
+- Model: `xgboost_depth6`.
+- ROC-AUC: `0.780060`; PR-AUC: `0.270385`.
+- Precision: `0.272622`; Recall: `0.426586`; F1: `0.332653`.
+- Threshold kỹ thuật: `0.16`, chọn trên development và không tối ưu lại trên frozen test.
+
+### Lệnh xác minh TV1
+
+Sau khi checkout branch đã có commit TV1 và đã chuẩn bị canonical input:
+
+```powershell
+& .\.venv\Scripts\python.exe -m pytest tests\models -q
+& .\.venv\Scripts\python.exe -m src.models.modeling_pipeline --verify-only
+```
+
+Không chạy lại frozen-test evaluation trên cùng snapshot; chỉ dùng `--verify-only` để kiểm tra artifact và fingerprint đã xuất bản. TV2 có thể dùng các output trên để bắt đầu DE-08, còn TV3 dùng `scored_dataset.parquet` và `model_integration_profiles.csv` cho kiểm thử tích hợp.

@@ -456,3 +456,12 @@ Chỉ append entry mới theo quy trình trong docs/tasks/working-protocol.md.
 - **Cảnh báo còn lại:** giá trị đuôi dài hợp lệ cần TV1 xem xét trong modeling (`CREDIT_TO_INCOME_RATIO` max 84.74; `INSTAL_PAYMENT_RATIO_MEAN` max 9189.32; 28 giá trị âm nhỏ của `CC_UTILIZATION_MEAN`); missing history là đặc tính coverage nguồn.
 - **Phạm vi an toàn:** không sửa raw CSV/TARGET, không train/SMOTE, không commit/push.
 - **Next step:** TV1 có thể bắt đầu modeling theo `model_contract.md`, fit toàn bộ preprocessing trên train folds và đánh giá các extreme values theo pipeline modeling.
+
+## 2026-09-23 — TV2-SETUP-SYNC — Cập nhật guide theo handoff TV1-MASTER
+
+- **Trạng thái:** done
+- **Đã làm:** cập nhật `docs/setup/tv2_setup.md` theo snapshot canonical thực tế; sửa manifest checksum, bổ sung checksum/kích thước data dictionary, sửa số phần của EDA report, cập nhật trạng thái DE-08 và ghi rõ các output TV1-MASTER đã sẵn sàng cho downstream.
+- **File thay đổi:** `docs/setup/tv2_setup.md`, `logs/log_tv2.md`.
+- **Kiểm tra đã chạy:** đối chiếu SHA-256 thực tế của dataset/manifest/data dictionary; kiểm tra artifact TV1 và schema `scored_dataset.parquet`; xác nhận commit TV1 local `f10cfd6` cùng lệnh `--verify-only` tồn tại.
+- **Blocker:** commit TV1 chưa được push lên remote; fairness/threshold analysis DE-08 vẫn chưa thực hiện.
+- **Next step:** push branch `tv1`, sau đó chạy DE-08 trên output model đã khóa.
