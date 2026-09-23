@@ -139,6 +139,13 @@ Chỉ append entry mới theo quy trình trong docs/tasks/working-protocol.md.
 - **File thay đổi:** `logs/log_tv1.md`.
 - **Next step:** push branch `tv1`; chờ TV3 đối soát integration profiles và TV2 thực hiện DE-08.
 
+## 2026-09-23 — DOC-MD-VI — Hoàn tất dịch hai báo cáo TV2
+
+- **Trạng thái:** done
+- **Đã làm:** chuyển `reports/data_quality_report.md` và `reports/eda_report.md` sang tiếng Việt; giữ nguyên đường dẫn, lệnh chạy, mã cột, category raw, số liệu, checksum và artifact.
+- **Kiểm tra:** 6 code fence cân bằng; `pytest tests/data/test_quality_report.py -q --basetemp .pytest_tmp_tv2` → **19 passed**; `git diff --check` đạt.
+- **Next step:** tiếp tục duy trì log TV1 khi có thay đổi modeling; log cập nhật setup TV2 nằm tại `logs/log_tv2.md`.
+
 ## 2026-09-23 — FINAL-REVIEW-FIX — Cross-owner handoff and production-artifact review
 
 - **Trạng thái:** done — TV2_FIX_GATE = PASS; TV1_GATE = PASS_WITH_WARNINGS.
