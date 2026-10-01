@@ -1,30 +1,23 @@
-# TV3 — Dashboard setup & refresh guide
+# Thiết lập TV3 — Dashboard
 
-Owner: TV3 (Power BI Dashboard)
+Trạng thái: dashboard design có thể bắt đầu từ contract; data/model integration chờ TV2/TV1.
 
-## Trạng thái hiện tại
+Các bước **EXPECTED / NOT YET VERIFIED AFTER DATASET RESET**:
 
-Dashboard Power BI (`dashboard/Credit_Risk_Analytics.pbix`) và canonical scored
-dataset chưa được bàn giao. Do đó chưa có file `.pbix` hoặc lệnh refresh tự động
-để chạy trong repository.
+1. Đọc `docs/contracts/data_contract.md`, `model_contract.md` và task TV3.
+2. Thiết kế Power BI model với `dim_date`, `dim_state`, portfolio/funnel/scored fact.
+3. Phân loại `state_code` là State/Province và `country` là Country/Region.
+4. Tạo drill-down Year → Quarter → Month, filter, tooltip và cross-filter.
+5. Chỉ kết nối prediction khi TV1 bàn giao model/scored output thật.
 
-## Chuẩn bị
+Kiểm tra simulator contract:
 
-1. Cài Power BI Desktop.
-2. Nhận từ TV2 `data/processed/cleaned_dataset.parquet`.
-3. Nhận từ TV1 `data/processed/scored_dataset.parquet` và model handoff.
+```powershell
+python -c "from src.dashboard.simulator_engine import simulator_status; print(simulator_status('models/full_inference_pipeline.joblib'))"
+```
 
-## Refresh khi đã có dữ liệu
+Ý nghĩa: hiện phải báo `BLOCKED / WAITING FOR TV1 ARTIFACT`; không phải lỗi migration.
 
-1. Mở `dashboard/Credit_Risk_Analytics.pbix`.
-2. Cập nhật Power Query source tới các file Parquet trong `data/processed/`.
-3. Chọn **Refresh**, kiểm tra row count, khóa `SK_ID_CURR` và các measure chính.
-4. Kiểm tra filter, drill-down, tooltip, cross-filtering và What-if Simulator.
+## Phạm vi trách nhiệm sau reorganize
 
-Lệnh refresh bằng Python: `PENDING` — Power BI là consumer desktop; chỉ thêm
-lệnh khi nhóm thống nhất công cụ tự động hóa và đã kiểm tra trên máy demo.
-
-## Validation / giới hạn
-
-Không gán ngẫu nhiên khách hàng vào địa lý. Nếu dùng region rating thay bản đồ,
-phải ghi rõ giới hạn theo `docs/architecture/decisions-and-risks.md`.
+TV3 là primary owner của Master Power BI artifact, integration V01–V09, V10–V12, relationships, layout, theme, slicers, filters, drill-down, tooltip, cross-filter, navigation và demo. TV1/TV2 có thể gửi prototype/spec local; chỉ TV3 tích hợp Master PBIX. TV1 cross-review model-facing visuals; TV2 review data semantics.

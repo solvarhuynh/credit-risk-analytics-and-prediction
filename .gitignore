@@ -7,15 +7,11 @@ data/raw/*
 !data/raw/.gitkeep
 data/interim/*
 !data/interim/.gitkeep
-data/processed/*.csv
-data/processed/*.parquet
-data/processed/cleaned_dataset_manifest.json
+data/processed/*
 !data/processed/.gitkeep
 
 # 2. Model artifacts nang (>50MB)
-models/*.pkl
-models/*.joblib
-models/*.onnx
+models/*
 !models/.gitkeep
 
 # 3. Moi truong ao Python (Virtual Environments)
@@ -32,6 +28,9 @@ __pycache__/
 *.class
 *.so
 .pytest_cache/
+.pytest_tmp/
+.pytest_tmp*/
+.audit_tmp/
 .mypy_cache/
 
 # 5. Jupyter Notebook Checkpoints
@@ -56,3 +55,11 @@ desktop.ini
 
 # 8. Logs
 *.log
+
+# 9. Local TV1 human runbook (never commit)
+TV1_AGENT_RUNBOOK.local.md
+REPO_TUTOR.local.md
+REPO_TUTOR_HOME_CREDIT_OLD.local.md
+REPO_TUTOR_HOME_CREDIT_OLD_*.local.md
+TV1_AGENT_RUNBOOK_HOME_CREDIT_OLD.local.md
+TV1_AGENT_RUNBOOK_HOME_CREDIT_OLD_*.local.md

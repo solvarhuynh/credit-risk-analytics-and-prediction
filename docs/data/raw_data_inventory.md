@@ -1,43 +1,25 @@
-# Kiểm kê dữ liệu gốc (`data/raw`)
+# Kiểm kê Raw Lending Club 2007–2018
 
-Ngày kiểm tra: 13/09/2026. Thư mục này là bộ dữ liệu **Home Credit Default Risk**.
+Kiểm tra migration ngày 01/10/2026 chỉ đọc header và sample nhỏ, không nạp toàn bộ CSV.
 
-## Cấu trúc thư mục dữ liệu
+| Local file | Original file | Size (bytes) | SHA-256 |
+|---|---|---:|---|
+| `data/raw/accepted_loans.csv` | `accepted_2007_to_2018Q4.csv` | 1,675,133,810 | `3EAE03C28FD9D2E8A076EBEB73507E8D4D0F44D90500DECDB0936E0933D1F36A` |
+| `data/raw/rejected_loans.csv` | `rejected_2007_to_2018Q4.csv` | 1,782,281,620 | `07EB8468D55340D8CA4145C3E3C2E2D3E25FF83C44E432A825729EE6C99C4D45` |
 
-![Cấu trúc thư mục `data`, với các tệp nguồn trong `raw`](image.png)
+## Accepted
 
-*Hình: Các bảng CSV nguồn được lưu trong `data/raw`; dữ liệu trung gian và đã xử lý lần lượt thuộc `data/interim` và `data/processed`.*
+- 151 cột; key raw `id`, chuẩn hóa thành `loan_id`.
+- Date chính `issue_d`; geography thật ở `addr_state`, ZIP bị masked.
+- `loan_status` là nguồn target; chỉ outcome cuối đã duyệt đi vào labeled model.
+- Dùng cho credit risk, portfolio, temporal và geographic analysis.
+- Có nhiều cột hậu kỳ thanh toán/recovery/hardship/settlement; phải tách khỏi model X.
 
-## Danh mục từng tệp
+## Rejected
 
-| Tệp | Kích thước hiện tại | Khóa/liên kết | Vai trò |
-| --- | ---: | --- | --- |
-| `application_train.csv` | 158.44 MB | `SK_ID_CURR` | Bảng trung tâm, một hồ sơ vay hiện tại mỗi dòng, chứa nhãn `TARGET` và các biến hồ sơ. |
-| `application_test.csv` | 25.34 MB | `SK_ID_CURR` | Cùng schema với train trừ `TARGET`; dùng tính điểm ngoài mẫu/Kaggle. |
-| `bureau.csv` | 162.14 MB | `SK_ID_CURR`, `SK_ID_BUREAU` | Các khoản tín dụng tại tổ chức tín dụng khác. Tạo feature dư nợ, số khoản vay, trạng thái khoản vay. |
-| `bureau_balance.csv` | 358.19 MB | `SK_ID_BUREAU` → `bureau` | Trạng thái tín dụng theo tháng của từng bản ghi bureau. Không join trực tiếp vào application; aggregate theo `SK_ID_BUREAU`, rồi qua `bureau` về `SK_ID_CURR`. |
-| `previous_application.csv` | 386.21 MB | `SK_ID_CURR`, `SK_ID_PREV` | Các đơn vay trước tại Home Credit: kết quả duyệt, số tiền, sản phẩm. |
-| `installments_payments.csv` | 689.62 MB | `SK_ID_PREV`, `SK_ID_CURR` | Lịch sử trả góp theo kỳ; nguồn chính cho feature trả trễ/chênh lệch thanh toán. |
-| `POS_CASH_balance.csv` | 374.51 MB | `SK_ID_PREV`, `SK_ID_CURR` | Số dư và quá hạn hàng tháng của khoản POS/cash. |
-| `credit_card_balance.csv` | 404.91 MB | `SK_ID_PREV`, `SK_ID_CURR` | Số dư, hạn mức, chi tiêu, thanh toán và quá hạn của thẻ tín dụng. |
-| `HomeCredit_columns_description.csv` | 0.04 MB | Tên bảng/cột | Data dictionary từ nguồn, giải nghĩa cột và giá trị đặc biệt. |
+- 9 cột: amount, application date, title, risk score, DTI, ZIP, state, employment length, policy code.
+- Không có shared `loan_id` và không có default outcome.
+- Dùng cho demand, funnel và geography; không dùng train default model.
+- Risk score/policy code là policy-derived; title là text cardinality cao.
 
-`data/raw/.gitkeep` là tệp kỹ thuật để Git giữ thư mục rỗng; giữ nguyên.
-
-## Mức tối thiểu theo mục tiêu
-
-| Mục tiêu | Tệp nên có |
-| --- | --- |
-| MVP đúng yêu cầu đồ án (ít nhất 3 bảng) | `application_train.csv`, `previous_application.csv`, `installments_payments.csv`, `HomeCredit_columns_description.csv` |
-| Mô hình/EDA đầy đủ | Toàn bộ trừ `sample_submission.csv`; thêm `application_test.csv` nếu cần suy luận ngoài mẫu |
-| Nộp Kaggle hoặc xuất điểm cho test | Mô hình/EDA đầy đủ + `application_test.csv` + `sample_submission.csv` |
-
-Mặc dù có thể dựng MVP từ ba bảng, `bureau.csv` nên được ưu tiên thêm sớm vì nó là nguồn lịch sử tín dụng bên ngoài quan trọng. Các bảng `bureau_balance`, `POS_CASH_balance`, và `credit_card_balance` là phần mở rộng có dung lượng lớn nhưng không dư thừa: chúng bổ sung trạng thái theo thời gian mà bảng cha không có.
-
-## Quy tắc join để không sinh dữ liệu dư/lỗi
-
-1. Lấy `application_train` hoặc `application_test` làm bảng gốc, hạt dữ liệu là một `SK_ID_CURR`.
-2. Với mọi bảng lịch sử nhiều dòng, aggregate về `SK_ID_CURR` trước khi left join vào application.
-3. Riêng `bureau_balance` phải aggregate về `SK_ID_BUREAU`, join vào `bureau`, rồi mới aggregate về `SK_ID_CURR`.
-4. Không nối thẳng các bảng lịch sử với nhau theo `SK_ID_CURR`; cách đó nhân bản số dòng và tạo feature sai.
-5. Sau mỗi join, kiểm tra số dòng và tính duy nhất của `SK_ID_CURR`; nguyên tắc này cũng khớp với [data contract](../contracts/data_contract.md).
+Raw là immutable, local-only và được `.gitignore` bảo vệ. Loader phải dùng `usecols`/`dtype`/`chunksize` khi chạy thật.

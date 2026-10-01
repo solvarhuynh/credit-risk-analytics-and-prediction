@@ -1,47 +1,35 @@
-# TV1 — Modeling setup & run guide
+# Thiết lập TV1 — Lending Club Modeling
 
-Owner: TV1 (Modeling & Machine Learning)
-
-## Trạng thái hiện tại
-
-Các module modeling trong `src/models/` hiện là skeleton; canonical model input
-(`data/processed/cleaned_dataset.parquet`) chưa được bàn giao. Vì vậy hiện chưa
-có lệnh train/evaluate modeling để chạy và không được tự tạo dữ liệu thay thế.
-
-## Chuẩn bị môi trường
-
-Từ thư mục repository:
+Trạng thái: **WAITING FOR TV2 LENDING CLUB CANONICAL HANDOFF**. Các lệnh là **EXPECTED / NOT YET VERIFIED AFTER DATASET RESET**.
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
-## Khi có canonical handoff
-
-TV1 chỉ bắt đầu preprocessing/split sau khi TV2 bàn giao:
-
-- `data/processed/cleaned_dataset.parquet`
-- `data/processed/data_dictionary.csv`
-- quality report chứng minh `SK_ID_CURR`, `TARGET`, missing/sentinel và leakage checks.
-
-Lệnh train chính thức: `PENDING` — sẽ cập nhật ngay khi script modeling canonical
-được implement và validation được kiểm tra.
-
-## Output dự kiến
-
-Model artifact và `data/processed/scored_dataset.parquet` theo
-`docs/contracts/model_contract.md`. Không commit model/data lớn vào Git.
-
-## Validation bắt buộc
-
-Chạy regression test suite cho các reusable modeling modules:
+Ý nghĩa: tạo môi trường Python độc lập, kích hoạt và cài dependency.
 
 ```powershell
-pytest tests/models -q
+Get-Item data/processed/cleaned_dataset.parquet,data/processed/data_dictionary.csv,data/processed/cleaned_dataset_manifest.json
 ```
 
-TV1 phải ghi lại split strategy, metric (AUC/Precision/Recall/F1), model path và
-đảm bảo imputer/encoder/scaler chỉ fit trên train fold. Nếu thiếu canonical input,
-trạng thái model training chính thức là `BLOCKED`.
+Ý nghĩa: xác nhận đủ ba artifact TV2. Nếu thiếu thì dừng, không train.
+
+```powershell
+python -c "from src.models.modeling_pipeline import load_canonical_input,build_feature_schema; d,dd,m=load_canonical_input(); print(build_feature_schema(d,dd)); print(m)"
+```
+
+Ý nghĩa: chạy model input gate, kiểm tra dictionary coverage và chỉ chọn feature `APPLICATION_TIME`/`CREDIT_SNAPSHOT`.
+
+```powershell
+python -m pytest tests/models
+```
+
+Ý nghĩa: chạy synthetic tests cho split, preprocessing, evaluation, scoring và cost. Không thay thế kiểm tra artifact thật.
+
+Workflow tương lai: freeze split → Logistic baseline bắt buộc → imbalance experiment → optional XGBoost → chọn model/threshold trên development → frozen test một lần → explainability/scoring/expected loss → full-data refit → TV3 handoff. Hiện chưa có lệnh train end-to-end vì artifact TV2 chưa tồn tại và không được tạo kết quả giả.
+
+## Phạm vi trách nhiệm sau reorganize
+
+TV1 là primary owner của modeling, V01–V06, Storytelling, report coordination và defense coordination. TV1 cross-review TV2 handoff/V07–V09 và TV3 dashboard structure. TV1 không tích hợp Master PBIX; TV3 giữ integration ownership.

@@ -1,20 +1,21 @@
-# Quyết định và rủi ro cần chốt
+# Quyết định kiến trúc và rủi ro
 
-## ADR-001 — Dashboard theo thực tế doanh nghiệp
+## Quyết định
 
-Dashboard chính dùng Power BI. TV3 bàn giao file `.pbix`, Power Query/DAX được mô tả trong tài liệu, nguồn dữ liệu refresh được và ảnh demo. Python tạo các bảng đã làm sạch/chấm điểm; Power BI không được tự train lại mô hình.
+- Tách accepted thành bảng nghiệp vụ thay vì chia ngẫu nhiên để đáp ứng join rubric.
+- Rejected không tham gia default modeling vì không có outcome.
+- Target chỉ map ba trạng thái cuối explicit; status chưa kết thúc bị censor khỏi supervised set.
+- Feature policy fail-closed; Logistic Regression là baseline bắt buộc.
+- Map dùng bang thật (`state_code`), không suy latitude/longitude từ ZIP masked.
+- Pipeline đọc chunk vì raw tổng cộng hơn 3 GB.
 
-What-if Simulator chỉ dùng mô hình Logistic Regression rút gọn khi các biến đầu vào và hệ số được cố định, kiểm thử và chuyển sang DAX. Không cố chuyển XGBoost/SHAP sang DAX. Nếu chưa làm được simulator, vẫn ưu tiên hoàn thiện dashboard, filter, drill-down, cross-filtering và visual dự báo bắt buộc.
+## Rủi ro cần theo dõi
 
-## RISK-001 — Map không tương thích dữ liệu hiện tại
-
-`REGION_RATING_CLIENT` là mã/xếp hạng đã ẩn danh, không phải tọa độ hay tỉnh/thành. Không được tạo choropleth bằng cách gán ngẫu nhiên khách hàng vào bản đồ.
-
-1. Hỏi giảng viên bằng văn bản liệu biểu đồ vùng theo `REGION_RATING_CLIENT` được thay cho geographic map hay không.
-2. Nếu không, bổ sung/đổi sang nguồn có địa lý và khóa join thật; ghi nguồn, cách join và hạn chế.
-
-Đây là blocker duy nhất để khẳng định đáp ứng trọn vẹn barem.
-
-## RISK-002 — Leakage và scope
-
-TV2/TV1 phải ghi nguồn và tính hợp lệ theo thời điểm của từng feature lịch sử. Logistic, EDA, dashboard và dự báo trên dashboard là việc bắt buộc; chỉ làm XGBoost, SHAP, SMOTE, PDO/EL và fairness sau khi luồng tối thiểu end-to-end hoàn chỉnh.
+- Temporal leakage từ payment, recovery, hardship, settlement và last-FICO.
+- Proxy leakage từ pricing/grade do lender quyết định.
+- Censoring bias khi loại trạng thái chưa kết thúc.
+- Khác schema accepted/rejected và không có key chung.
+- Memory pressure, dtype drift giữa các chunk và schema Parquet.
+- Class imbalance.
+- Geographic fairness/bias nếu dùng state/ZIP trong model.
+- ZIP bị che nên chỉ Map cấp bang đáng tin cậy.

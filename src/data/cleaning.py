@@ -1,334 +1,131 @@
-"""Canonical data cleaning and sentinel/missing handling module.
-
-This module provides deterministic, leakage-safe cleaning rules for raw Home
-Credit tables. It replaces known domain sentinels, standardizes infinity and
-whitespace, validates primary keys and targets, but deliberately performs NO
-statistical imputation or destructive deduplication.
-"""
+"""Làm sạch xác định cho raw accepted và rejected của Lending Club."""
 
 from __future__ import annotations
 
-import json
-from collections.abc import Sequence
-from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
-from src.data.load_data import (
-    RAW_TABLE_FILENAMES,
-    default_raw_dir,
-    validate_raw_files,
-)
-
-CANONICAL_TABLE_NAMES: tuple[str, ...] = tuple(RAW_TABLE_FILENAMES.keys())
-
-DAYS_EMPLOYED_SENTINEL: int = 365243
-
-PREV_APP_SENTINEL_DAY_COLUMNS: tuple[str, ...] = (
-    "DAYS_FIRST_DRAWING",
-    "DAYS_FIRST_DUE",
-    "DAYS_LAST_DUE_1ST_VERSION",
-    "DAYS_LAST_DUE",
-    "DAYS_TERMINATION",
-)
+GOOD_FINAL_STATUSES = {"Fully Paid"}
+BAD_FINAL_STATUSES = {"Charged Off", "Default"}
+PERCENT_COLUMNS = {"int_rate", "revol_util"}
+ACCEPTED_DATE_COLUMNS = {
+    "issue_d", "earliest_cr_line", "last_pymnt_d", "next_pymnt_d",
+    "last_credit_pull_d", "hardship_start_date", "hardship_end_date",
+    "payment_plan_start_date", "debt_settlement_flag_date", "settlement_date",
+    "sec_app_earliest_cr_line",
+}
+ACCEPTED_NUMERIC_COLUMNS = {
+    "loan_amnt", "funded_amnt", "funded_amnt_inv", "installment", "annual_inc",
+    "dti", "fico_range_low", "fico_range_high", "inq_last_6mths", "open_acc",
+    "pub_rec", "revol_bal", "total_acc", "annual_inc_joint", "dti_joint",
+}
 
 
-def summarize_missingness(frame: pd.DataFrame) -> pd.DataFrame:
-    """Return a tabular summary of missing values for all columns.
-
-    Args:
-        frame: Input DataFrame to summarize.
-
-    Returns:
-        DataFrame with columns: column, dtype, missing_count, missing_percentage.
-    """
-    total_rows = len(frame)
-    records: list[dict[str, Any]] = []
-
-    for col in frame.columns:
-        missing_count = int(frame[col].isna().sum())
-        missing_pct = (
-            round((missing_count / total_rows) * 100.0, 4) if total_rows > 0 else 0.0
-        )
-        records.append(
-            {
-                "column": col,
-                "dtype": str(frame[col].dtype),
-                "missing_count": missing_count,
-                "missing_percentage": missing_pct,
-            }
-        )
-
-    return pd.DataFrame(
-        records,
-        columns=["column", "dtype", "missing_count", "missing_percentage"],
-    )
+def _strip_strings(frame: pd.DataFrame) -> pd.DataFrame:
+    result = frame.copy()
+    result.columns = [str(column).strip() for column in result.columns]
+    for column in result.select_dtypes(include=["object", "string"]).columns:
+        values = result[column].astype("string").str.strip()
+        result[column] = values.replace({"": pd.NA, "null": pd.NA, "NULL": pd.NA, "n/a": pd.NA})
+    return result
 
 
-def validate_cleaned_table(table_name: str, frame: pd.DataFrame) -> None:
-    """Validate data contract and integrity rules on a cleaned table.
-
-    Args:
-        table_name: Logical name of the table.
-        frame: Cleaned DataFrame to validate.
-
-    Raises:
-        ValueError: If any contract or structural rule is violated.
-    """
-    if table_name not in CANONICAL_TABLE_NAMES:
-        raise ValueError(
-            f"Unknown table name: '{table_name}'. Expected one of: {CANONICAL_TABLE_NAMES}"
-        )
-
-    if table_name == "application_train":
-        if "TARGET" not in frame.columns:
-            raise ValueError("application_train must contain 'TARGET' column.")
-        target_series = frame["TARGET"]
-        if target_series.isna().any():
-            raise ValueError("application_train 'TARGET' contains null values.")
-        unique_targets = set(target_series.unique())
-        if not unique_targets.issubset({0, 1}):
-            raise ValueError(
-                f"application_train 'TARGET' contains invalid values: {unique_targets}. "
-                "Only non-null binary values {0, 1} are allowed."
-            )
-        if "SK_ID_CURR" in frame.columns:
-            if frame["SK_ID_CURR"].isna().any():
-                raise ValueError("application_train 'SK_ID_CURR' contains null values.")
-            if frame["SK_ID_CURR"].duplicated().any():
-                raise ValueError(
-                    "application_train 'SK_ID_CURR' contains duplicate values."
-                )
-        if "DAYS_EMPLOYED" in frame.columns:
-            if (frame["DAYS_EMPLOYED"] == DAYS_EMPLOYED_SENTINEL).any():
-                raise ValueError(
-                    f"application_train contains unreplaced sentinel {DAYS_EMPLOYED_SENTINEL} in DAYS_EMPLOYED."
-                )
-        if "DAYS_EMPLOYED_ANOM" in frame.columns:
-            anom_vals = set(frame["DAYS_EMPLOYED_ANOM"].unique())
-            if not anom_vals.issubset({0, 1}):
-                raise ValueError(
-                    f"application_train 'DAYS_EMPLOYED_ANOM' contains non-binary values: {anom_vals}"
-                )
-
-    elif table_name == "application_test":
-        if "TARGET" in frame.columns:
-            raise ValueError("application_test must not contain 'TARGET' column.")
-        if "SK_ID_CURR" in frame.columns:
-            if frame["SK_ID_CURR"].isna().any():
-                raise ValueError("application_test 'SK_ID_CURR' contains null values.")
-            if frame["SK_ID_CURR"].duplicated().any():
-                raise ValueError(
-                    "application_test 'SK_ID_CURR' contains duplicate values."
-                )
-        if "DAYS_EMPLOYED" in frame.columns:
-            if (frame["DAYS_EMPLOYED"] == DAYS_EMPLOYED_SENTINEL).any():
-                raise ValueError(
-                    f"application_test contains unreplaced sentinel {DAYS_EMPLOYED_SENTINEL} in DAYS_EMPLOYED."
-                )
-        if "DAYS_EMPLOYED_ANOM" in frame.columns:
-            anom_vals = set(frame["DAYS_EMPLOYED_ANOM"].unique())
-            if not anom_vals.issubset({0, 1}):
-                raise ValueError(
-                    f"application_test 'DAYS_EMPLOYED_ANOM' contains non-binary values: {anom_vals}"
-                )
-
-    elif table_name == "bureau":
-        if "SK_ID_BUREAU" in frame.columns:
-            if frame["SK_ID_BUREAU"].isna().any():
-                raise ValueError("bureau 'SK_ID_BUREAU' contains null values.")
-            if frame["SK_ID_BUREAU"].duplicated().any():
-                raise ValueError("bureau 'SK_ID_BUREAU' contains duplicate values.")
-
-    elif table_name == "previous_application":
-        if "SK_ID_PREV" in frame.columns:
-            if frame["SK_ID_PREV"].isna().any():
-                raise ValueError("previous_application 'SK_ID_PREV' contains null values.")
-            if frame["SK_ID_PREV"].duplicated().any():
-                raise ValueError(
-                    "previous_application 'SK_ID_PREV' contains duplicate values."
-                )
-        for col in PREV_APP_SENTINEL_DAY_COLUMNS:
-            if col in frame.columns and (frame[col] == DAYS_EMPLOYED_SENTINEL).any():
-                raise ValueError(
-                    f"previous_application contains unreplaced sentinel {DAYS_EMPLOYED_SENTINEL} in {col}."
-                )
+def parse_percent(series: pd.Series) -> pd.Series:
+    return pd.to_numeric(series.astype("string").str.replace("%", "", regex=False), errors="coerce")
 
 
-def clean_table(
-    table_name: str,
-    frame: pd.DataFrame,
-) -> tuple[pd.DataFrame, dict[str, Any]]:
-    """Clean a raw table deterministically without mutating the input DataFrame.
+def parse_term_months(series: pd.Series) -> pd.Series:
+    extracted = series.astype("string").str.extract(r"(\d+)", expand=False)
+    return pd.to_numeric(extracted, errors="coerce").astype("Int64")
 
-    Applies conservative string trimming, infinity standardization, and table-specific
-    sentinel replacements. Never imputes missing values or deletes rows.
 
-    Args:
-        table_name: Logical name of the table.
-        frame: Raw input DataFrame.
+def parse_employment_years(series: pd.Series) -> pd.Series:
+    text = series.astype("string").str.lower().str.strip()
+    result = pd.to_numeric(text.str.extract(r"(\d+)", expand=False), errors="coerce").astype("Float64")
+    result = result.mask(text.str.startswith("< 1", na=False), 0.5)
+    result = result.mask(text.str.contains(r"10\+", regex=True, na=False), 10.0)
+    return result.astype("Float64")
 
-    Returns:
-        Tuple of (cleaned_df, cleaning_report).
 
-    Raises:
-        ValueError: If table_name is unknown or validation fails.
-    """
-    if table_name not in CANONICAL_TABLE_NAMES:
-        raise ValueError(
-            f"Unknown table name: '{table_name}'. Expected one of: {CANONICAL_TABLE_NAMES}"
-        )
+def normalize_state(series: pd.Series) -> pd.Series:
+    state = series.astype("string").str.strip().str.upper()
+    return state.where(state.str.fullmatch(r"[A-Z]{2}", na=False), pd.NA)
 
-    # 1. Never mutate caller's DataFrame
-    df = frame.copy(deep=True)
-    input_row_count = len(frame)
-    input_col_count = len(frame.columns)
 
-    # 2. Duplicate detection without destructive deduplication
-    exact_duplicate_count = int(df.duplicated().sum())
+def normalize_zip(series: pd.Series) -> pd.Series:
+    zip_code = series.astype("string").str.strip().str.lower()
+    return zip_code.where(zip_code.str.fullmatch(r"\d{3,5}x{0,2}", na=False), pd.NA)
 
-    # 3. Conservative string normalization
-    trimmed_string_cells = 0
-    blank_strings_to_missing = 0
 
-    for col in df.columns:
-        col_dtype = df[col].dtype
-        if pd.api.types.is_object_dtype(col_dtype) or pd.api.types.is_string_dtype(col_dtype):
-            mask_str = df[col].apply(lambda x: isinstance(x, str))
-            if mask_str.any():
-                orig_series = df.loc[mask_str, col]
-                stripped_series = orig_series.str.strip()
-                trimmed_count = int((orig_series != stripped_series).sum())
-                trimmed_string_cells += trimmed_count
+def derive_target(status: pd.Series) -> pd.Series:
+    """Map duy nhất trạng thái cuối cùng đã duyệt; còn lại là unresolved."""
 
-                blank_mask = stripped_series == ""
-                blank_count = int(blank_mask.sum())
-                blank_strings_to_missing += blank_count
+    result = pd.Series(pd.NA, index=status.index, dtype="Int8")
+    result.loc[status.isin(GOOD_FINAL_STATUSES)] = 0
+    result.loc[status.isin(BAD_FINAL_STATUSES)] = 1
+    return result
 
-                df.loc[mask_str, col] = stripped_series
-                if blank_count > 0:
-                    df.loc[mask_str & (df[col] == ""), col] = np.nan
 
-    # 4. Infinity handling in numeric columns
-    infinity_replacements: dict[str, int] = {}
-    for col in df.columns:
-        if pd.api.types.is_numeric_dtype(df[col]):
-            inf_mask = np.isinf(df[col])
-            inf_count = int(inf_mask.sum())
-            if inf_count > 0:
-                infinity_replacements[col] = inf_count
-                df.loc[inf_mask, col] = np.nan
-
-    # 5. Table-specific sentinel replacement
-    sentinel_replacements: dict[str, int] = {}
-
-    if table_name in {"application_train", "application_test"}:
-        if "DAYS_EMPLOYED" in df.columns:
-            anom_mask = df["DAYS_EMPLOYED"] == DAYS_EMPLOYED_SENTINEL
-            anom_count = int(anom_mask.sum())
-            sentinel_replacements["DAYS_EMPLOYED"] = anom_count
-            df["DAYS_EMPLOYED_ANOM"] = anom_mask.astype("int8")
-            df.loc[anom_mask, "DAYS_EMPLOYED"] = np.nan
-
-    elif table_name == "previous_application":
-        for col in PREV_APP_SENTINEL_DAY_COLUMNS:
-            if col in df.columns:
-                sentinel_mask = df[col] == DAYS_EMPLOYED_SENTINEL
-                s_count = int(sentinel_mask.sum())
-                sentinel_replacements[col] = s_count
-                df.loc[sentinel_mask, col] = np.nan
-
-    # 6. Validate cleaned table
-    validate_cleaned_table(table_name, df)
-
-    # 7. Missingness summary
-    missing_summary = summarize_missingness(df)
-
-    report: dict[str, Any] = {
-        "table_name": table_name,
-        "input_row_count": input_row_count,
-        "output_row_count": len(df),
-        "input_column_count": input_col_count,
-        "output_column_count": len(df.columns),
-        "exact_duplicate_count": exact_duplicate_count,
-        "sentinel_replacements": sentinel_replacements,
-        "infinity_replacements": infinity_replacements,
-        "trimmed_string_cells": trimmed_string_cells,
-        "blank_strings_to_missing": blank_strings_to_missing,
-        "missingness_summary": missing_summary.to_dict(orient="records"),
-        "validation_status": "VALIDATED",
+def clean_accepted_loans(frame: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
+    if "id" not in frame.columns and "loan_id" not in frame.columns:
+        raise ValueError("Accepted raw phải có cột id.")
+    if "loan_status" not in frame.columns:
+        raise ValueError("Accepted raw phải có cột loan_status.")
+    result = _strip_strings(frame)
+    if "id" in result.columns:
+        result = result.rename(columns={"id": "loan_id"})
+    result["loan_id"] = result["loan_id"].astype("string").str.replace(r"\.0$", "", regex=True)
+    if result["loan_id"].isna().any() or result["loan_id"].duplicated().any():
+        raise ValueError("loan_id phải non-null và unique trong mỗi batch.")
+    for column in PERCENT_COLUMNS & set(result.columns):
+        result[column] = parse_percent(result[column])
+    for column in ACCEPTED_NUMERIC_COLUMNS & set(result.columns):
+        result[column] = pd.to_numeric(result[column], errors="coerce")
+    if "term" in result:
+        result["term_months"] = parse_term_months(result["term"])
+    if "emp_length" in result:
+        result["emp_length_years"] = parse_employment_years(result["emp_length"])
+    for column in ACCEPTED_DATE_COLUMNS & set(result.columns):
+        result[column] = pd.to_datetime(result[column], format="%b-%Y", errors="coerce")
+    if "addr_state" in result:
+        result["state_code"] = normalize_state(result["addr_state"])
+        result["country"] = "United States"
+    if "zip_code" in result:
+        result["zip_code"] = normalize_zip(result["zip_code"])
+    result["target"] = derive_target(result["loan_status"])
+    result.replace([np.inf, -np.inf], np.nan, inplace=True)
+    report = {
+        "rows": len(result),
+        "final_labeled_rows": int(result["target"].notna().sum()),
+        "unresolved_status_rows": int(result["target"].isna().sum()),
+        "target_counts": {str(k): int(v) for k, v in result["target"].value_counts().items()},
     }
-
-    return df, report
-
-
-def audit_sentinel_bearing_raw_tables(
-    raw_dir: str | Path | None = None,
-) -> dict[str, Any]:
-    """Run real-data cleaning audit on the sentinel-bearing tables one at a time.
-
-    Releases memory immediately after each table inspection.
-
-    Args:
-        raw_dir: Optional directory containing raw CSV files.
-
-    Returns:
-        Summary report dict with measured sentinel replacements and validation results.
-    """
-    paths = validate_raw_files(raw_dir)
-    target_tables = ("application_train", "application_test", "previous_application")
-
-    audit_results: dict[str, Any] = {}
-
-    for table_name in target_tables:
-        path = paths[table_name]
-        raw_df = pd.read_csv(path)
-        cleaned_df, report = clean_table(table_name, raw_df)
-
-        # Record concise audit summary
-        table_summary: dict[str, Any] = {
-            "input_rows": report["input_row_count"],
-            "output_rows": report["output_row_count"],
-            "input_columns": report["input_column_count"],
-            "output_columns": report["output_column_count"],
-            "exact_duplicates": report["exact_duplicate_count"],
-            "sentinel_replacements": report["sentinel_replacements"],
-            "infinity_replacements": report["infinity_replacements"],
-            "trimmed_string_cells": report["trimmed_string_cells"],
-            "blank_strings_to_missing": report["blank_strings_to_missing"],
-            "validation_status": report["validation_status"],
-        }
-
-        # Check remaining sentinels in cleaned_df
-        remaining_sentinels: dict[str, int] = {}
-        if table_name in {"application_train", "application_test"}:
-            if "DAYS_EMPLOYED" in cleaned_df.columns:
-                remaining_sentinels["DAYS_EMPLOYED"] = int(
-                    (cleaned_df["DAYS_EMPLOYED"] == DAYS_EMPLOYED_SENTINEL).sum()
-                )
-            if "DAYS_EMPLOYED_ANOM" in cleaned_df.columns:
-                table_summary["anomaly_flag_count"] = int(
-                    (cleaned_df["DAYS_EMPLOYED_ANOM"] == 1).sum()
-                )
-        elif table_name == "previous_application":
-            for col in PREV_APP_SENTINEL_DAY_COLUMNS:
-                if col in cleaned_df.columns:
-                    remaining_sentinels[col] = int(
-                        (cleaned_df[col] == DAYS_EMPLOYED_SENTINEL).sum()
-                    )
-
-        table_summary["remaining_sentinels"] = remaining_sentinels
-        audit_results[table_name] = table_summary
-
-        # Explicitly release memory before next iteration
-        del raw_df
-        del cleaned_df
-
-    return audit_results
+    return result, report
 
 
-if __name__ == "__main__":
-    audit_summary = audit_sentinel_bearing_raw_tables()
-    print(json.dumps(audit_summary, indent=2, ensure_ascii=False))
+REJECTED_RENAME = {
+    "Amount Requested": "requested_amount", "Application Date": "application_date",
+    "Loan Title": "loan_title", "Risk_Score": "risk_score",
+    "Debt-To-Income Ratio": "dti", "Zip Code": "zip_code", "State": "state_code",
+    "Employment Length": "emp_length_years", "Policy Code": "policy_code",
+}
+
+
+def clean_rejected_loans(frame: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
+    missing = sorted(set(REJECTED_RENAME) - set(frame.columns))
+    if missing:
+        raise ValueError(f"Rejected raw thiếu cột: {missing}")
+    result = _strip_strings(frame).rename(columns=REJECTED_RENAME)
+    for column in ("requested_amount", "risk_score", "policy_code"):
+        result[column] = pd.to_numeric(result[column], errors="coerce")
+    result["dti"] = parse_percent(result["dti"])
+    result["emp_length_years"] = parse_employment_years(result["emp_length_years"])
+    result["application_date"] = pd.to_datetime(result["application_date"], errors="coerce")
+    result["state_code"] = normalize_state(result["state_code"])
+    result["zip_code"] = normalize_zip(result["zip_code"])
+    result["country"] = "United States"
+    result.replace([np.inf, -np.inf], np.nan, inplace=True)
+    coverage = float(result["state_code"].notna().mean()) if len(result) else 0.0
+    return result, {"rows": len(result), "state_coverage": coverage}

@@ -62,7 +62,7 @@ def test_portfolio_expected_loss_is_sum_of_individual_losses() -> None:
 
 def test_series_index_preservation_and_alignment() -> None:
     """pd.Series đầu vào có index trùng khớp thì kết quả trả về Series cùng index."""
-    idx = pd.Index([101, 102, 103], name="SK_ID_CURR")
+    idx = pd.Index([101, 102, 103], name="loan_id")
     pd_series = pd.Series([0.05, 0.1, 0.2], index=idx)
     lgd_series = pd.Series([0.4, 0.4, 0.4], index=idx)
     ead_series = pd.Series([10000.0, 20000.0, 30000.0], index=idx)
@@ -135,8 +135,8 @@ def test_evaluate_threshold_policy() -> None:
 
 
 def test_evaluate_threshold_policy_target_mismatch_rejected() -> None:
-    """TARGET length hoặc series index không khớp phải raise ValueError."""
-    with pytest.raises(ValueError, match="TARGET phải không null và có cùng length"):
+    """target length hoặc series index không khớp phải raise ValueError."""
+    with pytest.raises(ValueError, match="target phải không null và có cùng length"):
         evaluate_threshold_policy(
             target=[0, 1],  # length 2
             probability_of_default=[0.1, 0.2, 0.3],  # length 3
