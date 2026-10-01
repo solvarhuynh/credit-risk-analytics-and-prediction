@@ -1,434 +1,228 @@
-# TV2 — Data Engineering setup & run guide
+# TV2 Execution Runbook — Lending Club
 
-Owner: TV2 (Data Engineering & Pipeline)
+TV2 chạy theo đúng thứ tự **DE-LC-01 → DE-LC-10** bằng một interface duy nhất:
 
-## Chuẩn bị dữ liệu
+```powershell
+python -m src.data.tv2_runner --stage de-lc-01
+```
 
-Đặt 8 CSV bắt buộc vào `data/raw/`:
+Mỗi stage tạo report tại `reports/tv2_stages/de-lc-XX.md` và marker tại `reports/tv2_stages/state/de-lc-XX.json`. Marker có một trong ba trạng thái: `PASS`, `FAIL`, `BLOCKED`.
 
-`application_train.csv`, `application_test.csv`, `bureau.csv`,
-`bureau_balance.csv`, `previous_application.csv`, `installments_payments.csv`,
-`credit_card_balance.csv`, `POS_CASH_balance.csv`.
+**Do not continue to next stage unless current stage PASS.** Nếu stage FAIL/BLOCKED, sửa nguyên nhân, chạy lại đúng stage đó rồi mới tiếp tục. Không dùng `src.data.build_pipeline.run_build_pipeline()` như shortcut; stage runner mới là execution interface canonical.
 
-`HomeCredit_columns_description.csv` là optional metadata.
+## 0. Chuẩn bị chung
 
-## Chuẩn bị môi trường
+Raw local phải tồn tại:
+
+- `data/raw/accepted_loans.csv`
+- `data/raw/rejected_loans.csv`
+
+Tạo environment nếu cần:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
-## Chạy DE-01 preflight
+Các lệnh trên chỉ chuẩn bị dependency. Chúng không tạo processed data.
 
-Từ repository root:
+Tuỳ chọn khi test fixture nhỏ:
 
 ```powershell
-python -m src.data.load_data
+python -m src.data.tv2_runner --stage de-lc-01 --raw-dir path/to/fixture/raw --reports-dir path/to/fixture/reports --interim-dir path/to/fixture/interim --processed-dir path/to/fixture/processed --chunksize 1000
 ```
 
-Hoặc gọi API trong code:
+## DE-LC-01 — Raw inventory & schema profiling
+
+**Purpose:** Đọc header/sample, kích thước file, schema accepted/rejected, sample values, phân bố `loan_status`, semantics state/date/ZIP và policy coverage.
+
+**Command:**
 
 ```powershell
-python -c "from src.data.load_data import run_raw_schema_preflight; import json; print(json.dumps(run_raw_schema_preflight(), ensure_ascii=False, indent=2))"
+python -m src.data.tv2_runner --stage de-lc-01
 ```
 
-Preflight kiểm tra file tồn tại, schema/dtype, duplicate, key/grain,
-train/test separation và foreign-key coverage. Loader không clean, aggregate,
-join hoặc feature engineering.
+**Expected inputs:** Hai raw CSV trong `data/raw/`; stage không đọc toàn bộ accepted/rejected cùng vào RAM. `loan_status` được scan theo chunk một cột để có distribution thực tế.
 
-## Validation
+**Expected outputs:** `reports/tv2_stages/de-lc-01.md` và marker tương ứng.
+
+**PASS criteria / inspect:** Có schema/sample của cả hai nguồn; size và columns hiện diện; policy accepted không có `UNKNOWN_REVIEW_REQUIRED`; report ghi rõ `addr_state`, ZIP masked và `loan_status`.
+
+**If FAIL:** Kiểm tra tên/path raw, header, column policy và encoding; không tự thêm hoặc bịa location/status.
+
+## DE-LC-02 — Accepted/rejected cleaning verification
+
+**Purpose:** Xác minh percent, term, employment, dates, state, ZIP, missing representation và invalid values rõ ràng mà không statistical-impute.
+
+**Command:**
 
 ```powershell
-python -m py_compile src\data\load_data.py
+python -m src.data.tv2_runner --stage de-lc-02
 ```
 
-Nếu thiếu raw file, command phải dừng và liệt kê chính xác file cần bổ sung.
+**Expected inputs:** `DE-LC-01 = PASS` và raw CSV; loader xử lý từng chunk.
 
-## Chạy DE-02 Data Cleaning & Sentinel Handling
+**Expected outputs:** Report stage; chưa tạo canonical processed dataset.
 
-Module `src/data/cleaning.py` cung cấp tầng làm sạch dữ liệu chuẩn tắc, xác định (deterministic) và chống rò rỉ (leakage-safe).
+**PASS criteria / inspect:** Accepted và rejected đều được đọc chunk-safe; không có infinity sau cleaning; số dòng, unresolved status, state/ZIP coverage được ghi; rejected giữ schema riêng; `target` chưa bị ép từ missing.
 
-### Mục đích và chính sách làm sạch
-- **Không thay đổi DataFrame đầu vào:** Các hàm trả về bản sao đã làm sạch, không sửa trực tiếp DataFrame của nơi gọi.
-- **Không thực hiện suy diễn/điền khuyết thống kê (No Statistical Imputation):** DE-02 tuyệt đối KHÔNG điền giá trị thiếu (mean, median, mode hay placeholder cố định) để tránh rò rỉ dữ liệu. Các bộ imputer phục vụ mô hình bắt buộc phải do TV1 fit duy nhất trên training fold sau khi chia tập.
-- **Xử lý sentinel `DAYS_EMPLOYED`:** Giá trị `365243` trên `application_train` và `application_test` được chuyển thành missing (NaN) và tạo cờ bất thường `DAYS_EMPLOYED_ANOM` (`int8`, nhận 0 hoặc 1).
-- **Xử lý sentinel trên `previous_application`:** Chuyển `365243` thành missing trên đúng 5 cột ngày tài liệu: `DAYS_FIRST_DRAWING`, `DAYS_FIRST_DUE`, `DAYS_LAST_DUE_1ST_VERSION`, `DAYS_LAST_DUE`, `DAYS_TERMINATION`.
-- **Chuẩn hóa chuỗi và vô cực:** Cắt bỏ khoảng trắng đầu/cuối (giữ nguyên chữ hoa/thường và khoảng trắng nội bộ); chuỗi rỗng sau khi cắt thành missing; giá trị vô cực `+inf`/`-inf` thành missing; không tự ý đổi `XNA`/`Unknown`.
-- **Chính sách bản ghi trùng lặp:** Đo đạc và báo cáo bản ghi trùng lặp tuyệt đối nhưng không xóa tự động; giữ nguyên các dòng thanh toán nhiều lần hợp lệ trong `installments_payments`.
-- **Xác thực khóa và Target:** Kiểm tra tính duy nhất và không null của khóa chính (`SK_ID_CURR`, `SK_ID_BUREAU`, `SK_ID_PREV`); `application_train` bắt buộc có `TARGET` nhị phân {0, 1}; `application_test` bắt buộc không có `TARGET`.
+**If FAIL:** Xem exception/coverage trong report, sửa cleaning rule hoặc raw schema handling rồi chạy lại DE-LC-02. Không impute statistics ở TV2.
 
-### Lệnh chạy kiểm toán dữ liệu thực tế (Real-data audit)
-Từ repository root:
+## DE-LC-03 — Leakage classification
+
+**Purpose:** Phân loại mọi cột raw theo policy và chặn unknown.
+
+**Command:**
 
 ```powershell
-python -m src.data.cleaning
+python -m src.data.tv2_runner --stage de-lc-03
 ```
 
-Lệnh đọc và làm sạch tuần tự từng bảng chứa sentinel (`application_train`, `application_test`, `previous_application`), giải phóng bộ nhớ sau mỗi bảng và in báo cáo JSON tóm tắt số lượng sentinel đã xử lý cùng trạng thái xác thực.
+**Expected inputs:** `DE-LC-02 = PASS`, header accepted/rejected và `src/data/column_policy.py`.
 
-### Lệnh kiểm thử tự động
-```powershell
-python -m pytest tests\data -v
-```
+**Expected outputs:** Report policy counts, model-default features, post-loan list và marker.
 
-### Input, Output và giới hạn
-- **Input:** Tệp thô trong `data/raw/`.
-- **Output:** Trả DataFrame đã làm sạch và từ điển báo cáo trong memory/console. Chưa lưu trữ tệp dataset cuối cùng (chưa tạo `data/processed/cleaned_dataset.parquet`).
-- **Giới hạn:** Không thực hiện join, không aggregate bảng lịch sử, không tạo các đặc trưng phái sinh cấp cao (DTI, tỷ lệ khoản vay...).
+**PASS criteria / inspect:** Không còn `UNKNOWN_REVIEW_REQUIRED`; các lớp `APPLICATION_TIME`, `CREDIT_SNAPSHOT`, `POLICY_DERIVED`, `POST_LOAN`, `TARGET_SOURCE`, `GEOGRAPHY_ANALYTICS` xuất hiện đúng semantics; post-loan không vào model list.
 
-## Chạy DE-03 Application-Level Feature Engineering
+**If FAIL:** Bổ sung review/classification chính thức trong `column_policy.py`, không whitelist mù; chạy lại DE-LC-03.
 
-Module `src/features/engineering.py` cung cấp tầng tạo đặc trưng cấp hồ sơ ứng dụng (application-level), xác định (deterministic), thuần túy từng dòng (row-local) và chống rò rỉ (leakage-safe).
+## DE-LC-04 — Business-table normalization
 
-### Danh mục đặc trưng và nguyên tắc
-Tạo đúng 6 đặc trưng trên `application_train` và `application_test`:
-1. `AGE_YEARS`: `-DAYS_BIRTH / 365.25` (phạm vi hợp lệ `[18, 100]`; tuổi < 18 hoặc > 100 trở thành missing `NaN`).
-2. `AGE_GROUP`: Phân nhóm độ tuổi thành categorical có thứ tự theo các bin nửa đóng nửa mở chuẩn `[18, 25, 35, 45, 55, 65, 101]` (tức `[18, 25)`, `[25, 35)`, `[35, 45)`, `[45, 55)`, `[55, 65)`, `[65, 101)`) với nhãn chính xác `['Under 25', '25-34', '35-44', '45-54', '55-64', '65+']`. Missing hoặc tuổi ngoài phạm vi hợp lệ sẽ tạo missing `AGE_GROUP`.
-3. `EMPLOYED_YEARS`: `-DAYS_EMPLOYED / 365.25` (bảo toàn missing NaN từ sentinel DE-02 và cờ `DAYS_EMPLOYED_ANOM`).
-4. `CREDIT_TO_INCOME_RATIO`: `AMT_CREDIT / AMT_INCOME_TOTAL`.
-5. `ANNUITY_TO_INCOME_RATIO`: `AMT_ANNUITY / AMT_INCOME_TOTAL`.
-6. `CREDIT_TO_ANNUITY_RATIO`: `AMT_CREDIT / AMT_ANNUITY`.
+**Purpose:** Dựng và kiểm tra `loan_application`, `borrower_profile`, `credit_profile`, `loan_pricing`, `loan_outcome`, `rejected_applications`.
 
-### Nguyên tắc an toàn dữ liệu và chống rò rỉ
-- **Không thay đổi DataFrame đầu vào:** Trả về bản sao DataFrame mới, không thay đổi đối tượng đầu vào.
-- **Phép chia an toàn (Safe ratio):** Mọi mẫu số bằng 0, missing hoặc không hợp lệ đều chuyển thành `NaN`, tuyệt đối không phát sinh giá trị vô cực `+inf`/`-inf`.
-- **Row-local & Leakage-safe:** Tính toán hoàn toàn độc lập trên từng dòng; tuyệt đối không ghép train/test; không tính toán thống kê gộp (mean/median/std); không sử dụng biến mục tiêu `TARGET`; không điền khuyết thống kê.
-- **Bảo toàn hạt dữ liệu và thứ tự:** Giữ nguyên 100% số dòng, danh sách khóa `SK_ID_CURR` và thứ tự ban đầu.
-- **Tính tương đồng Train/Test (Parity):** Đảm bảo cả hai tập dữ liệu đều sở hữu 128 đặc trưng chung với kiểu dữ liệu đồng nhất; `TARGET` chỉ xuất hiện trên `application_train`.
-
-### Lệnh chạy kiểm toán dữ liệu thực tế (Real-data audit)
-Từ repository root:
+**Command:**
 
 ```powershell
-python -m src.features.engineering
+python -m src.data.tv2_runner --stage de-lc-04
 ```
 
-Lệnh thực hiện làm sạch và tạo đặc trưng tuần tự trên `application_train` và `application_test`, xác thực tỷ lệ missing, phạm vi giá trị, kiểm tra tính tương đồng (parity) và in báo cáo JSON chi tiết.
+**Expected inputs:** `DE-LC-03 = PASS` và raw chunks.
 
-### Lệnh kiểm thử tự động
+**Expected outputs:** Các Parquet interim trong `data/interim/` tương ứng sáu bảng.
+
+**PASS criteria / inspect:** Mỗi accepted business table có một dòng mỗi `loan_id`; global duplicate/null key bị chặn; rejected table đứng riêng; post-loan chỉ ở `loan_outcome`; report ghi row counts.
+
+**If FAIL:** Không bỏ qua duplicate và không nối rejected row-to-row với accepted. Xóa/đổi tên partial interim output sau khi xác định nguyên nhân, rồi chạy lại stage.
+
+## DE-LC-05 — Target derivation
+
+**Purpose:** Profile actual `loan_status`, map final good/bad và audit unresolved.
+
+**Command:**
+
 ```powershell
-python -m pytest tests\features -v
+python -m src.data.tv2_runner --stage de-lc-05
 ```
 
-### Giới hạn và bước kế tiếp
-- **Giới hạn:** DE-03 chỉ tạo đặc trưng row-local cho bảng application.
-- **Bước kế tiếp:** `TV2-DE-04 — Historical Table Aggregation`.
+**Expected inputs:** `DE-LC-04 = PASS`, accepted raw và `loan_outcome`.
 
-## Chạy DE-04 Historical Table Aggregation
+**Expected outputs:** `data/interim/target_audit.csv` và stage report.
 
-Module `src/data/aggregate.py` cung cấp tầng tổng hợp các bảng lịch sử (historical tables) thành một dòng duy nhất cho mỗi khách hàng (`SK_ID_CURR`), phục vụ chuẩn bị dữ liệu trước khi kết nối (join) ở DE-05.
+**PASS criteria / inspect:** `Fully Paid → 0`; `Charged Off/Default → 1`; `Current`, `Issued`, grace/late và status khác được thống kê unresolved, không ép thành 0; accepted `loan_id` unique.
 
-### Mục đích nhiệm vụ
-Chuyển đổi dữ liệu giao dịch và lịch sử nhiều dòng (1:N) từ 6 bảng thô thành các chỉ số tóm tắt cấp khách hàng (`SK_ID_CURR`), loại bỏ hoàn toàn nguy cơ nhân bản dòng hồ sơ ứng dụng chính, đồng thời tuân thủ nghiêm ngặt tính xác định và nguyên tắc chống rò rỉ dữ liệu.
+**If FAIL:** Review status mapping explicit; không map legacy variant mù; nếu không có final status hợp lệ thì dừng và báo BLOCKED.
 
-### Bảng đầu vào và tệp đầu ra
+## DE-LC-06 — Application-time feature engineering
 
-| Bảng nguồn thô | Hạt dữ liệu nguồn | File đầu ra Parquet (`data/interim/`) | Tiền tố đặc trưng | Số đặc trưng phái sinh |
-| :--- | :--- | :--- | :--- | :--- |
-| `bureau.csv` + `bureau_balance.csv` | Khoản vay (`SK_ID_BUREAU`) + Kỳ dư nợ tháng | `bureau_aggregated.parquet` | `BUREAU_` | 20 |
-| `previous_application.csv` | Hồ sơ quá khứ (`SK_ID_PREV`) | `previous_application_aggregated.parquet` | `PREV_` | 15 |
-| `installments_payments.csv` | Đợt thanh toán trả góp | `installments_payments_aggregated.parquet` | `INSTAL_` | 10 |
-| `POS_CASH_balance.csv` | Hợp đồng - tháng (`SK_ID_PREV`, `MONTHS_BALANCE`) | `pos_cash_balance_aggregated.parquet` | `POS_` | 11 |
-| `credit_card_balance.csv` | Thẻ tín dụng - tháng (`SK_ID_PREV`, `MONTHS_BALANCE`) | `credit_card_balance_aggregated.parquet` | `CC_` | 18 |
+**Purpose:** Verify `fico_avg`, `loan_to_income_ratio`, `credit_history_months`, issue year/quarter/month và fixed bands.
 
-Tất cả các tệp Parquet và manifest tổng hợp `aggregation_manifest.json` được ghi nguyên tử (atomic write) vào thư mục `data/interim/` (thư mục này được gitignore).
+**Command:**
 
-### Danh mục đặc trưng chi tiết
-- **BUREAU_ (20 đặc trưng):**
-  `BUREAU_CREDIT_COUNT`, `BUREAU_ACTIVE_COUNT`, `BUREAU_ACTIVE_RATE`, `BUREAU_CLOSED_COUNT`, `BUREAU_CLOSED_RATE`, `BUREAU_DAYS_CREDIT_MEAN`, `BUREAU_DAYS_CREDIT_MAX`, `BUREAU_CREDIT_DAY_OVERDUE_MEAN`, `BUREAU_CREDIT_DAY_OVERDUE_MAX`, `BUREAU_AMT_CREDIT_SUM_SUM`, `BUREAU_AMT_CREDIT_SUM_MEAN`, `BUREAU_AMT_DEBT_SUM`, `BUREAU_AMT_DEBT_MEAN`, `BUREAU_AMT_OVERDUE_SUM`, `BUREAU_AMT_OVERDUE_MAX`, `BUREAU_BB_MONTH_COUNT`, `BUREAU_BB_DELINQUENT_MONTH_COUNT`, `BUREAU_BB_DELINQUENT_MONTH_RATE`, `BUREAU_BB_SEVERE_MONTH_COUNT`, `BUREAU_BB_SEVERE_MONTH_RATE`.
-- **PREV_ (15 đặc trưng):**
-  `PREV_APPLICATION_COUNT`, `PREV_APPROVED_COUNT`, `PREV_APPROVED_RATE`, `PREV_REFUSED_COUNT`, `PREV_REFUSED_RATE`, `PREV_AMT_APPLICATION_SUM`, `PREV_AMT_APPLICATION_MEAN`, `PREV_AMT_APPLICATION_MAX`, `PREV_AMT_CREDIT_SUM`, `PREV_AMT_CREDIT_MEAN`, `PREV_AMT_CREDIT_MAX`, `PREV_AMT_ANNUITY_MEAN`, `PREV_CREDIT_TO_APPLICATION_RATIO_MEAN`, `PREV_DAYS_DECISION_MEAN`, `PREV_DAYS_DECISION_MAX`.
-- **INSTAL_ (10 đặc trưng):**
-  `INSTAL_INSTALLMENT_COUNT`, `INSTAL_LATE_COUNT`, `INSTAL_LATE_RATE`, `INSTAL_DELAY_DAYS_MEAN`, `INSTAL_DELAY_DAYS_MAX`, `INSTAL_UNDERPAYMENT_COUNT`, `INSTAL_UNDERPAYMENT_RATE`, `INSTAL_PAYMENT_SHORTFALL_SUM`, `INSTAL_PAYMENT_SHORTFALL_MEAN`, `INSTAL_PAYMENT_RATIO_MEAN`.
-- **POS_ (11 đặc trưng):**
-  `POS_RECORD_COUNT`, `POS_CONTRACT_COUNT`, `POS_MONTHS_BALANCE_MIN`, `POS_MONTHS_BALANCE_MAX`, `POS_DPD_MEAN`, `POS_DPD_MAX`, `POS_DPD_DEF_MEAN`, `POS_DPD_DEF_MAX`, `POS_LATE_MONTH_COUNT`, `POS_LATE_MONTH_RATE`, `POS_INSTALMENT_FUTURE_MEAN`.
-- **CC_ (18 đặc trưng):**
-  `CC_RECORD_COUNT`, `CC_CONTRACT_COUNT`, `CC_MONTHS_BALANCE_MIN`, `CC_MONTHS_BALANCE_MAX`, `CC_BALANCE_MEAN`, `CC_BALANCE_MAX`, `CC_CREDIT_LIMIT_MEAN`, `CC_CREDIT_LIMIT_MAX`, `CC_UTILIZATION_MEAN`, `CC_UTILIZATION_MAX`, `CC_DPD_MEAN`, `CC_DPD_MAX`, `CC_DPD_DEF_MEAN`, `CC_DPD_DEF_MAX`, `CC_LATE_MONTH_COUNT`, `CC_LATE_MONTH_RATE`, `CC_PAYMENT_TOTAL_SUM`, `CC_PAYMENT_TOTAL_MEAN`.
-
-### Quy tắc kiểm tra thời gian và chống rò rỉ (Temporal & Leakage Validation)
-Toàn bộ các trường thời gian phải đại diện cho các sự kiện xảy ra trước hoặc đúng thời điểm nộp đơn (`<= 0`):
-- `bureau.DAYS_CREDIT <= 0`
-- `bureau_balance.MONTHS_BALANCE <= 0`
-- `previous_application.DAYS_DECISION <= 0`
-- `installments_payments.DAYS_INSTALMENT <= 0`
-- `installments_payments.DAYS_ENTRY_PAYMENT <= 0`
-- `POS_CASH_balance.MONTHS_BALANCE <= 0`
-- `credit_card_balance.MONTHS_BALANCE <= 0`
-Nếu phát hiện bất kỳ giá trị dương nào (`> 0`), quy trình sẽ chặn thực thi (`BLOCKED`) và phát sinh lỗi chi tiết.
-
-### Xử lý thanh toán tách kỳ trong `installments_payments`
-Bảng `installments_payments` có 653,483 dòng trùng lặp tổ hợp khóa kỳ `(SK_ID_PREV, SK_ID_CURR, NUM_INSTALMENT_VERSION, NUM_INSTALMENT_NUMBER)` do người vay chia nhỏ các đợt thanh toán trả góp:
-- Quy trình kiểm tra tính nhất quán của ngày hẹn trả (`DAYS_INSTALMENT`) và số tiền đến hạn (`AMT_INSTALMENT`) trong từng nhóm kỳ trả góp.
-- Số tiền đến hạn định kỳ được lấy đơn lẻ một lần duy nhất (không cộng dồn gây nhân bản nghĩa vụ).
-- Số tiền thực trả (`AMT_PAYMENT`) được cộng dồn theo kỳ.
-- Ngày thanh toán thực tế là ngày muộn nhất (`max(DAYS_ENTRY_PAYMENT)`).
-- Chậm trả (`delay_days`) và thiếu nợ (`payment_shortfall`) được tính ở cấp độ kỳ hợp nhất, chặn dưới tại 0. Một kỳ chỉ có trạng thái chậm/đúng hạn khi có đủ cả ngày đến hạn và ngày thanh toán; kỳ thiếu một trong hai mốc thời gian được giữ là không xác định, không bị coi là đúng hạn.
-- `INSTAL_LATE_COUNT` chỉ đếm kỳ chậm đã xác định. `INSTAL_LATE_RATE` dùng mẫu số là số kỳ có đủ hai mốc thời gian và là `NaN` khi khách hàng không có kỳ quan sát thời điểm hợp lệ.
-
-### Xử lý bản ghi mồ côi (Orphan) trong `bureau_balance`
-Khoảng 43,041 mã `SK_ID_BUREAU` trong `bureau_balance` (tương ứng 3,120,184 dòng lịch sử) không tồn tại trong bảng `bureau`:
-- Quy trình tổng hợp `bureau_balance` theo `SK_ID_BUREAU` trước, sau đó `left join` vào `bureau`.
-- Các bản ghi mồ côi không có ánh xạ tới `SK_ID_CURR` nên bị loại khỏi bảng tổng hợp cấp khách hàng, đồng thời được ghi nhận vào báo cáo chẩn đoán và manifest dưới dạng cảnh báo nghiệp vụ đã ghi nhận.
-- Tỷ lệ trễ hạn cấp khách hàng được tính có trọng số: `tổng tháng trễ hạn / tổng tháng có số dư quan sát được`.
-
-### Hành vi tỷ lệ an toàn (Safe Ratios)
-Mọi phép chia đều sử dụng phép chia số thực (float division). Mẫu số bằng 0 hoặc khuyết thiếu sẽ tạo giá trị `NaN`, tuyệt đối không phát sinh giá trị vô cực `+inf`/`-inf` hay gán giá trị 0 giả tạo.
-
-### Chiến lược an toàn bộ nhớ (Memory Strategy)
-1. Xử lý tuần tự từng bảng dữ liệu một, giải phóng bộ nhớ (`del` và `gc.collect()`) ngay sau khi hoàn thành mỗi bảng.
-2. Sử dụng `usecols` để chỉ tải các cột cần thiết phục vụ tính toán và xác thực.
-3. Ép kiểu dữ liệu tối ưu (`int32`, `int16`, `float32`, `category`) giúp giảm dung lượng RAM sử dụng xuống dưới 500 MB cho mỗi bảng lớn.
-4. Ghi nguyên tử từng tệp Parquet ra đĩa và giải phóng bộ nhớ trước khi nạp bảng kế tiếp.
-
-### Lệnh thực thi
 ```powershell
-python -m src.data.aggregate
+python -m src.data.tv2_runner --stage de-lc-06
 ```
 
-### Lệnh kiểm thử
+**Expected inputs:** `DE-LC-05 = PASS` và accepted raw chunks.
+
+**Expected outputs:** Stage report; chưa tạo `cleaned_dataset.parquet`.
+
+**PASS criteria / inspect:** Ratio denominator an toàn; không infinity; feature dependency không chứa `POST_LOAN` hoặc target; dates/bands deterministic; số dòng/labeled rows được ghi.
+
+**If FAIL:** Kiểm tra source columns/date parsing/zero denominator; không tạo feature từ payment, recovery, settlement hoặc target.
+
+## DE-LC-07 — Canonical modeling join
+
+**Purpose:** Tạo canonical labeled dataset sau khi sáu stage đầu PASS.
+
+**Command:**
+
 ```powershell
-python -m pytest tests\data\test_aggregate.py -v
-python -m pytest tests\data -v
+python -m src.data.tv2_runner --stage de-lc-07
 ```
 
-### Cảnh báo dự kiến (Expected Warnings)
-1. `bureau_balance`: Chứa 43,041 mã `SK_ID_BUREAU` mồ côi (3,120,184 dòng) không có cha trong `bureau`.
-2. `installments_payments`: Chứa 653,483 dòng trả góp từng phần được hợp nhất bảo toàn.
+**Expected inputs:** Markers DE-LC-01…06 đều `PASS`; safe business tables từ DE-LC-04.
 
-### Mối liên hệ với DE-05
-DE-04 chỉ tạo các tệp parquet tổng hợp trung gian tại `data/interim/`. Nhiệm vụ `TV2-DE-05 — Join and Canonical Dataset Publication` thực hiện left join các bảng tổng hợp này vào `application_train` (đã qua tiền xử lý ở DE-02 và feature engineering ở DE-03) để tạo ra tập dữ liệu chính thức `data/processed/cleaned_dataset.parquet`.
+**Expected outputs:** `data/processed/cleaned_dataset.parquet` và stage report. Output chỉ được rename từ partial sau khi stage hoàn tất.
 
-## TV2-DE-05 — Join and Canonical Dataset Publication
+**PASS criteria / inspect:** Join dùng `loan_id`; one-to-one và row preservation; chỉ target từ `loan_outcome` đi vào canonical; `LEAKAGE GATE = PASS`; unresolved loans không nằm trong labeled dataset.
 
-### Mục đích (Purpose)
-Xuất bản tập dữ liệu chuẩn tắc gắn nhãn phục vụ huấn luyện mô hình (`data/processed/cleaned_dataset.parquet`) và tệp siêu dữ liệu kiểm định (`data/processed/cleaned_dataset_manifest.json`) thông qua module điều phối chuẩn hóa `src/data/build_pipeline.py`.
+**If FAIL:** Giữ stage FAIL, không bàn giao TV1; kiểm tra marker/dependency, duplicate key và feature policy.
 
-### Quần thể chuẩn tắc gắn nhãn (Canonical Labeled Population)
-- Quần thể chuẩn tắc duy nhất được phép tham gia huấn luyện là `data/raw/application_train.csv` gồm đúng 307,511 khách hàng có nhãn `TARGET` (0 hoặc 1).
-- **Loại trừ tuyệt đối `application_test.csv`:** Tập dữ liệu kiểm thử (48,744 dòng, không có `TARGET`) tuyệt đối không được đưa vào tập dữ liệu chuẩn tắc huấn luyện để ngăn chặn hoàn toàn rủi ro rò rỉ dữ liệu (data leakage) và ô nhiễm nhãn.
+## DE-LC-08 — Dimensions and dashboard marts
 
-### Dữ liệu đầu vào & Tái sử dụng tầng tiền xử lý
-1. **Dữ liệu thô:** `data/raw/application_train.csv` (307,511 dòng, 122 cột).
-2. **Tái sử dụng DE-02:** Làm sạch giá trị sentinel (365,243 ngày làm việc $\rightarrow$ `NaN` và cờ `DAYS_EMPLOYED_ANOM`), chuẩn hóa chuỗi và kiểu dữ liệu qua `src/data/cleaning.py`.
-3. **Tái sử dụng DE-03:** Phái sinh 6 đặc trưng tài chính và nhân khẩu học cấp hồ sơ ứng viên (`AGE_YEARS`, `AGE_GROUP`, `EMPLOYED_YEARS`, `CREDIT_TO_INCOME_RATIO`, `ANNUITY_TO_INCOME_RATIO`, `CREDIT_TO_ANNUITY_RATIO`) qua `src/features/engineering.py`. Kết hợp cùng cờ `DAYS_EMPLOYED_ANOM` từ DE-02 tạo thành nhóm 7 đặc trưng phái sinh cấp hồ sơ ứng viên.
-4. **Tái sử dụng DE-04:** 5 tệp Parquet tổng hợp trung gian cấp khách hàng (`SK_ID_CURR`) duy nhất từ `data/interim/`:
-   - `bureau_aggregated.parquet` (20 đặc trưng `BUREAU_`)
-   - `previous_application_aggregated.parquet` (15 đặc trưng `PREV_`)
-   - `installments_payments_aggregated.parquet` (10 đặc trưng `INSTAL_`)
-   - `pos_cash_balance_aggregated.parquet` (11 đặc trưng `POS_`)
-   - `credit_card_balance_aggregated.parquet` (18 đặc trưng `CC_`)
+**Purpose:** Dựng date/state dimensions và funnel accepted/rejected.
 
-### Thứ tự Left Join xác định (Deterministic Join Order) & Lực lượng (Cardinality)
-Thực hiện phép nối trái (left join) 1-to-1 tuần tự theo đúng thứ tự:
-1. `BUREAU` (độ bao phủ: 85.6851%, 263,491 khớp / 44,020 không khớp)
-2. `PREV` (độ bao phủ: 94.6493%, 291,057 khớp / 16,454 không khớp)
-3. `INSTAL` (độ bao phủ: 94.8399%, 291,643 khớp / 15,868 không khớp)
-4. `POS` (độ bao phủ: 94.1248%, 289,444 khớp / 18,067 không khớp)
-5. `CC` (độ bao phủ: 28.2608%, 86,905 khớp / 220,606 không khớp)
+**Command:**
 
-Khóa nối `SK_ID_CURR` trên các bảng aggregate được kiểm định nghiêm ngặt tính duy nhất (1-to-1), đảm bảo tuyệt đối không làm mất dòng hoặc nhân đôi số dòng (bảo toàn đúng 307,511 dòng).
-
-### Chính sách xử lý khuyết thiếu lịch sử tín dụng (Missing-History Policy)
-- **Cột số đếm chuẩn tắc (Count features - đúng 18 cột đã phê duyệt):** Đối với khách hàng không có lịch sử ở bảng tương ứng, điền giá trị `0` (nghiệp vụ: không có giao dịch/hồ sơ phát sinh).
-  - `BUREAU`: `BUREAU_CREDIT_COUNT`, `BUREAU_ACTIVE_COUNT`, `BUREAU_CLOSED_COUNT`, `BUREAU_BB_MONTH_COUNT`, `BUREAU_BB_DELINQUENT_MONTH_COUNT`, `BUREAU_BB_SEVERE_MONTH_COUNT`.
-  - `PREV`: `PREV_APPLICATION_COUNT`, `PREV_APPROVED_COUNT`, `PREV_REFUSED_COUNT`.
-  - `INSTAL`: `INSTAL_INSTALLMENT_COUNT`, `INSTAL_LATE_COUNT`, `INSTAL_UNDERPAYMENT_COUNT`.
-  - `POS`: `POS_RECORD_COUNT`, `POS_CONTRACT_COUNT`, `POS_LATE_MONTH_COUNT`.
-  - `CC`: `CC_RECORD_COUNT`, `CC_CONTRACT_COUNT`, `CC_LATE_MONTH_COUNT`.
-- **Cột tỷ lệ, số tiền và thống kê (Rates, Amounts, Statistics):** Giữ nguyên giá trị khuyết thiếu thực tế `NaN`, tuyệt đối không điền 0 giả tạo gây méo mó phân phối.
-
-### Cổng kiểm soát chất lượng (Quality Gates - 28 quy tắc)
-Bộ kiểm định chất lượng tự động thực thi 28 quy tắc kiểm tra nghiêm ngặt trước khi cho phép xuất bản:
-1. Đúng 307,511 dòng.
-2. Đúng 203 cột chuẩn tắc (1 `SK_ID_CURR` + 1 `TARGET` + 120 cột thô sạch + 7 cột DE-02/DE-03 + 74 cột aggregate DE-04).
-3. `SK_ID_CURR` duy nhất 100%, không null, sắp xếp tăng dần.
-4. `TARGET` nhị phân {0: 282,686; 1: 24,825}, không null, bất biến so với bảng thô.
-5. Không có giá trị vô cực (`+inf` hoặc `-inf`).
-6. Không có xung đột tên cột hoặc cột hậu tố `_x`/`_y`.
-7. Đầy đủ các nhóm tiền tố `BUREAU_`, `PREV_`, `INSTAL_`, `POS_`, `CC_`.
-8. Đầy đủ các cột giao ước bắt buộc (`data_contract.md`): `SK_ID_CURR`, `TARGET`, `AMT_INCOME_TOTAL`, `AMT_CREDIT`, `AMT_ANNUITY`, `AMT_GOODS_PRICE`, `CODE_GENDER`, `NAME_CONTRACT_TYPE`, `AGE_YEARS`, `AGE_GROUP`, `ANNUITY_TO_INCOME_RATIO`, `CREDIT_TO_INCOME_RATIO`, `EMPLOYED_YEARS`, `DAYS_EMPLOYED_ANOM`.
-9. **Kiểm định tỷ lệ chính xác:** Chỉ 10 cột tỷ lệ chuẩn tắc (`BUREAU_ACTIVE_RATE`, `BUREAU_CLOSED_RATE`, `BUREAU_BB_DELINQUENT_MONTH_RATE`, `BUREAU_BB_SEVERE_MONTH_RATE`, `PREV_APPROVED_RATE`, `PREV_REFUSED_RATE`, `INSTAL_LATE_RATE`, `INSTAL_UNDERPAYMENT_RATE`, `POS_LATE_MONTH_RATE`, `CC_LATE_MONTH_RATE`) bị chặn trong `[0, 1]`. Các tỷ lệ tài chính như `CREDIT_TO_INCOME_RATIO`, `ANNUITY_TO_INCOME_RATIO`, `CREDIT_TO_ANNUITY_RATIO`, `PREV_CREDIT_TO_APPLICATION_RATIO_MEAN`, `INSTAL_PAYMENT_RATIO_MEAN`, `CC_UTILIZATION_MEAN/MAX` được phép lớn hơn 1 hợp lệ theo bản chất tài chính.
-
-### Xuất bản nguyên tử (Atomic Publication) & Artifacts
-- **Đường dẫn Parquet:** `data/processed/cleaned_dataset.parquet` (64,520,535 bytes trong lần tái tạo TV2-DE-FIX-01; SHA-256: `6460999371297ff2f83418a8341b0c85d4a2e4dc6c29b29e793edd2a0c755c96`).
-- **Đường dẫn Manifest:** `data/processed/cleaned_dataset_manifest.json` (SHA-256 lần tái tạo TV2-DE-FIX-01: `d311f6fce176fcfb3374d278dca79e2da31481baa59e5a43705c791c1efc390d`).
-- **Cơ chế nguyên tử:** Ghi ra tệp tạm `.tmp` tại cùng thư mục, thực hiện kiểm định đọc lại (read-back validation), sau đó thực hiện `os.replace` nguyên tử nhằm tránh tình trạng tệp hỏng khi có sự cố ngắt quãng.
-
-### Lệnh thực thi & Tùy chọn tái tạo
-- **Thực thi chuẩn tắc (sử dụng aggregate có sẵn):**
 ```powershell
-& .\.venv\Scripts\python.exe -m src.data.build_pipeline
+python -m src.data.tv2_runner --stage de-lc-08
 ```
-- **Tùy chọn ép buộc tái tạo aggregate từ dữ liệu thô (`--rebuild-aggregates`):**
+
+**Expected inputs:** DE-LC-07 `PASS`, business tables và raw chunks.
+
+**Expected outputs:** `data/interim/dim_date.parquet`, `dim_state.parquet`, `application_funnel.parquet`.
+
+**PASS criteria / inspect:** `dim_state.state_code` unique; `dim_date.date` unique và có Year/Quarter/Month; funnel có decision accepted/rejected và chỉ dùng fields semantic tương đương; không coi state dimension là transaction table.
+
+**If FAIL:** Kiểm tra date parsing, state normalization, dimension duplicate và schema funnel; không tạo tọa độ từ ZIP.
+
+## DE-LC-09 — Dictionary, manifest and quality report
+
+**Purpose:** Tạo handoff artifacts và quality gate độc lập.
+
+**Command:**
+
 ```powershell
-& .\.venv\Scripts\python.exe -m src.data.build_pipeline --rebuild-aggregates
+python -m src.data.tv2_runner --stage de-lc-09
 ```
 
-Các đường dẫn mặc định `data/interim/` và `data/processed/` được suy ra từ repository root, nên hai lệnh trên không phụ thuộc CWD của tiến trình gọi. Khi tái tạo để kiểm định thay đổi trong `aggregate.py`, dùng `--rebuild-aggregates` để không tái sử dụng aggregate interim cũ. Manifest lấy branch, commit HEAD, cờ dirty worktree và hash patch động từ Git; nếu Git không khả dụng, các trường provenance được ghi `null` thay vì giá trị lịch sử giả.
+**Expected inputs:** DE-LC-08 `PASS`, canonical dataset và interim artifacts.
 
-### Lệnh kiểm thử
+**Expected outputs:** `data/processed/data_dictionary.csv`, `cleaned_dataset_manifest.json`, `reports/data_quality_report.md`.
+
+**PASS criteria / inspect:** Dictionary bao phủ 100% canonical columns; manifest có dataset ID/row counts/status; quality report ghi chính xác `LEAKAGE GATE = PASS`; key/target/infinity/coverage checks PASS.
+
+**If FAIL:** TV1 chưa được handoff. Sửa quality/leakage/dictionary issue, chạy lại DE-LC-09 và không xóa bằng tay evidence.
+
+## DE-LC-10 — Static EDA
+
+**Purpose:** Sinh 3–5 static charts từ processed data/marts, không có model metrics.
+
+**Command:**
+
 ```powershell
-python -m pytest tests\data\test_build_pipeline.py -v
-python -m pytest tests\data -v
-python -m pytest tests -q
+python -m src.data.tv2_runner --stage de-lc-10
 ```
 
-### Cảnh báo nghiệp vụ dự kiến (Expected Warnings)
-1. Tỷ lệ bao phủ lịch sử < 100% là đặc tính nghiệp vụ tự nhiên (ví dụ thẻ tín dụng chỉ có 28.26% khách hàng sử dụng).
-2. Bản ghi mồ côi `bureau_balance` (43,041 mã) và các đợt thanh toán trả góp từng phần (653,483 dòng) được xử lý an toàn từ DE-04 và ghi nhận lại trong manifest.
-3. Các chỉ số thống kê của khách hàng không có lịch sử được bảo toàn giá trị `NaN` thực tế.
+**Expected inputs:** DE-LC-09 `PASS`, canonical dataset và funnel mart.
 
-### Xác nhận phạm vi Data Dictionary
-Tệp từ điển dữ liệu `data_dictionary.csv` thuộc phạm vi công việc chuyên biệt của nhiệm vụ `TV2-DE-06 — Data Dictionary and Data Quality Report`. DE-05 không tạo tệp này.
+**Expected outputs:** 3–5 PNG trong `reports/figures/eda/` và `reports/eda_report.md`.
 
-#### Hướng dẫn cho TV1 (Modeling) và TV3 (Dashboard & Application)
-- **Tệp dữ liệu sử dụng:** Đọc trực tiếp từ `data/processed/cleaned_dataset.parquet` bằng `pd.read_parquet('data/processed/cleaned_dataset.parquet')`.
-- **Tính toán và huấn luyện:** Tệp đã được sắp xếp tăng dần theo `SK_ID_CURR`, bảo toàn trọn vẹn 307,511 dòng của tập huấn luyện đã được làm sạch và bổ sung đầy đủ 201 đặc trưng (bao gồm 74 đặc trưng lịch sử đa nguồn).
-- **Phân tách Cross-Validation:** Luôn sử dụng Stratified K-Fold dựa trên cột `TARGET` để đảm bảo tỷ lệ mất cân bằng (imbalance) ~8.07% được phản ánh đồng đều giữa các fold.
+**PASS criteria / inspect:** Có loan amount, annual income và các chart default/purpose/funnel khả dụng; report ghi nguồn và sampling; không có ROC-AUC, SHAP, PD model metrics hoặc insight bịa.
 
-## TV2-DE-06 — Data Dictionary and Data Quality Report
+**If FAIL:** Kiểm tra processed/mart schema và chart source; sửa EDA code, không chạy model để bù thiếu chart.
 
-### Mục đích (Purpose)
-Nhiệm vụ `TV2-DE-06` thực hiện biên dịch từ điển dữ liệu chuẩn tắc ở dạng bảng máy đọc (`data/processed/data_dictionary.csv`) và báo cáo kiểm định chất lượng dữ liệu toàn diện ở dạng văn bản người đọc (`reports/data_quality_report.md`) cho tập dữ liệu chuẩn tắc huấn luyện `data/processed/cleaned_dataset.parquet`.
+## Synthetic validation và giới hạn task này
 
-**Nguyên tắc bất biến:** Nhiệm vụ này là bước kiểm toán và lập tài liệu độc lập; tuyệt đối không tái tạo, không chỉnh sửa, không ghi đè lên `data/processed/cleaned_dataset.parquet` và `data/processed/cleaned_dataset_manifest.json`.
+Chỉ chạy fixture nhỏ:
 
-### Dữ liệu đầu vào (Inputs)
-1. **Tập dữ liệu chuẩn tắc:** `data/processed/cleaned_dataset.parquet` (307,511 dòng, 203 cột).
-2. **Manifest kiểm định xuất bản:** `data/processed/cleaned_dataset_manifest.json`.
-3. **Mô tả gốc của Kaggle:** `data/raw/HomeCredit_columns_description.csv` (160 dòng mô tả trường thô của cuộc thi).
-
-### Tệp đầu ra xuất bản (Published Output Artifacts)
-1. **Machine-Readable Data Dictionary:** `data/processed/data_dictionary.csv`
-   - Đúng 203 dòng (1 dòng cho mỗi cột chuẩn tắc, không trùng lặp, không thiếu cột).
-   - Đúng 22 cột siêu dữ liệu theo đúng thứ tự quy định của đề mục đã khóa.
-   - Định dạng mã hóa: UTF-8 with BOM (`utf-8-sig`), ký tự ngắt dòng LF (`\n`).
-   - Tệp này được loại trừ khỏi Git theo quy tắc `.gitignore` (`data/processed/*.csv`).
-2. **Human-Readable Data Quality Report:** `reports/data_quality_report.md`
-   - Gồm đúng 19 phần Markdown chuẩn tắc được đánh số rõ ràng (từ 1 đến 19).
-   - Trình bày toàn diện các phát hiện kiểm toán chất lượng dữ liệu thực tế đo đạc từ 307,511 dòng.
-   - Định dạng mã hóa: UTF-8, ký tự ngắt dòng LF (`\n`).
-   - Trạng thái Git: Là sản phẩm bàn giao dự kiến theo dõi (intended tracked deliverable) nhưng giữ trạng thái untracked (`??`) cho đến khi hoàn thành commit đánh giá DE-06.
-
-### Lược đồ 22 cột của Data Dictionary (Approved 22-Column Schema)
-Toàn bộ 203 cột trong tập dữ liệu chuẩn tắc được mô tả tuần tự theo đúng 22 trường:
-1. `position`: Vị trí chỉ mục cột từ 0 đến 202, liên tục và đơn điệu.
-2. `column_name`: Tên cột chuẩn tắc (khớp 100% với tên cột trong parquet).
-3. `physical_dtype`: Kiểu dữ liệu lưu trữ vật lý trong Parquet (`int64`, `int32`, `float64`, `float32`, `category`).
-4. `logical_type`: Kiểu logic (`identifier`, `binary`, `categorical`, `ordinal`, `count`, `continuous`, `currency`, `duration`, `rate`, `ratio`, `flag`).
-5. `role`: Vai trò nghiệp vụ chuẩn tắc (`identifier`, `target`, `feature`).
-6. `feature_group`: Phân nhóm đặc trưng (`identifier`, `target`, `application_raw`, `application_cleaning`, `application_derived`, `bureau`, `previous_application`, `installments`, `pos_cash`, `credit_card`).
-7. `source_table`: Tên bảng nguồn phát sinh cột (`application_train`, `bureau`, `previous_application`,...).
-8. `source_columns`: Tên cột nguồn tương ứng trước khi phái sinh/làm sạch.
-9. `source_grain`: Hạt dữ liệu nguồn (`application`, `credit_loan`, `cash_loan_month`,...).
-10. `canonical_grain`: Hạt dữ liệu chuẩn tắc (`customer (SK_ID_CURR)`).
-11. `transformation_formula`: Công thức phái sinh hoặc logic biến đổi (`cleaned identity`, `replace(...)`, công thức tài chính/tổng hợp).
-12. `unit`: Đơn vị đo lường (`currency (CZK)`, `years`, `days`, `ratio`, `rate [0.0, 1.0]`, `count`, `unitless`).
-13. `description`: Mô tả ngữ nghĩa nghiệp vụ bằng tiếng Anh (không được để trống).
-14. `missing_value_meaning`: Ý nghĩa khi giá trị bị khuyết thiếu (ví dụ: `no_credit_history_fill_zero`, `not_applicable_complete`,...).
-15. `valid_values_or_range`: Miền giá trị cho phép hoặc danh mục hợp lệ (đặc biệt phân biệt rõ rate `[0.0, 1.0]` và ratio `unbounded`).
-16. `nullable`: Cờ logic cho biết cột có chứa giá trị khuyết thiếu trong tập dữ liệu hay không (`True` hoặc `False`).
-17. `missing_count`: Số lượng giá trị khuyết thiếu thực tế quan sát được trong 307,511 dòng.
-18. `missing_rate`: Tỷ lệ khuyết thiếu thực tế (làm tròn 6 chữ số thập phân).
-19. `unique_count`: Số lượng giá trị phân biệt thực tế (không tính NaN).
-20. `as_of_time_rule`: Quy tắc mốc thời gian chống rò rỉ (sự kiện lịch sử xảy ra tại thời điểm hoặc trước khi nộp đơn, `DAYS <= 0`).
-21. `leakage_note`: Ghi chú an toàn chống rò rỉ dữ liệu nhãn mục tiêu.
-22. `modeling_note`: Hướng dẫn kỹ thuật tiền xử lý dành cho mô hình hóa của TV1.
-
-### Phân tầng tỷ lệ khuyết thiếu (Missingness Buckets Partition)
-Quy trình áp dụng 7 nhóm phân tầng khuyết thiếu tất định, loại trừ lẫn nhau và bao phủ toàn bộ:
-- `exactly 0%`: 73 cột (gồm `SK_ID_CURR`, `TARGET`, 18 cột số đếm lịch sử điền 0, và các trường hồ sơ đầy đủ).
-- `greater than 0% and less than 5%`: 12 cột (`AMT_ANNUITY`, `AMT_GOODS_PRICE`, tỷ lệ tài chính DE-03).
-- `greater than or equal to 5% and less than 20%`: 48 cột (`EXT_SOURCE_3` 19.83%, `DAYS_EMPLOYED` / `EMPLOYED_YEARS` 18.01%, thiếu lịch sử `BUREAU_` 14.31%).
-- `greater than or equal to 20% and less than 50%`: 9 cột (`OCCUPATION_TYPE` 31.35%, đặc tính tòa nhà).
-- `greater than or equal to 50% and less than 80%`: 61 cột (`EXT_SOURCE_1` 56.38%, `COMMONAREA_AVG` 69.87%, đặc trưng thẻ tín dụng `CC_*` 71.74% do độ bao phủ chỉ đạt 28.26%).
-- `greater than or equal to 80% and less than 100%`: 0 cột.
-- `exactly 100%`: 0 cột.
-- **Tổng số cột phân tầng:** Đúng 203/203 cột.
-
-### Phân loại đặc trưng hằng số và gần như hằng số
-- **All-null (0 non-null values):** 0 cột.
-- **Constant (1 unique non-null value):** 0 cột.
-- **Near-constant (Tần suất giá trị áp đảo >= 99.5%):** Đúng 16 cột (gồm các cờ tài liệu `FLAG_DOCUMENT_*` và cờ điện thoại `FLAG_MOBIL`, `FLAG_CONT_MOBILE`).
-- **Ghi chú về `DAYS_EMPLOYED_ANOM`:** Cờ dị biệt này có tần suất giá trị phổ biến là ~81.99% (giá trị 0 khi không phát hiện sentinel 365243, 18.01% giá trị 1 khi phát hiện sentinel), do đó không thuộc nhóm near-constant và được giữ nguyên là một cờ chất lượng dữ liệu và dị biệt quan trọng.
-
-### Phạm vi loại trừ (Exclusions from DE-06)
-Các phân tích tương quan với nhãn mục tiêu, xếp hạng dự báo đặc trưng và phân tích tương quan đa biến nâng cao được loại trừ hoàn toàn khỏi DE-06 và thuộc phạm vi chuyên biệt của `TV2-DE-07 — Exploratory Data Analysis and Data Engineering Handoff`. DE-06 chỉ kiểm toán tính toàn vẹn của nhãn mục tiêu (kiểu dữ liệu, số lượng lớp, tỷ lệ mất cân bằng).
-
-### Lệnh thực thi & Tái tạo
 ```powershell
-& .\.venv\Scripts\python.exe -m src.data.quality_report
+python -m pytest tests/data tests/features -q
 ```
 
-### Lệnh kiểm thử
-```powershell
-& .\.venv\Scripts\python.exe -m pytest tests\data\test_quality_report.py -v
-& .\.venv\Scripts\python.exe -m pytest tests\data -q
-& .\.venv\Scripts\python.exe -m pytest tests -q
-```
+Task này không chạy DE-LC-02…DE-LC-10 trên raw thật, không tạo processed output thật, không EDA thật, không train TV1, không mở Power BI, không commit/push. Mọi command stage ở trên là executable canonical path sau khi owner chủ động chạy.
 
-### Hướng dẫn sử dụng cho các thành viên hạ nguồn (Downstream Handoff)
-- **TV1 (Modeling):**
-  * Nhận các tệp: `data/processed/cleaned_dataset.parquet`, `data/processed/data_dictionary.csv`, `reports/data_quality_report.md`.
-  * Bắt buộc tách `SK_ID_CURR` khỏi ma trận đặc trưng `X`.
-  * Bắt buộc tách `TARGET` làm vector nhãn `y` (không đưa vào pipeline biến đổi).
-  * Luôn sử dụng `StratifiedKFold` dựa trên tỷ lệ nợ xấu ~8.07%.
-  * Thực hiện fit toàn bộ bộ biến đổi (imputer, scaler, encoder, selector) **duy nhất trên train fold** của mỗi fold.
-  * Tự chủ ra quyết định về chiến lược lựa chọn đặc trưng và loại bỏ các cột near-constant trong quy trình mô hình hóa.
-- **TV3 (Dashboard & Application):**
-  * Sử dụng `cleaned_dataset.parquet` và `data_dictionary.csv` để tra cứu nhãn giao diện, phân loại và ngữ nghĩa đặc trưng.
-  * Đối với các biểu đồ và giao diện liên quan đến kết quả dự báo mô hình, điểm số rủi ro và xếp hạng decile, TV3 sẽ đợi sản phẩm `data/processed/scored_dataset.parquet` từ TV1.
+## Trách nhiệm
 
-## TV2-DE-07 — Exploratory Data Analysis and Data Engineering Handoff
-
-### Mục đích (Purpose)
-Nhiệm vụ `TV2-DE-07` hoàn thành giai đoạn phân tích khám phá dữ liệu chuẩn tắc (EDA) và thiết lập giao ước bàn giao kỹ thuật chính thức từ TV2 (Data Engineering) cho TV1 (Modeling) và TV3 (Dashboard). Nhiệm vụ tạo ra 5 biểu đồ tĩnh chuẩn xuất bản, báo cáo phân tích chi tiết, cập nhật notebook và bàn giao tập dữ liệu chuẩn tắc 307,511 dòng.
-
-### Điều kiện tiên quyết (Prerequisites)
-- Hoàn thành DE-05: `data/processed/cleaned_dataset.parquet` (lần tái tạo TV2-DE-FIX-01: SHA-256 `6460999371...`) và manifest.
-- Hoàn thành DE-06: `data/processed/data_dictionary.csv` (203 dòng, 22 cột) và `reports/data_quality_report.md`.
-- Dữ liệu thô: `data/raw/application_train.csv` (dùng để kiểm toán sentinel `DAYS_EMPLOYED`).
-
-### Lệnh thực thi EDA chuẩn tắc
-```powershell
-& .\.venv\Scripts\python.exe -m src.data.eda
-```
-
-### Tệp đầu vào dự kiến (Expected Inputs)
-- `data/processed/cleaned_dataset.parquet`
-- `data/processed/cleaned_dataset_manifest.json`
-- `data/processed/data_dictionary.csv`
-- `data/raw/application_train.csv`
-
-### Tệp đầu ra xuất bản (Generated Outputs)
-1. **5 biểu đồ chuẩn xuất bản trong `reports/figures/eda/`:**
-   - `01_income_distribution_by_target.png`: Phân phối thu nhập theo nhãn mục tiêu (log scale và density clipped p99 tại 472,500 CZK).
-   - `02_default_rate_by_age_group.png`: Tỷ lệ nợ xấu theo 6 nhóm tuổi cố định (giảm từ 12.29% cho Under 25 xuống 3.66% cho 65+).
-   - `03_default_rate_by_occupation_and_contract.png`: Tỷ lệ nợ xấu theo 19 nhóm nghề nghiệp (bảo toàn Missing/Unknown) và 2 loại hợp đồng vay.
-   - `04_key_numeric_spearman_heatmap.png`: Ma trận tương quan hạng Spearman cho 12 biến số kinh doanh trọng yếu (bỏ qua `TARGET`).
-   - `05_days_employed_before_after.png`: Kiểm toán trực quan trước/sau làm sạch giá trị sentinel 365,243 ngày.
-2. **Báo cáo phân tích khám phá:** `reports/eda_report.md` (15 mục chuẩn tắc dựa trên số liệu thực nghiệm).
-3. **Biên bản bàn giao kỹ thuật:** `docs/data/tv2_data_handoff.md`.
-4. **Notebook minh chứng:** `notebooks/03_eda_statistical.ipynb`.
-
-### Lệnh kiểm thử & Xác thực
-```powershell
-& .\.venv\Scripts\python.exe -m py_compile src\data\eda.py
-& .\.venv\Scripts\python.exe -m pytest tests\data\test_eda.py -v
-& .\.venv\Scripts\python.exe -m pytest tests -q
-& .\.venv\Scripts\python.exe -m src.data.eda
-git diff --check
-git status --short
-```
-
-### Tính bất biến và Khả năng tái lập (Idempotency)
-Lệnh thực thi hoàn toàn bất biến và có thể chạy lại nhiều lần mà không làm thay đổi các tạo tác ngược nguồn (`cleaned_dataset.parquet`, `cleaned_dataset_manifest.json`, `data_dictionary.csv`). Checksum của tập dữ liệu chuẩn tắc được bảo toàn nguyên vẹn byte-for-byte.
-
-### Giới hạn kỹ thuật, Quy tắc Handoff và Tuyên bố phi nhân quả
-1. **Phi nhân quả:** Toàn bộ quan sát trong EDA chỉ phản ánh tương quan thống kê trên tập dữ liệu lịch sử, không suy diễn quan hệ nhân quả.
-2. **Không suy diễn danh tính (Proxy Restriction):** Tuyệt đối không suy diễn cờ `DAYS_EMPLOYED_ANOM` hay dữ liệu khuyết `OCCUPATION_TYPE` là người nghỉ hưu hay thất nghiệp.
-3. **Diễn giải Spearman:** Ngưỡng $|\rho| \ge 0.70$ là ngưỡng mô tả tương quan đơn điệu, không tự ý loại bỏ biến hay coi là đa cộng tuyến nếu chưa thẩm định qua mô hình.
-4. **Đặc trưng chuẩn tắc AGE_GROUP:** `AGE_GROUP` là đặc trưng phái sinh chuẩn tắc đã được lưu trữ sẵn trong `cleaned_dataset.parquet` (vị trí thứ 124, thuộc nhóm `application_derived`). TV3 nên sử dụng trực tiếp cột `AGE_GROUP` chuẩn tắc này để phân nhóm dashboard. Các ngưỡng phân nhóm nửa mở từ `AGE_YEARS` `[0, 25, 35, 45, 55, 65, 120]` với `right=False` (nhãn: `'Under 25'`, `'25-34'`, `'35-44'`, `'45-54'`, `'55-64'`, `'65+'`) là quy chuẩn cấu trúc có thẩm quyền (authoritative construction rule). Việc tái phái sinh `AGE_GROUP` từ `AGE_YEARS` chỉ dùng cho kiểm định tính nhất quán hoặc làm phương án dự phòng (fallback/validation), không phải chỉ dẫn bàn giao chính.
-5. **Trạng thái DE-08:** Nhiệm vụ `TV2-DE-08 — Model-Informed Fairness and Threshold Analysis` hiện đang ở trạng thái **BLOCKED / PENDING** cho đến khi TV1 hoàn tất huấn luyện mô hình và cung cấp xác suất dự báo trên tập validation/test.
+TV2 vẫn là primary owner Data Engineering/technical EDA và V07–V09. TV1 review handoff và leakage/model inputs; TV3 tích hợp dimensions/marts vào Master PBIX. Chi tiết: `docs/tasks/thanh-vien-2-data-engineering.md` và `docs/tasks/dashboard-visual-plan.md`.

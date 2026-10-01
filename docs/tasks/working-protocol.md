@@ -40,7 +40,7 @@ Không ghi raw console log, dữ liệu nhạy cảm, token hoặc nội dung qu
 1. Làm trên branch riêng: tv1, tv2, hoặc tv3; không commit trực tiếp vào main.
 2. Trước task mới, cập nhật branch từ main và xử lý conflict trên branch cá nhân.
 3. Kiểm tra bằng git status; stage từng file cụ thể, không dùng git add . hoặc git add -A.
-4. Chạy kiểm tra phù hợp, cập nhật log, rồi commit theo mẫu: feat(data): aggregate bureau records.
+4. Chạy kiểm tra phù hợp, cập nhật log, rồi commit theo mẫu: feat(data): normalize accepted loan tables.
 5. Chỉ khi kiểm tra pass, hoặc blocker được ghi rõ trong log/PR, mới rebase/pull branch cá nhân, push branch và tạo PR vào main.
 6. Contract, schema dữ liệu/model, cấu hình dùng chung phải có review chéo trước merge.
 
@@ -86,3 +86,13 @@ Không ghi raw console log, dữ liệu nhạy cảm, token hoặc nội dung qu
 - Đường dẫn output và consumer downstream đã được cập nhật.
 - Log cá nhân có entry và ghi đúng canonical paths.
 - Kiểm tra liên quan pass; vấn đề còn lại ghi rõ blocker/next step.
+
+## 6. PRIMARY OWNER + SHARED RESPONSIBILITY + CROSS REVIEWER
+
+- TV1 là primary owner của modeling, V01–V06, storytelling, report coordination và defense coordination.
+- TV2 là primary owner của Data Engineering, V07–V09 và technical EDA/data report.
+- TV3 là primary owner của Master Power BI integration, V10–V12 và dashboard report/demo.
+- Shared deliverables gồm toàn bộ story, report sections chung, insight review và defense preparation.
+- TV1 review TV2 handoff/V07–V09; TV2 review data semantics của TV1/TV3; TV3 review V01–V06/model-facing visuals. Reviewer phải sign-off trước khi task FINAL.
+
+Source-code ownership vẫn tách rõ; knowledge ownership là shared. Không để ba người chỉnh cùng một module hoặc Master PBIX đồng thời. TV1/TV2 có thể gửi visual specification/prototype local; chỉ TV3 tích hợp Master PBIX.
