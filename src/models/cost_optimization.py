@@ -212,15 +212,15 @@ def _prepare_target(
 ) -> np.ndarray:
     """Kiểm tra target nhị phân và alignment với policy input."""
     if isinstance(target, pd.Series) and index is not None and not target.index.equals(index):
-        raise ValueError("TARGET Series phải có cùng index và thứ tự với PD/LGD/EAD.")
+        raise ValueError("target Series phải có cùng index và thứ tự với PD/LGD/EAD.")
     try:
         values = np.asarray(target)
     except (TypeError, ValueError) as exc:
-        raise ValueError("TARGET phải là vector nhị phân 0/1.") from exc
+        raise ValueError("target phải là vector nhị phân 0/1.") from exc
     if values.ndim != 1 or len(values) != expected_length or pd.isna(values).any():
-        raise ValueError("TARGET phải không null và có cùng length với PD/LGD/EAD.")
+        raise ValueError("target phải không null và có cùng length với PD/LGD/EAD.")
     if not set(values).issubset({0, 1}):
-        raise ValueError("TARGET chỉ được chứa 0 hoặc 1.")
+        raise ValueError("target chỉ được chứa 0 hoặc 1.")
     return values.astype(int)
 
 
