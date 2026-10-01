@@ -20,6 +20,13 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
+Ý nghĩa các lệnh chuẩn bị:
+
+- `python -m venv .venv`: tạo virtual environment riêng cho repository.
+- `.\.venv\Scripts\Activate.ps1`: kích hoạt môi trường Python trên PowerShell.
+- `pip install -r requirements.txt`: cài đúng các thư viện pipeline, modeling,
+  giải thích mô hình và kiểm thử đã khóa trong repository.
+
 ## Input canonical bắt buộc
 
 TV1 chỉ bắt đầu preprocessing/split sau khi TV2 bàn giao:
@@ -33,24 +40,44 @@ chặn nếu frozen test của cùng snapshot/split đã được dùng. Không 
 không dùng `application_test.csv`, và không dùng frozen test để chọn model hoặc
 threshold.
 
-## Lệnh modeling canonical
+## Quy trình chạy và ý nghĩa từng lệnh
 
-Từ repository root, chỉ dùng để tạo một modeling run mới trên snapshot chưa từng
-được đánh giá frozen-test trong output namespace hiện hành:
+Tất cả lệnh dưới đây chạy từ repository root và dùng Python trong `.venv` để
+tránh chạy nhầm interpreter bên ngoài môi trường dự án.
+
+### 1. Chạy gated modeling pipeline
 
 ```powershell
 & .\.venv\Scripts\python.exe -m src.models.modeling_pipeline
 ```
 
-Sau khi run hoàn tất, chỉ kiểm tra artifact mà không train/evaluate lại frozen test:
+Lệnh này thực hiện một modeling run đầy đủ:
+
+1. Đọc và kiểm tra canonical dataset, manifest và data dictionary.
+2. Kiểm tra fingerprint, khóa `SK_ID_CURR`, nhãn `TARGET`, infinity và ranh giới
+   feature; loại `SK_ID_CURR`, `TARGET` cùng các cột output khỏi `X`.
+3. Tạo development/frozen-test split phân tầng cố định theo seed trong pipeline.
+4. Fit preprocessing và các candidate model chỉ trên development folds; so sánh
+   bằng metric phát triển, không dùng frozen test để chọn model.
+5. Khóa threshold từ development out-of-fold probabilities.
+6. Đánh giá frozen test đúng một lần, tạo model card/biểu đồ, sau đó refit
+   pipeline production trên toàn bộ labeled canonical dataset.
+7. Xuất model inference, scored dataset và các hồ sơ tích hợp cho TV3.
+
+Không chạy lại lệnh này trên cùng output namespace sau khi frozen-test record đã
+tồn tại. Nếu cần experiment mới, phải tạo snapshot/namespace và control record
+mới theo policy trong model card.
+
+### 2. Chỉ xác minh artifact đã có
 
 ```powershell
 & .\.venv\Scripts\python.exe -m src.models.modeling_pipeline --verify-only
 ```
 
-Nếu canonical dataset đổi hoặc muốn thực hiện experiment mới, phải tạo run/output
-namespace mới và ghi fingerprint/split mới trước khi chạy lại. Không xóa hay ghi đè
-control record frozen-test để lặp evaluation.
+Lệnh này chỉ load model/scored dataset hiện có và kiểm tra fingerprint, schema,
+PD, threshold, recommendation, model version, tính deterministic và an toàn với
+category chưa từng gặp. Lệnh **không train model** và **không đánh giá lại frozen
+test**; dùng lệnh này cho kiểm tra sau checkout hoặc trước handoff.
 
 ## Output và consumer
 
@@ -76,14 +103,37 @@ model card, không phải business lending policy, realized loss hay profit.
 
 ## Validation bắt buộc
 
-Chạy regression test suite cho các reusable modeling modules:
+### Kiểm thử modeling
 
 ```powershell
 & .\.venv\Scripts\python.exe -m pytest tests\models -q
 & .\.venv\Scripts\python.exe -m src.models.modeling_pipeline --verify-only
+```
+
+Ý nghĩa:
+
+- `pytest tests\models -q`: chạy regression tests cho split, preprocessing,
+  evaluation, scoring, expected loss và modeling pipeline; `-q` giữ output ngắn.
+- `--verify-only`: kiểm tra artifact production mà không làm thay đổi model,
+  scored dataset hoặc frozen-test record.
+
+### Kiểm tra thay đổi trước commit
+
+```powershell
 git diff --check
 git status --short
 ```
+
+- `git diff --check`: phát hiện whitespace lỗi trong phần thay đổi.
+- `git status --short`: xác nhận chỉ các file đúng scope được thay đổi và không
+  vô tình stage dữ liệu, model lớn hoặc secret.
+
+Kết quả validation đã xác nhận cho run hiện tại:
+
+- Full test suite: **209 passed**.
+- Model tests: **61 passed**.
+- `--verify-only`: `SUCCESS`, `deterministic=true`,
+  `unknown_category_safe=true`, 307,511 dòng được xác minh.
 
 Preprocessor (median imputation + scale cho Logistic; imputation + OneHotEncoder
 cho categorical) nằm trong từng CV/model pipeline. SMOTE không được dùng cho run
@@ -96,3 +146,12 @@ không được áp dụng SMOTE lên full data hoặc validation/test.
   ưu business cost và không được đổi sau frozen test.
 - LGD 45% và `AMT_CREDIT` làm EAD proxy chỉ là scenario minh bạch.
 - SHAP/feature importance mô tả đóng góp cho dự báo, không chứng minh nhân quả.
+
+## Trạng thái blocker
+
+- Modeling pipeline TV1-MASTER: **đã hoàn tất và đã xác minh**.
+- Canonical input: bắt buộc phải đúng fingerprint trong model card; không tự tạo
+  dữ liệu thay thế khi thiếu hoặc lệch snapshot.
+- Frozen-test: đã khóa; không được dùng để retune model hoặc threshold.
+- Fairness/threshold analysis DE-08 của TV2: thuộc downstream, chưa nằm trong
+  phạm vi lệnh modeling của TV1.

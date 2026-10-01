@@ -146,6 +146,14 @@ Chỉ append entry mới theo quy trình trong docs/tasks/working-protocol.md.
 - **Kiểm tra:** 6 code fence cân bằng; `pytest tests/data/test_quality_report.py -q --basetemp .pytest_tmp_tv2` → **19 passed**; `git diff --check` đạt.
 - **Next step:** tiếp tục duy trì log TV1 khi có thay đổi modeling; log cập nhật setup TV2 nằm tại `logs/log_tv2.md`.
 
+## 2026-10-01 — TV1-SETUP-COMMANDS — Bổ sung ý nghĩa các lệnh chạy
+
+- **Trạng thái:** done
+- **Đã làm:** cập nhật guide canonical `docs/setup/tv1_setup.md` để ghi rõ lệnh chuẩn bị môi trường, modeling pipeline, `--verify-only`, regression tests và kiểm tra Git; bổ sung ý nghĩa, thứ tự chạy, output, giới hạn và blocker của từng lệnh theo rule setup/handoff.
+- **File thay đổi:** `docs/setup/tv1_setup.md`, `logs/log_tv1.md`.
+- **Kiểm tra:** rà soát code fence/lệnh đối chiếu với `src/models/modeling_pipeline.py`; `git diff --check`; các validation hiện hành của TV1 đã xác nhận full suite **209 passed**, model tests **61 passed** và `--verify-only` thành công.
+- **Next step:** dùng guide này làm entrypoint chuẩn cho TV1; không chạy lại frozen-test trên cùng snapshot.
+
 ## 2026-09-23 — FINAL-REVIEW-FIX — Cross-owner handoff and production-artifact review
 
 - **Trạng thái:** done — TV2_FIX_GATE = PASS; TV1_GATE = PASS_WITH_WARNINGS.
