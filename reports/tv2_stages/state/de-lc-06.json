@@ -1,0 +1,26 @@
+{
+  "stage": "de-lc-06",
+  "title": "Application-time feature engineering",
+  "status": "PASS",
+  "completed_at_utc": "2026-10-03T09:38:09.266270+00:00",
+  "report_path": "D:\\ttdltq\\reports\\tv2_stages\\de-lc-06.md",
+  "payload": {
+    "rows_checked": 2260701,
+    "labeled_rows_available": 1345350,
+    "features_verified": [
+      "fico_avg",
+      "loan_to_income_ratio",
+      "credit_history_months",
+      "issue_year",
+      "issue_quarter",
+      "issue_month",
+      "loan_amount_band",
+      "income_band",
+      "fico_band",
+      "dti_band"
+    ],
+    "infinity_count": 0,
+    "post_loan_dependencies": [],
+    "target_dependencies": []
+  }
+}

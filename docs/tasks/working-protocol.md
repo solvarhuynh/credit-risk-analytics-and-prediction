@@ -94,5 +94,6 @@ Không ghi raw console log, dữ liệu nhạy cảm, token hoặc nội dung qu
 - TV3 là primary owner của Master Power BI integration, V10–V12 và dashboard report/demo.
 - Shared deliverables gồm toàn bộ story, report sections chung, insight review và defense preparation.
 - TV1 review TV2 handoff/V07–V09; TV2 review data semantics của TV1/TV3; TV3 review V01–V06/model-facing visuals. Reviewer phải sign-off trước khi task FINAL.
+- A visual is not DONE until its business question, rationale, insight/expected insight, and relationship to the overall dashboard story are documented.
 
 Source-code ownership vẫn tách rõ; knowledge ownership là shared. Không để ba người chỉnh cùng một module hoặc Master PBIX đồng thời. TV1/TV2 có thể gửi visual specification/prototype local; chỉ TV3 tích hợp Master PBIX.

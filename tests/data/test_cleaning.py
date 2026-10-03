@@ -1,6 +1,31 @@
 import pandas as pd
+import pytest
 
-from src.data.cleaning import clean_accepted_loans, clean_rejected_loans
+from src.data.cleaning import clean_accepted_loans, clean_rejected_loans, derive_target
+
+
+@pytest.mark.parametrize(
+    ("status", "expected_target"),
+    [
+        ("Fully Paid", 0),
+        ("Charged Off", 1),
+        ("Default", 1),
+        ("Current", None),
+        ("Late (16-30 days)", None),
+        ("Late (31-120 days)", None),
+        ("In Grace Period", None),
+        ("Does not meet the credit policy. Status:Fully Paid", None),
+        ("Does not meet the credit policy. Status:Charged Off", None),
+        (None, None),
+    ],
+)
+def test_derive_target_uses_only_explicit_final_statuses(status, expected_target) -> None:
+    result = derive_target(pd.Series([status], dtype="string"))
+
+    if expected_target is None:
+        assert pd.isna(result.iloc[0])
+    else:
+        assert result.iloc[0] == expected_target
 
 
 def test_clean_accepted_and_target_policy() -> None:

@@ -1,0 +1,19 @@
+{
+  "stage": "de-lc-04",
+  "title": "Business-table normalization",
+  "status": "PASS",
+  "completed_at_utc": "2026-10-03T09:32:41.377800+00:00",
+  "report_path": "D:\\ttdltq\\reports\\tv2_stages\\de-lc-04.md",
+  "payload": {
+    "accepted_rows": 2260701,
+    "rejected_rows": 27648741,
+    "tables": [
+      "loan_application",
+      "borrower_profile",
+      "credit_profile",
+      "loan_pricing",
+      "loan_outcome",
+      "rejected_applications"
+    ]
+  }
+}

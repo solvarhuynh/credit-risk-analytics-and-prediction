@@ -1,0 +1,44 @@
+{
+  "stage": "de-lc-10",
+  "title": "Static EDA",
+  "status": "PASS",
+  "completed_at_utc": "2026-10-03T10:52:58.495567+00:00",
+  "report_path": "D:\\ttdltq\\reports\\tv2_stages\\de-lc-10.md",
+  "payload": {
+    "figures": [
+      "D:\\ttdltq\\reports\\figures\\eda\\eda_01_loan_amount_distribution.png",
+      "D:\\ttdltq\\reports\\figures\\eda\\eda_02_dti_by_target.png",
+      "D:\\ttdltq\\reports\\figures\\eda\\eda_03_default_by_fico.png",
+      "D:\\ttdltq\\reports\\figures\\eda\\eda_04_fico_dti_heatmap.png",
+      "D:\\ttdltq\\reports\\figures\\eda\\eda_05_accepted_loan_volume_over_time.png"
+    ],
+    "figure_count": 5,
+    "figure_names": [
+      "eda_01_loan_amount_distribution.png",
+      "eda_02_dti_by_target.png",
+      "eda_03_default_by_fico.png",
+      "eda_04_fico_dti_heatmap.png",
+      "eda_05_accepted_loan_volume_over_time.png"
+    ],
+    "eda_sample_rows": 200000,
+    "dti_display_cap_99th_percentile": 38.35,
+    "heatmap_min_cell_count": 100,
+    "funnel_audit": {
+      "status": "PASS",
+      "expected_raw_rows": {
+        "accepted": 2260701,
+        "rejected": 27648741
+      },
+      "actual_funnel_rows": {
+        "accepted": 2260701,
+        "rejected": 27648741
+      },
+      "difference": {
+        "accepted": 0,
+        "rejected": 0
+      },
+      "note": "Funnel counts khớp DE-LC-02."
+    },
+    "report_path": "D:\\ttdltq\\reports\\eda_report.md"
+  }
+}

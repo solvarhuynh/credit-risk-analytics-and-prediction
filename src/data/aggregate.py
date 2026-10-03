@@ -80,6 +80,8 @@ def build_loan_outcome_table(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_rejected_applications_table(frame: pd.DataFrame) -> pd.DataFrame:
+    """Giữ nguyên grain/cột rejected; contract không yêu cầu synthetic key."""
+
     return frame.copy()
 
 

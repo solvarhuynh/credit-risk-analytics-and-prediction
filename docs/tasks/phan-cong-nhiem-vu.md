@@ -20,11 +20,13 @@ Không thành viên nào được tuyên bố task FINAL nếu chưa có reviewe
 
 TV1 sở hữu toàn bộ modeling roadmap: input gate, deterministic split, preprocessing, Logistic Regression bắt buộc, imbalance, XGBoost tùy chọn, evaluation, threshold, SHAP, scoring, Expected Loss, refit và TV3 handoff.
 
+**Secondary support:** Data understanding, leakage/feature review, data-quality và TV2→TV1 handoff verification.
+
 TV1 trực tiếp sở hữu sáu visual V01–V06, dẫn Storytelling, điều phối báo cáo và defense. TV1 không trở thành sole owner của PBIX; TV3 vẫn là integration owner.
 
 ## TV2 — Data Engineering và technical EDA
 
-TV2 tiếp tục là primary owner duy nhất của raw inventory, schema profiling, cleaning, missing/outlier, accepted/rejected normalization, business tables, Join/Merge, target, leakage classification, calculated fields, canonical dataset, dictionary, manifest, quality report và static EDA implementation.
+TV2 tiếp tục là **PRIMARY OWNER — Data Engineering**, chịu trách nhiệm chính và duy nhất về raw inventory, schema profiling, cleaning, missing/outlier, accepted/rejected normalization, business tables, Join/Merge, target, leakage classification, calculated fields, canonical dataset, dictionary, manifest, quality report và static EDA implementation.
 
 TV2 trực tiếp sở hữu V07–V09 và là primary author cho dataset, preprocessing, Join/Merge, calculated fields, data quality và technical EDA. TV2 không triển khai modeling.
 

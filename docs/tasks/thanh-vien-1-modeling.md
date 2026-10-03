@@ -20,6 +20,20 @@ TV1 có workload lớn nhất theo phân công hiện tại. Điều kiện bắ
 | ML-LC-12 Full-data refit | Locked config + labeled set | Production pipeline | Không thay hyperparameter/threshold sau test |
 | ML-LC-13 TV3 handoff | Model + scored data + contract | Integration package | Schema/model version và validation cases có thật |
 
+## Data Engineering Support / Cross-review
+
+TV1 hỗ trợ TV2 ở các phần Data Engineering liên quan trực tiếp tới modeling:
+
+- hiểu raw schema và business meaning của các field quan trọng;
+- review target derivation;
+- review leakage classification;
+- review application-time/model-safe features;
+- review calculated features phục vụ model;
+- kiểm tra quality/leakage gate trước Model Input Gate;
+- verify TV2 → TV1 handoff: `cleaned_dataset.parquet`, `data_dictionary.csv`, `cleaned_dataset_manifest.json`.
+
+TV1 is **NOT the primary owner of Data Engineering**. TV2 remains the **PRIMARY OWNER** responsible for cleaning, normalization, joins, canonical dataset generation, dictionary, manifest, quality report and technical EDA pipeline. TV1's role is **SUPPORTING CONTRIBUTOR / CROSS-REVIEWER**.
+
 ## DASHBOARD VISUALS V01–V06 — PRIMARY
 
 TV1 chuẩn bị visual specification, required fields, measures, interpretation và prototype nếu cần. TV3 tích hợp vào Master PBIX; TV3 là reviewer cho nhóm này.

@@ -9,6 +9,7 @@ import pandas as pd
 
 GOOD_FINAL_STATUSES = {"Fully Paid"}
 BAD_FINAL_STATUSES = {"Charged Off", "Default"}
+TARGET_STATUS_MAP = {"Fully Paid": 0, "Charged Off": 1, "Default": 1}
 PERCENT_COLUMNS = {"int_rate", "revol_util"}
 ACCEPTED_DATE_COLUMNS = {
     "issue_d", "earliest_cr_line", "last_pymnt_d", "next_pymnt_d",
@@ -60,11 +61,11 @@ def normalize_zip(series: pd.Series) -> pd.Series:
 
 
 def derive_target(status: pd.Series) -> pd.Series:
-    """Map duy nhất trạng thái cuối cùng đã duyệt; còn lại là unresolved."""
+    """Map allowlist trạng thái cuối; mọi status khác giữ ``pd.NA``."""
 
     result = pd.Series(pd.NA, index=status.index, dtype="Int8")
-    result.loc[status.isin(GOOD_FINAL_STATUSES)] = 0
-    result.loc[status.isin(BAD_FINAL_STATUSES)] = 1
+    for status_value, target_value in TARGET_STATUS_MAP.items():
+        result.loc[status.eq(status_value)] = target_value
     return result
 
 

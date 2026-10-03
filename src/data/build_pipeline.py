@@ -31,8 +31,9 @@ from src.data.aggregate import (
     join_canonical_modeling_table,
 )
 from src.data.cleaning import clean_accepted_loans, clean_rejected_loans
-from src.data.column_policy import classify_column
+from src.data.column_policy import approved_model_features, classify_column
 from src.data.load_data import load_accepted_loans, load_rejected_loans
+from src.data.quality_report import validate_canonical_modeling_dataset
 from src.features.engineering import engineer_lending_club_features
 
 
@@ -61,7 +62,7 @@ class ParquetSink:
             self.writer.close()
 
 
-def prepare_accepted_batch(frame: pd.DataFrame) -> dict[str, pd.DataFrame]:
+def prepare_accepted_batch(frame: pd.DataFrame) -> dict[str, Any]:
     cleaned, _ = clean_accepted_loans(frame)
     tables = {
         "loan_application": build_loan_application_table(cleaned),
@@ -74,8 +75,26 @@ def prepare_accepted_batch(frame: pd.DataFrame) -> dict[str, pd.DataFrame]:
         tables["loan_application"], tables["borrower_profile"],
         tables["credit_profile"], tables["loan_outcome"],
     )
+    if len(canonical) != len(cleaned):
+        raise ValueError("Canonical join làm thay đổi số dòng accepted.")
     canonical, _ = engineer_lending_club_features(canonical)
-    tables["canonical_labeled"] = canonical.loc[canonical["target"].notna()].copy()
+    canonical_labeled = canonical.loc[canonical["target"].notna()].copy()
+    baseline_features = approved_model_features(canonical_labeled.columns)
+    validation = validate_canonical_modeling_dataset(canonical_labeled, baseline_features)
+    tables["canonical_labeled"] = canonical_labeled
+    tables["canonical_audit"] = {
+        "input_accepted_rows": len(cleaned),
+        "joined_rows": len(canonical),
+        "resolved_labeled_rows": int(canonical["target"].notna().sum()),
+        "unresolved_rows": int(canonical["target"].isna().sum()),
+        "canonical_labeled_rows": len(canonical_labeled),
+        "unique_loan_id_count": int(cleaned["loan_id"].nunique(dropna=True)),
+        "duplicate_loan_id_count": int(cleaned["loan_id"].duplicated().sum()),
+        "null_loan_id_count": int(cleaned["loan_id"].isna().sum()),
+        "target_counts": validation["target_counts"],
+        "baseline_features": baseline_features,
+        "leakage_gate": validation["leakage_gate"],
+    }
     return tables
 
 

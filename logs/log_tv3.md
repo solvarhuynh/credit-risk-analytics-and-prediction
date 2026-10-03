@@ -3,7 +3,7 @@
 ## Dataset Migration Reset — 2026-10-01
 
 - Dataset cũ đã retired; Lending Club 2007–2018 được chọn.
-- Lịch sử trước reset được archive tại `logs/log_tv3_old.md`.
+- Lịch sử trước reset đã được loại khỏi working tree; có thể truy xuất qua Git history.
 - Chưa chạy lại pipeline, mô hình hoặc dashboard.
 - Trạng thái: **RESET / NOT YET EXECUTED**.
 - Dashboard design có thể bắt đầu từ contract; tích hợp data/model chờ TV2/TV1 outputs.

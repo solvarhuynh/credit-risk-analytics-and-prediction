@@ -1,0 +1,16 @@
+{
+  "stage": "de-lc-02",
+  "title": "Accepted/rejected cleaning verification",
+  "status": "PASS",
+  "completed_at_utc": "2026-10-03T09:04:20.532518+00:00",
+  "report_path": "D:\\ttdltq\\reports\\tv2_stages\\de-lc-02.md",
+  "payload": {
+    "accepted_rows_checked": 2260701,
+    "rejected_rows_checked": 27648741,
+    "accepted_unresolved_status_rows": 915351,
+    "accepted_state_non_null": 2260668,
+    "accepted_zip_non_null": 2260667,
+    "rejected_state_non_null": 27648719,
+    "statistical_imputation": false
+  }
+}

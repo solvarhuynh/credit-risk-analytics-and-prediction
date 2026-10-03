@@ -23,6 +23,7 @@ Canonical được dựng bằng `loan_application LEFT JOIN borrower_profile LE
 - `state_code` từ `addr_state`, `country = United States`; ZIP giữ dạng chuỗi masked, không suy tọa độ.
 - Join phải bảo toàn số dòng và uniqueness của `loan_id`.
 - Rejected không merge row-to-row với accepted; chỉ có thể concat mart funnel trên trường tương đương thật.
+- `rejected_applications` giữ nguyên một dòng mỗi hồ sơ rejected và các cột nguồn; contract hiện không yêu cầu `rejected_application_id`, nên không tạo synthetic key. Không có source key thì không thể kiểm chứng uniqueness ở cấp hồ sơ ngoài row preservation.
 
 ## Output TV2 dự kiến
 

@@ -27,14 +27,17 @@ TV2 chuẩn bị data source, field semantics, measures, filters và candidate i
 
 TV2 không cần trực tiếp chỉnh Master PBIX. Status: `PLANNED / WAITING FOR DATA`.
 
-## STATIC EDA SHARED RESPONSIBILITY
+## STATIC EDA OWNERSHIP
 
-TV2 duy trì canonical EDA source module/notebook và trực tiếp implement/interpret:
+TV1 executes và interprets cả năm static EDA figures của project:
 
-- EDA-03 loan amount/time distribution.
-- EDA-04 accepted vs rejected/data distribution.
+- EDA-01 — Loan Amount Distribution.
+- EDA-02 — DTI by Target.
+- EDA-03 — Default Rate by FICO Band.
+- EDA-04 — FICO × DTI Risk Heatmap.
+- EDA-05 — Accepted Loan Volume Over Time (all accepted `loan_application` rows; no resolved-only default-rate trend).
 
-TV1 phụ trách interpretation EDA-01 FICO vs default và EDA-02 DTI/loan-to-income vs default. TV3 phụ trách interpretation EDA-05 geography/purpose/borrower segmentation. Cả ba phải hiểu đủ cả năm biểu đồ.
+TV2 vẫn là **PRIMARY OWNER của Data Engineering** và duy trì canonical EDA data source/module, chunk-safe aggregation, data semantics, leakage boundary và quality evidence. Việc TV1 thực hiện/diễn giải static EDA không chuyển Data Engineering ownership sang TV1. TV3 sử dụng các artifact đã được kiểm tra khi tích hợp dashboard; cả team vẫn phải hiểu đủ năm biểu đồ.
 
 ## REPORT AUTHORSHIP
 
@@ -47,7 +50,7 @@ TV2 là primary author cho dataset, data sources, raw schema, preprocessing, cle
 - Review data-related storytelling claims và limitation.
 - Sign-off TV2 handoff trước khi TV1 mở Model Input Gate.
 
-TV2 không train model, không tạo model binary. Next step: **DE-LC-01 — Raw Inventory & Schema Profiling**.
+TV2 không train model, không tạo model binary. Trạng thái hiện tại: **TV2_HANDOFF_PASS**; TV1 có thể mở Model Input Gate để bắt đầu Modeling, còn TV2 tiếp tục cross-review phần data/model handoff.
 
 ## Execution interface
 

@@ -25,6 +25,17 @@ Một prompt chỉ làm một task kỹ thuật cụ thể. Không tự suy di�
 - Ưu tiên mã tái lập được trong src; notebook dùng để minh họa/phân tích.
 - Không sửa file ngoài scope task. Nếu phát hiện lỗi khác, ghi vào log như một next step.
 
+## Quy tắc reasoning cho dashboard visual
+
+Whenever creating, proposing, modifying or reviewing a dashboard visual, agent phải trả lời rõ bốn câu hỏi:
+
+1. **BUSINESS QUESTION:** Biểu đồ này đang trả lời câu hỏi kinh doanh nào?
+2. **WHY THIS VISUAL:** Tại sao loại biểu đồ này phù hợp với dữ liệu và câu hỏi đó?
+3. **INSIGHT:** Biểu đồ có thể hoặc đã giúp phát hiện insight gì? Nếu data chưa chạy, chỉ ghi candidate insight; không bịa kết quả.
+4. **STORY CONNECTION:** Biểu đồ liên kết với visual nào khác và nằm ở đâu trong dashboard storytelling flow, ví dụ `overview → segmentation → risk → prediction → business impact`?
+
+Không tạo chart chỉ để đủ số lượng. Mỗi visual phải có mục đích riêng; tránh hai visual trả lời cùng một câu hỏi nếu không có lý do rõ ràng. Insight phải được data hỗ trợ và correlation/association không được viết thành causation. Khi thiết kế visual mới, phải xem `docs/tasks/dashboard-visual-plan.md` để tránh trùng logic và đảm bảo liên kết toàn dashboard.
+
 ## Sau khi làm
 
 1. Kiểm tra lại đường dẫn, consumer downstream và file trùng/orphan.

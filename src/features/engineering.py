@@ -49,7 +49,7 @@ def engineer_lending_club_features(frame: pd.DataFrame) -> tuple[pd.DataFrame, d
         bins=[-np.inf, 40000, 80000, 150000, np.inf], labels=["<=40k", "40k-80k", "80k-150k", ">150k"],
     )
     result["fico_band"] = pd.cut(
-        result["fico_avg"], bins=[-np.inf, 650, 700, 750, np.inf], labels=["<650", "650-699", "700-749", "750+"],
+        result["fico_avg"], bins=[-np.inf, 650, 700, 750, np.inf], labels=["<650", "650-699", "700-749", "750+"], right=False,
     )
     dti = pd.to_numeric(result["dti"], errors="coerce") if "dti" in result else pd.Series(np.nan, index=result.index)
     result["dti_band"] = pd.cut(dti, bins=[-np.inf, 10, 20, 30, np.inf], labels=["<=10", "10-20", "20-30", ">30"])

@@ -99,11 +99,13 @@ python -m src.data.tv2_runner --stage de-lc-04
 
 **Expected inputs:** `DE-LC-03 = PASS` và raw chunks.
 
-**Expected outputs:** Các Parquet interim trong `data/interim/` tương ứng sáu bảng.
+**Expected outputs:** Sau khi stage hoàn tất thành công, sáu Parquet canonical trong `data/interim/` tương ứng sáu bảng. Trong lúc chạy, runner ghi vào các file `.partial.parquet`; các file này được validate rồi mới promote. Nếu stage lỗi hoặc bị `KeyboardInterrupt`, partial artifacts được dọn và canonical outputs cũ được giữ nguyên.
 
-**PASS criteria / inspect:** Mỗi accepted business table có một dòng mỗi `loan_id`; global duplicate/null key bị chặn; rejected table đứng riêng; post-loan chỉ ở `loan_outcome`; report ghi row counts.
+**PASS criteria / inspect:** Mỗi accepted business table có một dòng mỗi `loan_id`; global duplicate/null key bị chặn; rejected table đứng riêng; post-loan chỉ ở `loan_outcome`; report ghi row counts. Console progress báo theo chunk, không theo từng row, cho accepted và rejected.
 
-**If FAIL:** Không bỏ qua duplicate và không nối rejected row-to-row với accepted. Xóa/đổi tên partial interim output sau khi xác định nguyên nhân, rồi chạy lại stage.
+**If FAIL:** Không bỏ qua duplicate và không nối rejected row-to-row với accepted. Runner tự dọn `.partial.parquet` và không thay canonical outputs cũ; xác định nguyên nhân rồi chạy lại stage.
+
+Rejected cleaning semantics không thay đổi trong hardening này; chưa có tối ưu hiệu năng được áp dụng vì cần giữ nguyên xử lý null-like strings và chưa chạy benchmark trên raw lớn.
 
 ## DE-LC-05 — Target derivation
 
@@ -171,9 +173,9 @@ python -m src.data.tv2_runner --stage de-lc-08
 
 **Expected inputs:** DE-LC-07 `PASS`, business tables và raw chunks.
 
-**Expected outputs:** `data/interim/dim_date.parquet`, `dim_state.parquet`, `application_funnel.parquet`.
+**Expected outputs:** `data/interim/dim_date.parquet`, `dim_state.parquet`, `application_funnel.parquet`. Runner ghi các output vào `.partial.parquet`, kiểm tra dimension keys và decision counts, rồi mới atomic-promote; rerun không được nối thêm dữ liệu vào funnel cũ.
 
-**PASS criteria / inspect:** `dim_state.state_code` unique; `dim_date.date` unique và có Year/Quarter/Month; funnel có decision accepted/rejected và chỉ dùng fields semantic tương đương; không coi state dimension là transaction table.
+**PASS criteria / inspect:** `dim_state.state_code` unique; `dim_date.date` unique và có Year/Quarter/Month; funnel có decision accepted/rejected, row count đúng bằng accepted + rejected source và chỉ dùng fields semantic tương đương; không coi state dimension là transaction table.
 
 **If FAIL:** Kiểm tra date parsing, state normalization, dimension duplicate và schema funnel; không tạo tọa độ từ ZIP.
 
@@ -205,11 +207,17 @@ python -m src.data.tv2_runner --stage de-lc-09
 python -m src.data.tv2_runner --stage de-lc-10
 ```
 
-**Expected inputs:** DE-LC-09 `PASS`, canonical dataset và funnel mart.
+**Expected inputs:** DE-LC-09 `PASS`, canonical dataset, `loan_application.parquet` và funnel mart.
 
-**Expected outputs:** 3–5 PNG trong `reports/figures/eda/` và `reports/eda_report.md`.
+**Expected outputs:** Đúng 5 PNG trong `reports/figures/eda/` và `reports/eda_report.md`:
 
-**PASS criteria / inspect:** Có loan amount, annual income và các chart default/purpose/funnel khả dụng; report ghi nguồn và sampling; không có ROC-AUC, SHAP, PD model metrics hoặc insight bịa.
+- `eda_01_loan_amount_distribution.png` — histogram.
+- `eda_02_dti_by_target.png` — boxplot.
+- `eda_03_default_by_fico.png` — ordered FICO bar chart.
+- `eda_04_fico_dti_heatmap.png` — FICO × DTI heatmap, minimum 100 rows/cell.
+- `eda_05_accepted_loan_volume_over_time.png` — chronological accepted-loan volume line chart.
+
+**PASS criteria / inspect:** Có đúng năm chart trên; EDA-01/02 ghi rõ plotting sample và DTI 99th-percentile display cap; EDA-03 dùng minimum group count 100; EDA-04 dùng minimum cell count 100; EDA-05 aggregate toàn bộ accepted rows từ `loan_application.parquet`, không dùng resolved-only canonical rows và không vẽ default-rate time trend; report ghi funnel audit và limitation; không có ROC-AUC, SHAP, PD model metrics hoặc insight bịa.
 
 **If FAIL:** Kiểm tra processed/mart schema và chart source; sửa EDA code, không chạy model để bù thiếu chart.
 
@@ -221,7 +229,7 @@ Chỉ chạy fixture nhỏ:
 python -m pytest tests/data tests/features -q
 ```
 
-Task này không chạy DE-LC-02…DE-LC-10 trên raw thật, không tạo processed output thật, không EDA thật, không train TV1, không mở Power BI, không commit/push. Mọi command stage ở trên là executable canonical path sau khi owner chủ động chạy.
+Runbook này không tự động chạy full pipeline, không train TV1, không mở Power BI và không commit/push. DE-LC-08/DE-LC-10 runtime evidence phải được ghi bằng command thực tế và stage reports tương ứng.
 
 ## Trách nhiệm
 

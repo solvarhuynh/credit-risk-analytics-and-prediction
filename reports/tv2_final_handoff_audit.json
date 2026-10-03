@@ -1,0 +1,63 @@
+{
+  "audit_date": "2026-10-04",
+  "status": "TV2_HANDOFF_PASS",
+  "stage_marker_pass_count": 10,
+  "stage_audit_pass_count": 10,
+  "stage_audit_fail_count": 0,
+  "stage_audit_failures": [],
+  "raw": {
+    "accepted_rows": 2260701,
+    "accepted_columns": 151,
+    "accepted_size_bytes": 1675133810,
+    "rejected_rows": 27648741,
+    "rejected_columns": 9,
+    "rejected_size_bytes": 1782281620
+  },
+  "canonical": {
+    "rows": 1345350,
+    "columns": 113,
+    "unique_loan_id": 1345350,
+    "null_loan_id": 0,
+    "duplicate_loan_id": 0,
+    "target_0": 1076751,
+    "target_1": 268599,
+    "target_null": 0,
+    "numeric_infinity": 0,
+    "baseline_feature_count": 106,
+    "forbidden_baseline_features": []
+  },
+  "unresolved_accepted_rows": 915351,
+  "funnel": {
+    "accepted": 2260701,
+    "rejected": 27648741,
+    "total": 29909442,
+    "status": "PASS"
+  },
+  "interim": {
+    "accepted_business_table_rows": 2260701,
+    "rejected_applications_rows": 27648741,
+    "dim_date_rows": 4238,
+    "dim_state_rows": 51,
+    "partial_parquet_files": 0
+  },
+  "eda": {
+    "figure_count": 5,
+    "status": "PASS",
+    "dti_display_cap_p99": 38.35,
+    "minimum_fico_group_count": 100,
+    "minimum_heatmap_cell_count": 100
+  },
+  "leakage_gate": "PASS",
+  "tests": {
+    "focused_command": ".venv\\Scripts\\python.exe -m pytest tests/data/test_quality_report.py tests/data/test_tv2_runner.py tests/data/test_build_pipeline.py -q --basetemp D:\\ttdltq\\.pytest_tmp_de09_focused",
+    "focused_status": "PASS",
+    "focused_passed": 31,
+    "regression_command": ".venv\\Scripts\\python.exe -m pytest tests/data tests/features -q --basetemp D:\\ttdltq\\.pytest_tmp_de09_regression",
+    "status": "PASS",
+    "passed": 75,
+    "warnings": 4
+  },
+  "git_diff_check": "PASS",
+  "tv1_modeling_started": false,
+  "commit_or_push": false
+}

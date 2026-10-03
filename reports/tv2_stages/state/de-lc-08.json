@@ -1,0 +1,16 @@
+{
+  "stage": "de-lc-08",
+  "title": "Dimensions and dashboard marts",
+  "status": "PASS",
+  "completed_at_utc": "2026-10-03T10:51:18.857856+00:00",
+  "report_path": "D:\\ttdltq\\reports\\tv2_stages\\de-lc-08.md",
+  "payload": {
+    "dim_date_path": "D:\\ttdltq\\data\\interim\\dim_date.parquet",
+    "dim_state_path": "D:\\ttdltq\\data\\interim\\dim_state.parquet",
+    "funnel_path": "D:\\ttdltq\\data\\interim\\application_funnel.parquet",
+    "dim_date_unique_rows": 4238,
+    "dim_state_unique_rows": 51,
+    "accepted_funnel_rows": 2260701,
+    "rejected_funnel_rows": 27648741
+  }
+}

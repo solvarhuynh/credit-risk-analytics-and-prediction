@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterable, Iterator
 
 import pandas as pd
 
@@ -12,12 +12,16 @@ from src.config import ACCEPTED_RAW_PATH, REJECTED_RAW_PATH
 RAW_PATHS = {"accepted": ACCEPTED_RAW_PATH, "rejected": REJECTED_RAW_PATH}
 
 
-def validate_raw_files(raw_dir: str | Path | None = None) -> dict[str, Path]:
+def validate_raw_files(
+    raw_dir: str | Path | None = None,
+    sources: Iterable[str] | None = None,
+) -> dict[str, Path]:
     directory = Path(raw_dir) if raw_dir is not None else ACCEPTED_RAW_PATH.parent
-    paths = {
-        "accepted": directory / ACCEPTED_RAW_PATH.name,
-        "rejected": directory / REJECTED_RAW_PATH.name,
-    }
+    requested = tuple(sources) if sources is not None else tuple(RAW_PATHS)
+    invalid = sorted(set(requested) - set(RAW_PATHS))
+    if invalid:
+        raise ValueError(f"source không hợp lệ: {invalid}")
+    paths = {source: directory / RAW_PATHS[source].name for source in requested}
     missing = [str(path) for path in paths.values() if not path.is_file()]
     if missing:
         raise FileNotFoundError(f"Thiếu raw Lending Club: {', '.join(missing)}")
@@ -38,7 +42,7 @@ def load_csv(
 
     if source not in RAW_PATHS:
         raise ValueError("source phải là 'accepted' hoặc 'rejected'.")
-    path = validate_raw_files(raw_dir)[source]
+    path = validate_raw_files(raw_dir, sources=[source])[source]
     defaults: dict[str, Any] = {"low_memory": False}
     defaults["dtype"] = (
         {"id": "string", "zip_code": "string"}
