@@ -7,9 +7,9 @@ Tài liệu này giải thích các file dữ liệu chính trong pipeline Lendi
 ### Cách hiểu đơn giản - muốn hiểu rõ hơn thì đọc các bảng sau nữa
 
 | Tên file | Cách hiểu |
-|---:|---|
+|---|---|
 |`loan_application.parquet` | thông tin chính của khoản vay như loan_id, số tiền vay, thời hạn, purpose, issue date. Đây là “bảng gốc” khi join canonical.
-borrower_profile.parquet: thông tin người vay như thu nhập, employment, home ownership, verification, state/ZIP.|
+|`borrower_profile.parquet` | thông tin người vay như thu nhập, employment, home ownership, verification, state/ZIP.|
 |`credit_profile.parquet` |toàn bộ thông tin tín dụng/FICO/DTI/account history. Đây là nguồn chính cho nhiều feature model.|
 |`loan_pricing.parquet` | các trường do Lending Club quyết định hoặc định giá như int_rate, grade, sub_grade, installment, funded amount. Dùng cho analytics, nhưng baseline model mặc định không dùng.|
 |`loan_outcome.parquet` | chứa loan_status, target và các trường phát sinh sau khi khoản vay đã chạy như payment, recovery, hardship, settlement. Bảng này giữ outcome riêng để tránh leakage.|
