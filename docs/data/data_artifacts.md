@@ -4,17 +4,16 @@ Tài liệu này giải thích các file dữ liệu chính trong pipeline Lendi
 
 ## 1. Bức tranh lớn
 
-Pipeline có thể hiểu ngắn gọn như sau:
+### Cách hiểu đơn giản - muốn hiểu rõ hơn thì đọc các bảng sau nữa
 
-```text
-raw
-  → cleaned chunks
-  → interim business tables (DE-LC-04)
-  → canonical modeling dataset (DE-LC-07)
-  → dimensions / dashboard marts (DE-LC-08)
-  → dictionary / manifest / quality report (DE-LC-09)
-  → modeling + dashboard
-```
+| Tên file | Cách hiểu |
+|---:|---|
+|`loan_application.parquet` | thông tin chính của khoản vay như loan_id, số tiền vay, thời hạn, purpose, issue date. Đây là “bảng gốc” khi join canonical.
+borrower_profile.parquet: thông tin người vay như thu nhập, employment, home ownership, verification, state/ZIP.|
+|`credit_profile.parquet` |toàn bộ thông tin tín dụng/FICO/DTI/account history. Đây là nguồn chính cho nhiều feature model.|
+|`loan_pricing.parquet` | các trường do Lending Club quyết định hoặc định giá như int_rate, grade, sub_grade, installment, funded amount. Dùng cho analytics, nhưng baseline model mặc định không dùng.|
+|`loan_outcome.parquet` | chứa loan_status, target và các trường phát sinh sau khi khoản vay đã chạy như payment, recovery, hardship, settlement. Bảng này giữ outcome riêng để tránh leakage.|
+|`rejected_applications.parquet` | toàn bộ hồ sơ bị từ chối sau cleaning. Không dùng train default model vì không có outcome, nhưng dùng cho funnel/dashboard accepted vs rejected.|  
 
 Ba lớp có ý nghĩa khác nhau:
 
