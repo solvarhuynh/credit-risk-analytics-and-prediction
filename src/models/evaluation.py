@@ -14,6 +14,7 @@ from typing import Mapping, Sequence
 import numpy as np
 import pandas as pd
 from sklearn.metrics import (
+    average_precision_score,
     accuracy_score,
     confusion_matrix,
     f1_score,
@@ -39,6 +40,7 @@ class BinaryEvaluationResult:
     """Kết quả đánh giá binary classifier tại một threshold đã cho."""
 
     roc_auc: float
+    pr_auc: float
     precision: float
     recall: float
     f1: float
@@ -52,6 +54,7 @@ class BinaryEvaluationResult:
         """Trả metrics có thể dùng cho bảng so sánh, không gồm model name."""
         return {
             "roc_auc": self.roc_auc,
+            "pr_auc": self.pr_auc,
             "precision": self.precision,
             "recall": self.recall,
             "f1": self.f1,
@@ -91,6 +94,7 @@ def evaluate_binary_classifier(
 
     return BinaryEvaluationResult(
         roc_auc=float(roc_auc_score(labels, probabilities)),
+        pr_auc=float(average_precision_score(labels, probabilities)),
         precision=float(precision_score(labels, predicted_labels, zero_division=0)),
         recall=float(recall_score(labels, predicted_labels, zero_division=0)),
         f1=float(f1_score(labels, predicted_labels, zero_division=0)),
@@ -157,6 +161,7 @@ def compare_evaluation_results(
         columns=[
             "model",
             "roc_auc",
+            "pr_auc",
             "precision",
             "recall",
             "f1",
