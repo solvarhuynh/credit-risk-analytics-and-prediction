@@ -1,0 +1,276 @@
+{
+  "stage": "ml-lc-04",
+  "title": "Logistic Regression imbalance experiment",
+  "status": "PASS",
+  "completed_at_utc": "2026-10-04T17:55:01.371911+00:00",
+  "report_path": "D:\\ttdltq\\reports\\tv1_stages\\ml-lc-04.md",
+  "payload": {
+    "stage": "ml-lc-04",
+    "status": "PASS",
+    "dataset_id": "lending_club_2007_2018",
+    "canonical_path": "D:\\ttdltq\\data\\processed\\cleaned_dataset.parquet",
+    "split_manifest_path": "D:\\ttdltq\\data\\processed\\modeling\\split_manifest.json",
+    "train_rows": 807210,
+    "validation_rows": 269070,
+    "frozen_test_rows": 269070,
+    "frozen_test_used_for_training": false,
+    "frozen_test_used_for_evaluation": false,
+    "frozen_test_used_for_selection": false,
+    "frozen_test_evaluation_rows": 0,
+    "approved_feature_count": 106,
+    "actual_feature_count": 103,
+    "actual_baseline_feature_count": 103,
+    "actual_baseline_features": [
+      "loan_amnt",
+      "purpose",
+      "term_months",
+      "application_type",
+      "emp_length",
+      "emp_length_years",
+      "home_ownership",
+      "annual_inc",
+      "verification_status",
+      "annual_inc_joint",
+      "verification_status_joint",
+      "dti",
+      "dti_joint",
+      "delinq_2yrs",
+      "fico_range_low",
+      "fico_range_high",
+      "inq_last_6mths",
+      "mths_since_last_delinq",
+      "mths_since_last_record",
+      "open_acc",
+      "pub_rec",
+      "revol_bal",
+      "revol_util",
+      "total_acc",
+      "collections_12_mths_ex_med",
+      "mths_since_last_major_derog",
+      "acc_now_delinq",
+      "tot_coll_amt",
+      "tot_cur_bal",
+      "open_acc_6m",
+      "open_act_il",
+      "open_il_12m",
+      "open_il_24m",
+      "mths_since_rcnt_il",
+      "total_bal_il",
+      "il_util",
+      "open_rv_12m",
+      "open_rv_24m",
+      "max_bal_bc",
+      "all_util",
+      "total_rev_hi_lim",
+      "inq_fi",
+      "total_cu_tl",
+      "inq_last_12m",
+      "acc_open_past_24mths",
+      "avg_cur_bal",
+      "bc_open_to_buy",
+      "bc_util",
+      "chargeoff_within_12_mths",
+      "delinq_amnt",
+      "mo_sin_old_il_acct",
+      "mo_sin_old_rev_tl_op",
+      "mo_sin_rcnt_rev_tl_op",
+      "mo_sin_rcnt_tl",
+      "mort_acc",
+      "mths_since_recent_bc",
+      "mths_since_recent_bc_dlq",
+      "mths_since_recent_inq",
+      "mths_since_recent_revol_delinq",
+      "num_accts_ever_120_pd",
+      "num_actv_bc_tl",
+      "num_actv_rev_tl",
+      "num_bc_sats",
+      "num_bc_tl",
+      "num_il_tl",
+      "num_op_rev_tl",
+      "num_rev_accts",
+      "num_rev_tl_bal_gt_0",
+      "num_sats",
+      "num_tl_120dpd_2m",
+      "num_tl_30dpd",
+      "num_tl_90g_dpd_24m",
+      "num_tl_op_past_12m",
+      "pct_tl_nvr_dlq",
+      "percent_bc_gt_75",
+      "pub_rec_bankruptcies",
+      "tax_liens",
+      "tot_hi_cred_lim",
+      "total_bal_ex_mort",
+      "total_bc_limit",
+      "total_il_high_credit_limit",
+      "revol_bal_joint",
+      "sec_app_fico_range_low",
+      "sec_app_fico_range_high",
+      "sec_app_inq_last_6mths",
+      "sec_app_mort_acc",
+      "sec_app_open_acc",
+      "sec_app_revol_util",
+      "sec_app_open_act_il",
+      "sec_app_num_rev_accts",
+      "sec_app_chargeoff_within_12_mths",
+      "sec_app_collections_12_mths_ex_med",
+      "sec_app_mths_since_last_major_derog",
+      "fico_avg",
+      "loan_to_income_ratio",
+      "credit_history_months",
+      "issue_year",
+      "issue_quarter",
+      "issue_month",
+      "loan_amount_band",
+      "income_band",
+      "fico_band",
+      "dti_band"
+    ],
+    "excluded_safe_features": [
+      "issue_d",
+      "earliest_cr_line",
+      "sec_app_earliest_cr_line"
+    ],
+    "excluded_safe_feature_reasons": {
+      "issue_d": "Raw issue date is not one-hot encoded; issue_year/issue_quarter/issue_month are the deterministic application-time representation.",
+      "earliest_cr_line": "Raw credit-history date is not one-hot encoded; credit_history_months is the deterministic numeric representation.",
+      "sec_app_earliest_cr_line": "Raw secondary-applicant date is not one-hot encoded because it is date-like and sparsely observed; no post-loan information is added."
+    },
+    "transformed_feature_count": 151,
+    "sparse_output": true,
+    "baseline_manifest_path": "D:\\ttdltq\\data\\processed\\modeling\\ml_lc_03_manifest.json",
+    "baseline_model_artifact_path": "D:\\ttdltq\\data\\processed\\modeling\\logistic_baseline.joblib",
+    "baseline_validation_prediction_path": "D:\\ttdltq\\data\\processed\\modeling\\ml_lc_03_validation_predictions.parquet",
+    "baseline_class_weight": null,
+    "baseline_metrics": {
+      "roc_auc": 0.7148869450258554,
+      "pr_auc": 0.3853066510082448,
+      "precision": 0.562453531598513,
+      "recall": 0.08449367088607596,
+      "f1": 0.14691697685709662,
+      "accuracy": 0.8040955885085665,
+      "reference_threshold": 0.5,
+      "confusion_matrix": [
+        [
+          211819,
+          3531
+        ],
+        [
+          49181,
+          4539
+        ]
+      ]
+    },
+    "weighted_model_artifact_path": "D:\\ttdltq\\data\\processed\\modeling\\logistic_weighted.joblib",
+    "weighted_validation_prediction_path": "D:\\ttdltq\\data\\processed\\modeling\\ml_lc_04_weighted_validation_predictions.parquet",
+    "weighted_class_weight": "balanced",
+    "weighted_metrics": {
+      "roc_auc": 0.7150973325904029,
+      "pr_auc": 0.3840143077217175,
+      "precision": 0.3221343873517787,
+      "recall": 0.6553983618763961,
+      "f1": 0.43195759925406096,
+      "accuracy": 0.6558516371204519,
+      "reference_threshold": 0.5,
+      "confusion_matrix": [
+        [
+          141262,
+          74088
+        ],
+        [
+          18512,
+          35208
+        ]
+      ]
+    },
+    "metric_comparison": [
+      {
+        "metric": "roc_auc",
+        "baseline": 0.7148869450258554,
+        "weighted": 0.7150973325904029,
+        "difference": 0.0002103875645474984
+      },
+      {
+        "metric": "pr_auc",
+        "baseline": 0.3853066510082448,
+        "weighted": 0.3840143077217175,
+        "difference": -0.0012923432865272755
+      },
+      {
+        "metric": "precision",
+        "baseline": 0.562453531598513,
+        "weighted": 0.3221343873517787,
+        "difference": -0.24031914424673428
+      },
+      {
+        "metric": "recall",
+        "baseline": 0.08449367088607596,
+        "weighted": 0.6553983618763961,
+        "difference": 0.5709046909903202
+      },
+      {
+        "metric": "f1",
+        "baseline": 0.14691697685709662,
+        "weighted": 0.43195759925406096,
+        "difference": 0.28504062239696437
+      },
+      {
+        "metric": "accuracy",
+        "baseline": 0.8040955885085665,
+        "weighted": 0.6558516371204519,
+        "difference": -0.14824395138811464
+      }
+    ],
+    "confusion_matrix_comparison": {
+      "TN": {
+        "baseline": 211819,
+        "weighted": 141262,
+        "difference": -70557
+      },
+      "FP": {
+        "baseline": 3531,
+        "weighted": 74088,
+        "difference": 70557
+      },
+      "FN": {
+        "baseline": 49181,
+        "weighted": 18512,
+        "difference": -30669
+      },
+      "TP": {
+        "baseline": 4539,
+        "weighted": 35208,
+        "difference": 30669
+      }
+    },
+    "solver": "lbfgs",
+    "penalty": "l2",
+    "max_iter": 1000,
+    "random_state": 42,
+    "weighted_n_iter": [
+      74
+    ],
+    "weighted_converged": true,
+    "weighted_convergence_warnings": [],
+    "weighted_convergence_fallback_used": false,
+    "weighted_fit_seconds": 50.49088589998428,
+    "reference_threshold": 0.5,
+    "threshold_selected": false,
+    "imbalance_treatment": "class_weight_balanced",
+    "resampling": "none",
+    "preprocessing_fit_partition": "train_only",
+    "preprocessing_fitted": true,
+    "model_trained": true,
+    "baseline_artifact_sha256_before": "0498329435e40692236c8fc84c9ac2f37588a50a4b838ab9b6214195e13a97d9",
+    "interpretation": "Recall tăng +0.570905 trên validation. False negatives thay đổi -30669; false positives thay đổi +70557. Precision thay đổi -0.240319; F1 thay đổi +0.285041. ROC-AUC thay đổi +0.000210; PR-AUC thay đổi -0.001292. Trade-off quan sát được là weighted model nhạy hơn với default nhưng tạo thêm cảnh báo false positive.",
+    "provenance": {
+      "runner": "src.models.tv1_runner.run_ml_lc_04",
+      "feature_schema_source": "ML-LC-01 build_feature_schema",
+      "baseline_source": "D:\\ttdltq\\data\\processed\\modeling\\ml_lc_03_manifest.json",
+      "split_source": "D:\\ttdltq\\data\\processed\\modeling\\split_manifest.json",
+      "frozen_test_access": "membership validation only; no prediction/metric/selection",
+      "threshold_policy": "0.5 reference only; final selection belongs to ML-LC-07"
+    },
+    "baseline_artifact_sha256_after": "0498329435e40692236c8fc84c9ac2f37588a50a4b838ab9b6214195e13a97d9",
+    "baseline_artifact_preserved": true
+  }
+}
