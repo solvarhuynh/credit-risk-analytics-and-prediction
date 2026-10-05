@@ -65,4 +65,4 @@ TV1 tạo shared question bank, kiểm tra rehearsal và bảo đảm ba thành 
 - Review TV3 dashboard structure, V10–V12, interaction và final report consistency.
 - Đọc toàn bộ defense matrix trước khi sign-off.
 
-Trạng thái: **PLANNED / WAITING FOR TV2 LENDING CLUB HANDOFF**. Không train hoặc tạo model artifact trong task phân công này.
+Trạng thái: **ML-LC-01 PASS / ML-LC-02 PASS / ML-LC-03 PASS / ML-LC-04 PASS / ML-LC-05 NOT STARTED**. Baseline và weighted Logistic đã được so sánh trên validation; frozen test vẫn sealed.
