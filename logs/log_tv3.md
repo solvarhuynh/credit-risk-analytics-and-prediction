@@ -24,6 +24,14 @@
 - Validation: kiểm tra chéo ownership bằng `rg`; chưa build hoặc thay đổi PBIX, code hay data.
 - Next step: tích hợp V01 vào Master PBIX khi data/model dependencies usable.
 
+## 2026-10-06 — Course visualization theory review V01–V12
+
+- Task/status: **DESIGN REVIEW COMPLETE / POWER BI BUILD NOT STARTED**. `docs/tasks/dashboard-visual-plan.md` now records theory-based review before any chart lock or PBIX work.
+- TV3 ownership remains V01 Geographic Risk Map, V10 Loan Amount vs Annual Income, V11 DTI/FICO Risk Matrix, V12 Borrower Segment Analysis and Master Power BI integration. V01 uses verified state-level `state_code`/`country`; no location is fabricated from masked ZIP.
+- Review recommendation: V01 map remains a provisional candidate pending Power BI recognition; V10 should use binned heatmap or sampled detail instead of plotting the full raw population; V11 heatmap remains suitable with cell count/sparse-cell handling; V12 is **NEEDS MORE DATA** until segment dimension, measure and decision question are specified.
+- Provisional five-page architecture and Individual Prediction / Decision Support page remain unchanged. Chart types, interactions and measures are not final until lecturer-material review and data-model sign-off.
+- No PBIX, dataset, code or model changed; no commit/push. Next step: receive complete lecturer materials and then review TV3 visual specifications/data-model choices before integration.
+
 ## 2026-10-01 — Team responsibility reorganization
 
 - Task: reorganize workload cho Lending Club; trạng thái **PLANNED / NOT YET IMPLEMENTED**.

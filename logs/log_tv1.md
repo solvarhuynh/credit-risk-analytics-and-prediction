@@ -177,3 +177,12 @@
 - Rewrote existing `docs/tasks/report-writing-plan.md` as a full-project report plan (front matter and chapters 1–16), report/dashboard/video/defense distinction, 5–8 minute main presentation and narrative/time allocation, and defense preparation. No new planning file created.
 - Consistency updates: `docs/tasks/phan-cong-nhiem-vu.md`, `docs/tasks/thanh-vien-1-modeling.md`, `docs/tasks/thanh-vien-3-dashboard.md`, `docs/tasks/defense-knowledge-matrix.md`, `docs/setup/tv3_setup.md`. V01 is TV3-owned; TV1 owns V02–V06; TV2 owns V07–V09; TV3 owns V10–V12 and integrates all visuals. Chart types explicitly remain provisional until lecturer theory review.
 - Validation: final repo search found no remaining old Executive Overview/Geographic & Temporal five-page grouping or assignment claiming TV1 owns V01. `git diff --check` result recorded after closeout. No code/data/model artifacts touched.
+
+## 2026-10-06 — Course visualization theory review V01–V12
+
+- Task/status: **DESIGN REVIEW COMPLETE / POWER BI BUILD NOT STARTED**. Review áp dụng message/context/audience, Less is More, data type, granularity/LOD, aggregation, distribution, heatmap, treemap, map, reference line, tooltip, trend và calculated-measure principles từ lecturer theory brief.
+- Updated canonical `docs/tasks/dashboard-visual-plan.md` với compact V01–V12 review table, detailed question/source/grain/variables/candidates/pros-cons/recommendation/aggregation/interaction/insight/limitation/story role, page interaction review, storytelling review và unresolved build gates.
+- Ownership giữ nguyên: TV1 V02–V06; TV2 V07–V09; TV3 V01 và V10–V12, đồng thời là Master Power BI integrator. Five-page architecture và Individual Prediction / Decision Support page vẫn provisional.
+- Review outcome: V01/V02/V03/V05/V06/V09/V11 giữ hướng provisional; V04 cần đổi khỏi raw scatter sang binned/box/violin direction; V07 cần coordinated time views thay combo mặc định; V08 cần grouped/100% stacked bar thay funnel hiện tại vì accepted/rejected là outcome song song; V10 cần binned heatmap/sampled detail thay raw scatter; V12 NEEDS MORE DATA để chốt segment dimension và measure.
+- Chưa khóa chart type. Còn chờ lecturer materials đầy đủ, binning/sampling/denominator policy, V08 process semantics, V12 segment specification, V01 map recognition và TV2/TV3 data-model sign-off.
+- Validation: review lại canonical docs/contract/reports/artifact semantics và `git diff --check` PASS. Không sửa PBIX, dataset, measure, code hoặc model; không commit/push.
