@@ -1,0 +1,258 @@
+{
+  "stage": "ml-lc-05",
+  "title": "Optional XGBoost candidate",
+  "status": "PASS",
+  "completed_at_utc": "2026-10-06T04:33:18.881852+00:00",
+  "report_path": "D:\\ttdltq\\reports\\tv1_stages\\ml-lc-05.md",
+  "payload": {
+    "stage": "ml-lc-05",
+    "status": "PASS",
+    "dataset_id": "lending_club_2007_2018",
+    "canonical_path": "D:\\ttdltq\\data\\processed\\cleaned_dataset.parquet",
+    "split_manifest_path": "D:\\ttdltq\\data\\processed\\modeling\\split_manifest.json",
+    "train_rows": 807210,
+    "validation_rows": 269070,
+    "frozen_test_rows": 269070,
+    "approved_feature_count": 106,
+    "actual_feature_count": 103,
+    "actual_features": [
+      "loan_amnt",
+      "purpose",
+      "term_months",
+      "application_type",
+      "emp_length",
+      "emp_length_years",
+      "home_ownership",
+      "annual_inc",
+      "verification_status",
+      "annual_inc_joint",
+      "verification_status_joint",
+      "dti",
+      "dti_joint",
+      "delinq_2yrs",
+      "fico_range_low",
+      "fico_range_high",
+      "inq_last_6mths",
+      "mths_since_last_delinq",
+      "mths_since_last_record",
+      "open_acc",
+      "pub_rec",
+      "revol_bal",
+      "revol_util",
+      "total_acc",
+      "collections_12_mths_ex_med",
+      "mths_since_last_major_derog",
+      "acc_now_delinq",
+      "tot_coll_amt",
+      "tot_cur_bal",
+      "open_acc_6m",
+      "open_act_il",
+      "open_il_12m",
+      "open_il_24m",
+      "mths_since_rcnt_il",
+      "total_bal_il",
+      "il_util",
+      "open_rv_12m",
+      "open_rv_24m",
+      "max_bal_bc",
+      "all_util",
+      "total_rev_hi_lim",
+      "inq_fi",
+      "total_cu_tl",
+      "inq_last_12m",
+      "acc_open_past_24mths",
+      "avg_cur_bal",
+      "bc_open_to_buy",
+      "bc_util",
+      "chargeoff_within_12_mths",
+      "delinq_amnt",
+      "mo_sin_old_il_acct",
+      "mo_sin_old_rev_tl_op",
+      "mo_sin_rcnt_rev_tl_op",
+      "mo_sin_rcnt_tl",
+      "mort_acc",
+      "mths_since_recent_bc",
+      "mths_since_recent_bc_dlq",
+      "mths_since_recent_inq",
+      "mths_since_recent_revol_delinq",
+      "num_accts_ever_120_pd",
+      "num_actv_bc_tl",
+      "num_actv_rev_tl",
+      "num_bc_sats",
+      "num_bc_tl",
+      "num_il_tl",
+      "num_op_rev_tl",
+      "num_rev_accts",
+      "num_rev_tl_bal_gt_0",
+      "num_sats",
+      "num_tl_120dpd_2m",
+      "num_tl_30dpd",
+      "num_tl_90g_dpd_24m",
+      "num_tl_op_past_12m",
+      "pct_tl_nvr_dlq",
+      "percent_bc_gt_75",
+      "pub_rec_bankruptcies",
+      "tax_liens",
+      "tot_hi_cred_lim",
+      "total_bal_ex_mort",
+      "total_bc_limit",
+      "total_il_high_credit_limit",
+      "revol_bal_joint",
+      "sec_app_fico_range_low",
+      "sec_app_fico_range_high",
+      "sec_app_inq_last_6mths",
+      "sec_app_mort_acc",
+      "sec_app_open_acc",
+      "sec_app_revol_util",
+      "sec_app_open_act_il",
+      "sec_app_num_rev_accts",
+      "sec_app_chargeoff_within_12_mths",
+      "sec_app_collections_12_mths_ex_med",
+      "sec_app_mths_since_last_major_derog",
+      "fico_avg",
+      "loan_to_income_ratio",
+      "credit_history_months",
+      "issue_year",
+      "issue_quarter",
+      "issue_month",
+      "loan_amount_band",
+      "income_band",
+      "fico_band",
+      "dti_band"
+    ],
+    "excluded_safe_features": [
+      "issue_d",
+      "earliest_cr_line",
+      "sec_app_earliest_cr_line"
+    ],
+    "transformed_feature_count": 151,
+    "sparse_output": true,
+    "model_parameters": {
+      "n_estimators": 200,
+      "max_depth": 4,
+      "learning_rate": 0.05,
+      "subsample": 0.8,
+      "colsample_bytree": 0.8,
+      "random_state": 42,
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "n_jobs": 4
+    },
+    "fit_seconds": 38.93056449999858,
+    "baseline_metrics": {
+      "roc_auc": 0.7148869450258554,
+      "pr_auc": 0.3853066510082448,
+      "precision": 0.562453531598513,
+      "recall": 0.08449367088607596,
+      "f1": 0.14691697685709662,
+      "accuracy": 0.8040955885085665,
+      "reference_threshold": 0.5,
+      "confusion_matrix": [
+        [
+          211819,
+          3531
+        ],
+        [
+          49181,
+          4539
+        ]
+      ]
+    },
+    "weighted_metrics": {
+      "roc_auc": 0.7150973325904029,
+      "pr_auc": 0.3840143077217175,
+      "precision": 0.3221343873517787,
+      "recall": 0.6553983618763961,
+      "f1": 0.43195759925406096,
+      "accuracy": 0.6558516371204519,
+      "reference_threshold": 0.5,
+      "confusion_matrix": [
+        [
+          141262,
+          74088
+        ],
+        [
+          18512,
+          35208
+        ]
+      ]
+    },
+    "validation_metrics": {
+      "roc_auc": 0.7245008074441494,
+      "pr_auc": 0.39925588559808173,
+      "precision": 0.5986735445836404,
+      "recall": 0.07561429635145198,
+      "f1": 0.13426989504999587,
+      "accuracy": 0.805325751663136,
+      "reference_threshold": 0.5,
+      "confusion_matrix": [
+        [
+          212627,
+          2723
+        ],
+        [
+          49658,
+          4062
+        ]
+      ]
+    },
+    "comparison": [
+      {
+        "metric": "roc_auc",
+        "logistic_baseline": 0.7148869450258554,
+        "logistic_weighted": 0.7150973325904029,
+        "xgboost": 0.7245008074441494
+      },
+      {
+        "metric": "pr_auc",
+        "logistic_baseline": 0.3853066510082448,
+        "logistic_weighted": 0.3840143077217175,
+        "xgboost": 0.39925588559808173
+      },
+      {
+        "metric": "precision",
+        "logistic_baseline": 0.562453531598513,
+        "logistic_weighted": 0.3221343873517787,
+        "xgboost": 0.5986735445836404
+      },
+      {
+        "metric": "recall",
+        "logistic_baseline": 0.08449367088607596,
+        "logistic_weighted": 0.6553983618763961,
+        "xgboost": 0.07561429635145198
+      },
+      {
+        "metric": "f1",
+        "logistic_baseline": 0.14691697685709662,
+        "logistic_weighted": 0.43195759925406096,
+        "xgboost": 0.13426989504999587
+      },
+      {
+        "metric": "accuracy",
+        "logistic_baseline": 0.8040955885085665,
+        "logistic_weighted": 0.6558516371204519,
+        "xgboost": 0.805325751663136
+      }
+    ],
+    "model_artifact_path": "D:\\ttdltq\\data\\processed\\modeling\\xgboost_candidate.joblib",
+    "validation_prediction_path": "D:\\ttdltq\\data\\processed\\modeling\\ml_lc_05_xgboost_validation_predictions.parquet",
+    "preprocessing_fit_partition": "train_only",
+    "early_stopping_used": false,
+    "frozen_test_used_for_training": false,
+    "frozen_test_used_for_evaluation": false,
+    "frozen_test_used_for_selection": false,
+    "frozen_test_evaluation_rows": 0,
+    "reference_threshold": 0.5,
+    "threshold_selected": false,
+    "final_model_selected": false,
+    "prior_artifact_sha256": {
+      "logistic_baseline.joblib": "0498329435e40692236c8fc84c9ac2f37588a50a4b838ab9b6214195e13a97d9",
+      "logistic_weighted.joblib": "1eaae44ec659117c01065d5fb40c91bd5282be4902095dc00765da5199aafc1a",
+      "ml_lc_03_manifest.json": "adebf9b34d2b23b0b58fd7882f3d85a6c59af770cd5a61f52644baa66433dd0b",
+      "ml_lc_04_manifest.json": "603eef5eff73fbb4db82c5b0f91b9f36780b0baa8ca534b72ed181177d0f4ef8",
+      "ml_lc_03_validation_predictions.parquet": "609a13cedead01d99ddd3f610760747ac05dddfdbe17c3b9b9c21054342f18fa",
+      "ml_lc_04_weighted_validation_predictions.parquet": "b7c3066bd021b8913e29dd937433edc50ff552ffebc9453ea88722adf969e2db"
+    }
+  }
+}

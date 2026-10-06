@@ -1,0 +1,11 @@
+{
+  "stage": "ml-lc-12",
+  "title": "Full-data XGBoost refit",
+  "status": "PASS",
+  "completed_at_utc": "2026-10-06T10:50:11.015584+00:00",
+  "manifest_path": "D:\\ttdltq\\data\\processed\\modeling\\ml_lc_12_manifest.json",
+  "report_path": "D:\\ttdltq\\reports\\tv1_stages\\ml-lc-12.md",
+  "full_refit_model_artifact": "D:\\ttdltq\\data\\processed\\modeling\\xgboost_full_refit.joblib",
+  "score_artifact": "D:\\ttdltq\\data\\processed\\modeling\\ml_lc_12_full_refit_scores.parquet",
+  "full_refit_rows": 1345350
+}

@@ -1,0 +1,11 @@
+{
+  "stage": "ml-lc-11",
+  "title": "Expected Loss Scenario Analysis",
+  "status": "PASS",
+  "completed_at_utc": "2026-10-06T10:25:39.467689+00:00",
+  "manifest_path": "D:\\ttdltq\\data\\processed\\modeling\\ml_lc_11_manifest.json",
+  "report_path": "D:\\ttdltq\\reports\\tv1_stages\\ml-lc-11.md",
+  "expected_loss_artifact_path": "D:\\ttdltq\\data\\processed\\modeling\\ml_lc_11_expected_loss.parquet",
+  "portfolio_summary_path": "D:\\ttdltq\\data\\processed\\modeling\\ml_lc_11_portfolio_el_summary.csv",
+  "risk_tier_summary_path": "D:\\ttdltq\\data\\processed\\modeling\\ml_lc_11_risk_tier_el_summary.csv"
+}

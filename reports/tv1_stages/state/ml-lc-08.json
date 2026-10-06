@@ -1,0 +1,8 @@
+{
+  "stage": "ml-lc-08",
+  "status": "PASS",
+  "title": "One-shot Frozen Test Evaluation",
+  "completed_at_utc": "2026-10-06T07:46:10.189124+00:00",
+  "manifest_path": "D:\\ttdltq\\data\\processed\\modeling\\ml_lc_08_manifest.json",
+  "report_path": "D:\\ttdltq\\reports\\tv1_stages\\ml-lc-08.md"
+}

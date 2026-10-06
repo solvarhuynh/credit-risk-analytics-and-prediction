@@ -1,0 +1,9 @@
+{
+  "stage": "ml-lc-13",
+  "title": "Conditional modeling-to-dashboard handoff audit",
+  "status": "PASS",
+  "completed_at_utc": "2026-10-06T10:50:26.404942+00:00",
+  "manifest_path": "D:\\ttdltq\\data\\processed\\modeling\\ml_lc_13_manifest.json",
+  "report_path": "D:\\ttdltq\\reports\\tv1_stages\\ml-lc-13.md",
+  "handoff_artifact_created": false
+}

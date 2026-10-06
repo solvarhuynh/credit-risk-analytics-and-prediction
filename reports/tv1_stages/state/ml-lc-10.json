@@ -1,0 +1,10 @@
+{
+  "stage": "ml-lc-10",
+  "title": "PD scoring and risk tier",
+  "status": "PASS",
+  "completed_at_utc": "2026-10-06T09:56:45.482918+00:00",
+  "manifest_path": "D:\\ttdltq\\data\\processed\\modeling\\ml_lc_10_manifest.json",
+  "report_path": "D:\\ttdltq\\reports\\tv1_stages\\ml-lc-10.md",
+  "scored_artifact_path": "D:\\ttdltq\\data\\processed\\modeling\\ml_lc_10_scored_frozen_test.parquet",
+  "decision_threshold": 0.22009515762329102
+}
