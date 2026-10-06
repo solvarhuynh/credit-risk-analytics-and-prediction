@@ -8,9 +8,14 @@ import pytest
 
 from src.models.evaluation import (
     BinaryEvaluationResult,
+    align_validation_predictions,
     build_validation_threshold_table,
     compare_evaluation_results,
     evaluate_binary_classifier,
+    evaluate_validation_predictions,
+    select_validation_threshold,
+    select_validation_candidate,
+    _select_threshold_row,
 )
 
 
@@ -143,4 +148,108 @@ def test_compare_evaluation_results() -> None:
     assert "roc_auc" in comparison.columns
     assert "precision" in comparison.columns
     assert "f1" in comparison.columns
+
+
+def test_candidate_validation_alignment_fails_closed() -> None:
+    frozen = pd.DataFrame({"loan_id": ["a", "b", "c", "d"], "target": [0, 1, 0, 1]})
+    original = pd.DataFrame({
+        "loan_id": ["b", "a", "d", "c"], "target": [1, 0, 1, 0],
+        "predicted_pd": [0.8, 0.1, 0.7, 0.2],
+    })
+    candidates = {name: original.copy() for name in
+                  ("logistic_baseline", "logistic_weighted", "xgboost_candidate")}
+    aligned = align_validation_predictions(candidates, frozen, expected_rows=4)
+    assert all(frame["loan_id"].tolist() == frozen["loan_id"].tolist()
+               for frame in aligned.values())
+
+    wrong_id = original.copy()
+    wrong_id.loc[0, "loan_id"] = "other"
+    with pytest.raises(ValueError, match="loan_id"):
+        align_validation_predictions({**candidates, "xgboost_candidate": wrong_id}, frozen, expected_rows=4)
+    wrong_target = original.copy()
+    wrong_target.loc[0, "target"] = 0
+    with pytest.raises(ValueError, match="target"):
+        align_validation_predictions({**candidates, "xgboost_candidate": wrong_target}, frozen, expected_rows=4)
+    wrong_probability = original.copy()
+    wrong_probability.loc[0, "predicted_pd"] = np.inf
+    with pytest.raises(ValueError, match="predicted_pd"):
+        align_validation_predictions({**candidates, "xgboost_candidate": wrong_probability}, frozen, expected_rows=4)
+    wrong_probability.loc[0, "predicted_pd"] = 1.01
+    with pytest.raises(ValueError, match="predicted_pd"):
+        align_validation_predictions({**candidates, "xgboost_candidate": wrong_probability}, frozen, expected_rows=4)
+
+
+def test_candidate_metrics_recomputed_from_probabilities() -> None:
+    from sklearn.metrics import average_precision_score, brier_score_loss, log_loss, roc_auc_score
+
+    labels = np.array([0, 0, 1, 1])
+    probabilities = np.array([0.1, 0.6, 0.4, 0.9])
+    result = evaluate_validation_predictions(pd.DataFrame({
+        "target": labels, "predicted_pd": probabilities,
+    }))
+    assert result["roc_auc"] == pytest.approx(roc_auc_score(labels, probabilities))
+    assert result["pr_auc"] == pytest.approx(average_precision_score(labels, probabilities))
+    assert result["log_loss"] == pytest.approx(log_loss(labels, probabilities))
+    assert result["brier_score"] == pytest.approx(brier_score_loss(labels, probabilities))
+    assert result["confusion_matrix"] == [[1, 1], [1, 1]]
+    assert result["precision"] == result["recall"] == result["f1"] == result["accuracy"] == 0.5
+    assert result["threshold"] == 0.5
+
+
+def test_candidate_selection_rule_uses_ranking_and_practical_ties() -> None:
+    rows = {
+        "logistic_baseline": {"roc_auc": 0.7148, "pr_auc": 0.3853, "log_loss": 0.5, "brier_score": 0.16},
+        "logistic_weighted": {"roc_auc": 0.7150, "pr_auc": 0.3840, "log_loss": 0.6, "brier_score": 0.19},
+        "xgboost_candidate": {"roc_auc": 0.7245, "pr_auc": 0.3992, "log_loss": 0.48, "brier_score": 0.15},
+    }
+    assert select_validation_candidate(rows) == "xgboost_candidate"
+    rows["xgboost_candidate"] = {"roc_auc": 0.70, "pr_auc": 0.35, "log_loss": 0.7, "brier_score": 0.25}
+    assert select_validation_candidate(rows) == "logistic_baseline"
+    rows["logistic_weighted"]["log_loss"] = 0.49
+    assert select_validation_candidate(rows) == "logistic_weighted"
+    rows["logistic_weighted"]["pr_auc"] = 0.40
+    assert select_validation_candidate(rows) == "logistic_weighted"
+    with pytest.raises(ValueError, match="đúng ba candidate"):
+        select_validation_candidate({"logistic_baseline": rows["logistic_baseline"]})
+
+
+def test_threshold_selector_finds_maximum_f1_from_exact_scores() -> None:
+    result = select_validation_threshold([0, 0, 1, 1], [0.1, 0.4, 0.35, 0.8])
+    assert result["selected_threshold"] == pytest.approx(0.35)
+    assert result["selected_metrics"]["f1"] == pytest.approx(0.8)
+    assert result["selected_metrics"]["f1"] == pytest.approx(result["max_f1"])
+    assert result["reference_metrics"]["f1"] == pytest.approx(2 / 3)
+    table = result["threshold_table"]
+    assert int(table["selected"].sum()) == 1
+    assert {0.1, 0.2, 0.3, 0.4, 0.5, 0.6}.issubset(set(table["threshold"]))
+
+
+def test_threshold_tie_prefers_higher_recall() -> None:
+    result = select_validation_threshold(
+        [1, 1, 0, 0, 0], [0.9, 0.8, 0.8, 0.8, 0.1],
+    )
+    assert result["selected_threshold"] == pytest.approx(0.8)
+    assert result["selected_metrics"]["recall"] == 1.0
+
+
+def test_threshold_ties_apply_precision_then_higher_threshold() -> None:
+    precision_tie = pd.DataFrame([
+        {"threshold": 0.7, "f1": 0.8, "recall": 0.6, "precision": 0.95},
+        {"threshold": 0.6, "f1": 0.8 - 5e-13, "recall": 0.6, "precision": 0.96},
+    ])
+    assert _select_threshold_row(precision_tie, tie_tolerance=1e-12)["threshold"] == 0.6
+    threshold_tie = pd.DataFrame([
+        {"threshold": 0.4, "f1": 0.75, "recall": 0.75, "precision": 0.75},
+        {"threshold": 0.6, "f1": 0.75, "recall": 0.75, "precision": 0.75},
+    ])
+    assert _select_threshold_row(threshold_tie, tie_tolerance=1e-12)["threshold"] == 0.6
+
+
+def test_threshold_selector_rejects_invalid_inputs_and_tolerance() -> None:
+    with pytest.raises(ValueError, match="xác suất"):
+        select_validation_threshold([0, 1], [0.2, 1.01])
+    with pytest.raises(ValueError, match="y_true"):
+        select_validation_threshold([0, 2], [0.2, 0.8])
+    with pytest.raises(ValueError, match="tie_tolerance"):
+        select_validation_threshold([0, 1], [0.2, 0.8], tie_tolerance=-1)
 

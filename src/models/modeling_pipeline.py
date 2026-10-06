@@ -13,7 +13,7 @@ from sklearn.pipeline import Pipeline
 
 from src.config import CANONICAL_DATASET_PATH, DATA_DICTIONARY_PATH, DATASET_MANIFEST_PATH
 from src.data.column_policy import approved_model_features, classify_column, unknown_columns
-from src.models.preprocess_pipeline import NormalizePandasMissing, build_preprocessor
+from src.models.preprocess_pipeline import NormalizePandasMissing, build_preprocessor, build_xgboost_preprocessor
 
 
 class GateError(RuntimeError):
@@ -216,3 +216,46 @@ def optional_xgboost_available() -> bool:
     except ImportError:
         return False
     return True
+
+
+def build_xgboost_pipeline(
+    dataset: pd.DataFrame,
+    schema: FeatureSchema,
+    *,
+    feature_columns: Sequence[str],
+    random_state: int = 42,
+    n_estimators: int = 200,
+    max_depth: int = 4,
+    learning_rate: float = 0.05,
+    subsample: float = 0.8,
+    colsample_bytree: float = 0.8,
+) -> Pipeline:
+    """Tạo một XGBoost candidate; dependency được nạp khi gọi hàm."""
+
+    features = tuple(feature_columns)
+    if not features or len(features) != len(set(features)):
+        raise GateError("XGBoost feature list rỗng hoặc trùng cột.")
+    unapproved = sorted(set(features) - set(schema.approved_features))
+    if unapproved:
+        raise GateError(f"XGBoost feature chưa được ML-LC-01 duyệt: {unapproved}")
+    try:
+        from xgboost import XGBClassifier
+    except ImportError as exc:
+        raise GateError("Thiếu optional dependency xgboost; cài requirements.txt trước khi chạy ML-LC-05.") from exc
+    preprocessor = build_xgboost_preprocessor(dataset, features)
+    return Pipeline([
+        ("normalize_missing", NormalizePandasMissing()),
+        ("preprocess", preprocessor),
+        ("model", XGBClassifier(
+            n_estimators=n_estimators,
+            max_depth=max_depth,
+            learning_rate=learning_rate,
+            subsample=subsample,
+            colsample_bytree=colsample_bytree,
+            random_state=random_state,
+            objective="binary:logistic",
+            eval_metric="logloss",
+            tree_method="hist",
+            n_jobs=4,
+        )),
+    ])

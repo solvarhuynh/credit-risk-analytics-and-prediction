@@ -71,3 +71,21 @@ def build_preprocessor(frame: pd.DataFrame, features: Sequence[str]) -> ColumnTr
         ("numeric", numeric_pipeline, numeric),
         ("categorical", categorical_pipeline, categorical),
     ], remainder="drop", sparse_threshold=1.0)
+
+
+def build_xgboost_preprocessor(frame: pd.DataFrame, features: Sequence[str]) -> ColumnTransformer:
+    """Tạo encoding thưa cho cây; chỉ fit imputer/encoder trong train pipeline."""
+
+    validate_modeling_columns(frame, features)
+    date_like = [name for name in features if pd.api.types.is_datetime64_any_dtype(frame[name])]
+    if date_like:
+        raise ValueError(f"Raw datetime không được đưa trực tiếp vào XGBoost: {date_like}")
+    numeric = [name for name in features if pd.api.types.is_numeric_dtype(frame[name])]
+    categorical = [name for name in features if name not in numeric]
+    return ColumnTransformer([
+        ("numeric", SimpleImputer(strategy="median"), numeric),
+        ("categorical", Pipeline([
+            ("imputer", SimpleImputer(strategy="most_frequent")),
+            ("one_hot", OneHotEncoder(handle_unknown="ignore", sparse_output=True)),
+        ]), categorical),
+    ], remainder="drop", sparse_threshold=1.0)

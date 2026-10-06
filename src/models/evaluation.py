@@ -9,21 +9,33 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from numbers import Real
-from typing import Mapping, Sequence
+from typing import Any, Mapping, Sequence
 
 import numpy as np
 import pandas as pd
 from sklearn.metrics import (
     average_precision_score,
     accuracy_score,
+    brier_score_loss,
     confusion_matrix,
     f1_score,
+    log_loss,
     precision_recall_curve,
     precision_score,
     recall_score,
     roc_auc_score,
     roc_curve,
 )
+
+
+ROC_AUC_CLOSE_GAP = 0.002
+PR_AUC_CLOSE_GAP = 0.005
+CANDIDATE_SIMPLICITY_ORDER = (
+    "logistic_baseline", "logistic_weighted", "xgboost_candidate",
+)
+CANDIDATE_COMPLEXITY = {
+    "logistic_baseline": 0, "logistic_weighted": 0, "xgboost_candidate": 1,
+}
 
 
 @dataclass(frozen=True)
@@ -169,6 +181,196 @@ def compare_evaluation_results(
             "threshold",
         ],
     )
+
+
+def align_validation_predictions(
+    predictions: Mapping[str, pd.DataFrame],
+    validation_ids: pd.DataFrame,
+    *,
+    expected_rows: int,
+) -> dict[str, pd.DataFrame]:
+    """Kiểm tra và sắp ba prediction artifacts theo đúng frozen validation IDs."""
+
+    if not predictions:
+        raise ValueError("Không có validation prediction artifact để so sánh.")
+    if not {"loan_id", "target"}.issubset(validation_ids.columns):
+        raise ValueError("Frozen validation IDs thiếu loan_id/target.")
+    if (len(validation_ids) != expected_rows or validation_ids["loan_id"].isna().any()
+            or not validation_ids["loan_id"].is_unique
+            or validation_ids["target"].isna().any()
+            or not validation_ids["target"].isin([0, 1]).all()):
+        raise ValueError("Frozen validation IDs/target không hợp lệ.")
+    reference = validation_ids.set_index("loan_id")["target"]
+    reference_ids = set(reference.index)
+    aligned: dict[str, pd.DataFrame] = {}
+    for name, frame in predictions.items():
+        if frame.columns.tolist() != ["loan_id", "target", "predicted_pd"]:
+            raise ValueError(f"{name}: prediction schema không hợp lệ.")
+        if (len(frame) != expected_rows or frame["loan_id"].isna().any()
+                or not frame["loan_id"].is_unique
+                or frame["target"].isna().any()
+                or not frame["target"].isin([0, 1]).all()):
+            raise ValueError(f"{name}: validation IDs/target không hợp lệ.")
+        if set(frame["loan_id"]) != reference_ids:
+            raise ValueError(f"{name}: loan_id không khớp frozen validation population.")
+        ordered = frame.set_index("loan_id").loc[reference.index]
+        if not ordered["target"].eq(reference).all():
+            raise ValueError(f"{name}: target theo loan_id không khớp frozen validation.")
+        try:
+            probabilities = ordered["predicted_pd"].to_numpy(dtype=float)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"{name}: predicted_pd phải là số.") from exc
+        if not np.isfinite(probabilities).all() or not np.all((0 <= probabilities) & (probabilities <= 1)):
+            raise ValueError(f"{name}: predicted_pd phải hữu hạn trong [0,1].")
+        aligned[name] = ordered.reset_index()
+    return aligned
+
+
+def evaluate_validation_predictions(frame: pd.DataFrame) -> dict[str, float | list[list[int]]]:
+    """Tính lại ranking, chất lượng PD và chẩn đoán tại ngưỡng tham chiếu 0.5."""
+
+    labels = frame["target"].to_numpy(dtype=int)
+    probabilities = frame["predicted_pd"].to_numpy(dtype=float)
+    result = evaluate_binary_classifier(labels, probabilities, threshold=0.5)
+    return {
+        **result.metrics_dict(),
+        "log_loss": float(log_loss(labels, probabilities, labels=[0, 1])),
+        "brier_score": float(brier_score_loss(labels, probabilities)),
+        "confusion_matrix": result.confusion.astype(int).tolist(),
+    }
+
+
+def select_validation_candidate(metrics: Mapping[str, Mapping[str, float]]) -> str:
+    """Khóa candidate bằng ROC-AUC, PR-AUC và thứ tự đơn giản đã công bố."""
+
+    if set(metrics) != set(CANDIDATE_SIMPLICITY_ORDER):
+        raise ValueError("Phải có đúng ba candidate ML-LC-03/04/05.")
+    if any(not np.isfinite([row["roc_auc"], row["pr_auc"]]).all() for row in metrics.values()):
+        raise ValueError("ROC-AUC/PR-AUC phải hữu hạn.")
+    best_roc = max(row["roc_auc"] for row in metrics.values())
+    close_roc = [name for name in CANDIDATE_SIMPLICITY_ORDER
+                 if best_roc - metrics[name]["roc_auc"] <= ROC_AUC_CLOSE_GAP]
+    best_pr = max(metrics[name]["pr_auc"] for name in close_roc)
+    close_pr = [name for name in close_roc
+                if best_pr - metrics[name]["pr_auc"] <= PR_AUC_CLOSE_GAP]
+    return min(close_pr, key=lambda name: (
+        CANDIDATE_COMPLEXITY[name], metrics[name]["log_loss"],
+        metrics[name]["brier_score"], CANDIDATE_SIMPLICITY_ORDER.index(name),
+    ))
+
+
+def select_validation_threshold(
+    y_true: Sequence[int] | np.ndarray | pd.Series,
+    y_proba: Sequence[float] | np.ndarray | pd.Series,
+    *,
+    tie_tolerance: float = 1e-12,
+    diagnostic_thresholds: Sequence[float] = (0.10, 0.20, 0.30, 0.40, 0.50, 0.60),
+) -> dict[str, Any]:
+    """Tìm operating threshold F1 tối đa chính xác trên prediction scores validation."""
+
+    labels, probabilities, _ = _validate_evaluation_inputs(y_true, y_proba, threshold=0.5)
+    if not np.isfinite(tie_tolerance) or tie_tolerance < 0:
+        raise ValueError("tie_tolerance phải hữu hạn và không âm.")
+    precision_curve, recall_curve, candidate_thresholds = precision_recall_curve(
+        labels, probabilities,
+    )
+    candidate_f1 = np.divide(
+        2 * precision_curve[:-1] * recall_curve[:-1],
+        precision_curve[:-1] + recall_curve[:-1],
+        out=np.zeros_like(precision_curve[:-1]),
+        where=(precision_curve[:-1] + recall_curve[:-1]) > 0,
+    )
+    exact_candidates = pd.DataFrame({
+        "threshold": candidate_thresholds,
+        "precision": precision_curve[:-1],
+        "recall": recall_curve[:-1],
+        "f1": candidate_f1,
+    })
+    chosen = _select_threshold_row(exact_candidates, tie_tolerance=tie_tolerance)
+    selected_threshold = float(chosen["threshold"])
+    if not np.isfinite(selected_threshold) or not 0 <= selected_threshold <= 1:
+        raise ValueError("selected threshold không hữu hạn hoặc ngoài [0,1].")
+
+    supplied = np.asarray(diagnostic_thresholds, dtype=float)
+    if supplied.ndim != 1 or not np.isfinite(supplied).all() or np.any((supplied < 0) | (supplied > 1)):
+        raise ValueError("diagnostic thresholds phải là vector hữu hạn trong [0,1].")
+    thresholds = np.unique(np.concatenate((candidate_thresholds, supplied, [selected_threshold])))
+    sorted_indices = np.argsort(probabilities, kind="mergesort")
+    sorted_probabilities = probabilities[sorted_indices]
+    sorted_positive = labels[sorted_indices].astype(np.int64)
+    prefix_positive = np.concatenate(([0], np.cumsum(sorted_positive)))
+    start = np.searchsorted(sorted_probabilities, thresholds, side="left")
+    predicted_positive = len(labels) - start
+    true_positive = int(labels.sum()) - prefix_positive[start]
+    false_positive = predicted_positive - true_positive
+    false_negative = int(labels.sum()) - true_positive
+    true_negative = len(labels) - int(labels.sum()) - false_positive
+    precision = np.divide(true_positive, predicted_positive,
+                          out=np.zeros(len(thresholds), dtype=float), where=predicted_positive > 0)
+    recall = true_positive / int(labels.sum())
+    f1 = np.divide(2 * precision * recall, precision + recall,
+                   out=np.zeros(len(thresholds), dtype=float), where=(precision + recall) > 0)
+    accuracy = (true_positive + true_negative) / len(labels)
+    table = pd.DataFrame({
+        "threshold": thresholds,
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
+        "accuracy": accuracy,
+        "tn": true_negative,
+        "fp": false_positive,
+        "fn": false_negative,
+        "tp": true_positive,
+        "predicted_positive_count": predicted_positive,
+        "predicted_negative_count": len(labels) - predicted_positive,
+        "predicted_positive_rate": predicted_positive / len(labels),
+        "specificity": np.divide(true_negative, len(labels) - int(labels.sum()),
+                                  out=np.zeros(len(thresholds), dtype=float),
+                                  where=(len(labels) - int(labels.sum())) > 0),
+        "selected": np.isclose(thresholds, selected_threshold, rtol=0, atol=0),
+    })
+    if int(table["selected"].sum()) != 1:
+        raise ValueError("Threshold table phải có đúng một selected row.")
+    selected_row = table.loc[table["selected"]].iloc[0]
+    if abs(float(selected_row["f1"]) - float(exact_candidates["f1"].max())) > tie_tolerance:
+        raise ValueError("selected F1 không đạt maximum theo tie tolerance.")
+    selected_metrics = {
+        key: (float(selected_row[key]) if key in {"precision", "recall", "f1", "accuracy"}
+              else int(selected_row[key]))
+        for key in ("precision", "recall", "f1", "accuracy", "tn", "fp", "fn", "tp")
+    }
+    selected_metrics["confusion_matrix"] = [
+        [selected_metrics["tn"], selected_metrics["fp"]],
+        [selected_metrics["fn"], selected_metrics["tp"]],
+    ]
+    reference = evaluate_binary_classifier(labels, probabilities, threshold=0.5)
+    reference_metrics = {
+        "precision": reference.precision, "recall": reference.recall,
+        "f1": reference.f1, "accuracy": reference.accuracy,
+        "confusion_matrix": reference.confusion.astype(int).tolist(),
+        "tn": int(reference.confusion[0, 0]), "fp": int(reference.confusion[0, 1]),
+        "fn": int(reference.confusion[1, 0]), "tp": int(reference.confusion[1, 1]),
+    }
+    return {
+        "selected_threshold": selected_threshold,
+        "selected_metrics": selected_metrics,
+        "reference_metrics": reference_metrics,
+        "max_f1": float(exact_candidates["f1"].max()),
+        "tie_tolerance": float(tie_tolerance),
+        "threshold_table": table,
+    }
+
+
+def _select_threshold_row(candidates: pd.DataFrame, *, tie_tolerance: float) -> pd.Series:
+    """Áp dụng thứ tự F1, recall, precision, threshold cao nhất."""
+
+    if candidates.empty or not {"f1", "recall", "precision", "threshold"}.issubset(candidates.columns):
+        raise ValueError("Không có threshold candidates hợp lệ.")
+    max_f1 = float(candidates["f1"].max())
+    tied = candidates.loc[(max_f1 - candidates["f1"]) <= tie_tolerance]
+    tied = tied.loc[tied["recall"] == tied["recall"].max()]
+    tied = tied.loc[tied["precision"] == tied["precision"].max()]
+    return tied.sort_values("threshold", ascending=False, kind="mergesort").iloc[0]
 
 
 def _validate_evaluation_inputs(
