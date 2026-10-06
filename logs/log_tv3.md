@@ -16,6 +16,14 @@
 - Kiểm tra cú pháp PASS; chưa chạy dashboard.
 - Next step: thiết kế layout từ contract, chờ TV2 dimensions/marts và TV1 scored artifacts.
 
+## 2026-10-06 — V01 Geographic Risk Map ownership
+
+- Task/status: **DONE / OWNERSHIP UPDATED**. TV3 nhận primary ownership của V01 Geographic Risk Map; TV1 trực tiếp phụ trách V02–V06.
+- TV3 vẫn là Master Power BI integration owner và trực tiếp sở hữu V10–V12; V01 dùng `state_code`/`country` theo visual plan, không bịa location.
+- Files: `README.md`, `docs/tasks/phan-cong-nhiem-vu.md`, `docs/tasks/thanh-vien-3-dashboard.md`, `docs/setup/tv3_setup.md`, `docs/tasks/dashboard-visual-plan.md`.
+- Validation: kiểm tra chéo ownership bằng `rg`; chưa build hoặc thay đổi PBIX, code hay data.
+- Next step: tích hợp V01 vào Master PBIX khi data/model dependencies usable.
+
 ## 2026-10-01 — Team responsibility reorganization
 
 - Task: reorganize workload cho Lending Club; trạng thái **PLANNED / NOT YET IMPLEMENTED**.

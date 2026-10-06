@@ -17,8 +17,8 @@ TV1 có workload lớn nhất theo phân công hiện tại. Điều kiện bắ
 | ML-LC-09 Explainability | Locked model | Global/local explanation | Không diễn giải leakage feature |
 | ML-LC-10 Scoring | Predicted PD | Score/risk tier | Mapping và range được kiểm tra |
 | ML-LC-11 Expected Loss | PD + approved LGD/EAD assumptions | EL analysis | Assumption minh bạch, không gọi là observed fact |
-| ML-LC-12 Full-data refit | Locked config + labeled set | Production pipeline | Không thay hyperparameter/threshold sau test |
-| ML-LC-13 TV3 handoff | Model + scored data + contract | Integration package | Schema/model version và validation cases có thật |
+| ML-LC-12 Full-data refit | Locked config + labeled set | Full-refit demo/inference pipeline | Không thay hyperparameter/threshold sau test; không gán test metrics cho refit |
+| ML-LC-13 TV3 handoff audit | Existing model/scoring artifacts + contract | Handoff audit evidence | Chỉ tạo phần còn thiếu; không trùng artifacts hoặc tuyên bố dashboard hoàn tất |
 
 ## Data Engineering Support / Cross-review
 
@@ -34,26 +34,25 @@ TV1 hỗ trợ TV2 ở các phần Data Engineering liên quan trực tiếp t�
 
 TV1 is **NOT the primary owner of Data Engineering**. TV2 remains the **PRIMARY OWNER** responsible for cleaning, normalization, joins, canonical dataset generation, dictionary, manifest, quality report and technical EDA pipeline. TV1's role is **SUPPORTING CONTRIBUTOR / CROSS-REVIEWER**.
 
-## DASHBOARD VISUALS V01–V06 — PRIMARY
+## DASHBOARD VISUALS V02–V06 — PRIMARY
 
-TV1 chuẩn bị visual specification, required fields, measures, interpretation và prototype nếu cần. TV3 tích hợp vào Master PBIX; TV3 là reviewer cho nhóm này.
+TV1 chuẩn bị visual specification, required fields, measures, interpretation và prototype nếu cần cho V02–V06. V01 Geographic Risk Map thuộc TV3; TV1 chỉ cross-review khi cần. TV3 tích hợp mọi visual vào Master PBIX và là reviewer cho nhóm V02–V06.
 
-- V01 Geographic Risk Map.
 - V02 PD Distribution.
 - V03 Risk Tier Distribution.
 - V04 FICO vs Risk/PD.
 - V05 Model Feature Importance / SHAP.
 - V06 Expected Loss / Risk Contribution.
 
-Mỗi visual phải có business question, source table, fields, measure, filter, interaction, tooltip, candidate insight và limitation. Status hiện tại: `PLANNED / WAITING FOR DATA`.
+Mỗi visual phải có business question, source table, fields, measure, filter, interaction, tooltip, candidate insight và limitation. V05 đã có explainability source artifacts sau ML-LC-09; Power BI visual vẫn chờ TV3 tích hợp.
 
 ## STORYTELLING LEAD
 
-TV1 kết hợp insight từ cả ba thành viên thành narrative: applicant → decision/funnel → temporal/geographic portfolio → borrower risk → PD/prediction → explanation → Expected Loss. TV1 kiểm tra các câu chữ không biến correlation thành causation và chuẩn bị executive summary.
+TV1 kết hợp insight từ cả ba thành viên thành narrative: credit-risk problem → dataset/application flow → borrower risk → prediction/generalization → explainability → Expected Loss → individual prediction → limitations. Dashboard page story hiện tại là provisional trong `docs/tasks/dashboard-visual-plan.md`; chart types chỉ khóa sau lecturer theory review. TV1 kiểm tra câu chữ không biến association thành causation và chuẩn bị executive summary.
 
 ## REPORT COORDINATOR
 
-TV1 điều phối cấu trúc và consistency của scientific report tối thiểu 40 trang; primary author cho problem framing, modeling, prediction, evaluation, geographic interpretation, Storytelling, Expected Loss và conclusions. TV3 cross-review readability/dashboard consistency; TV2 review data claims khi cần.
+TV1 điều phối cấu trúc và consistency của full project report theo `docs/tasks/report-writing-plan.md`; primary author cho problem framing, modeling, prediction, evaluation, Storytelling, Expected Loss và conclusions. Báo cáo không phải dashboard-only. TV3 cross-review dashboard consistency; TV2 review data claims khi cần.
 
 ## DEFENSE COORDINATOR
 
@@ -65,4 +64,4 @@ TV1 tạo shared question bank, kiểm tra rehearsal và bảo đảm ba thành 
 - Review TV3 dashboard structure, V10–V12, interaction và final report consistency.
 - Đọc toàn bộ defense matrix trước khi sign-off.
 
-Trạng thái: **ML-LC-01 PASS / ML-LC-02 PASS / ML-LC-03 PASS / ML-LC-04 PASS / ML-LC-05 NOT STARTED**. Baseline và weighted Logistic đã được so sánh trên validation; frozen test vẫn sealed.
+Trạng thái hiện tại: **ML-LC-01 đến ML-LC-13 PASS**; ML-LC-13 PASS là handoff audit thỏa bằng artifacts hiện có, không có nghĩa Power BI đã hoàn thành. `xgboost_candidate` là model được đánh giá ở ML-LC-08; threshold `0.22009515762329102` được chọn trên validation. ML-LC-12 tạo model refit riêng trên 1,345,350 labeled rows và in-sample demo scores; không mang metrics frozen-test sang refit. Không chọn model/threshold lại. Dashboard integration và review Master PBIX vẫn thuộc TV3. Bản tổng hợp modeling: `reports/tv1_stages/modeling_summary.md`.

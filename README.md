@@ -85,7 +85,7 @@ ttdltq/
 
 ### TV1 — Modeling, Storytelling & Report
 
-TV1 là chủ trì mô hình hóa: xây dựng Logistic Regression baseline, mô hình so sánh tùy chọn, đánh giá, scoring, SHAP, risk tier và Expected Loss. TV1 phụ trách các visual V01–V06: Map, PD, risk tier, FICO/PD, SHAP và Expected Loss; đồng thời giữ vai trò Storytelling Lead, Report Coordinator và Defense Coordinator.
+TV1 là chủ trì mô hình hóa: xây dựng Logistic Regression baseline, mô hình so sánh tùy chọn, đánh giá, scoring, SHAP, risk tier và Expected Loss. TV1 phụ trách các visual V02–V06: PD, risk tier, FICO/PD, SHAP và Expected Loss; đồng thời giữ vai trò Storytelling Lead, Report Coordinator và Defense Coordinator. V01 Geographic Risk Map thuộc TV3.
 
 ### TV2 — Data Engineering & Technical EDA
 
@@ -93,7 +93,7 @@ TV2 là chủ trì Data Engineering: kiểm kê raw, profiling schema, cleaning,
 
 ### TV3 — Master Power BI & Integration
 
-TV3 là chủ trì artifact Power BI tổng thể, layout, theme, relationships, filters, drill-down, tooltip, cross-filtering, navigation và demo. TV3 phụ trách các visual V10–V12: loan amount/annual income, DTI/FICO risk matrix và borrower segment composition; đồng thời tích hợp V01–V09 vào Master PBIX duy nhất.
+TV3 là chủ trì artifact Power BI tổng thể, layout, theme, relationships, filters, drill-down, tooltip, cross-filtering, navigation và demo. TV3 sở hữu trực tiếp V01 Geographic Risk Map và các visual V10–V12: loan amount/annual income, DTI/FICO risk matrix và borrower segment composition; đồng thời tích hợp V01–V09 vào Master PBIX duy nhất.
 
 Mỗi phần báo cáo có primary author và cross reviewer. Tất cả thành viên cần hiểu luồng end-to-end, còn TV3 là đầu mối duy nhất quản lý bản Master PBIX.
 

@@ -89,11 +89,11 @@ Không ghi raw console log, dữ liệu nhạy cảm, token hoặc nội dung qu
 
 ## 6. PRIMARY OWNER + SHARED RESPONSIBILITY + CROSS REVIEWER
 
-- TV1 là primary owner của modeling, V01–V06, storytelling, report coordination và defense coordination.
+- TV1 là primary owner của modeling, V02–V06, storytelling, report coordination và defense coordination; TV3 là primary owner của V01.
 - TV2 là primary owner của Data Engineering, V07–V09 và technical EDA/data report.
 - TV3 là primary owner của Master Power BI integration, V10–V12 và dashboard report/demo.
 - Shared deliverables gồm toàn bộ story, report sections chung, insight review và defense preparation.
-- TV1 review TV2 handoff/V07–V09; TV2 review data semantics của TV1/TV3; TV3 review V01–V06/model-facing visuals. Reviewer phải sign-off trước khi task FINAL.
+- TV1 review TV2 handoff/V07–V09 và có thể cross-review V01; TV2 review data semantics của TV1/TV3; TV3 review V02–V06/model-facing visuals. Reviewer phải sign-off trước khi task FINAL.
 - A visual is not DONE until its business question, rationale, insight/expected insight, and relationship to the overall dashboard story are documented.
 
 Source-code ownership vẫn tách rõ; knowledge ownership là shared. Không để ba người chỉnh cùng một module hoặc Master PBIX đồng thời. TV1/TV2 có thể gửi visual specification/prototype local; chỉ TV3 tích hợp Master PBIX.

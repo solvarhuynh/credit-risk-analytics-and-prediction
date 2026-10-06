@@ -10,9 +10,9 @@ Mọi thành viên đều phải hiểu end-to-end: dữ liệu raw/interim/proc
 
 | Thành viên | PRIMARY | SHARED | CROSS REVIEW |
 |---|---|---|---|
-| TV1 | Modeling; V01–V06; Storytelling Lead; Report Coordinator; Defense Coordinator | Hiểu toàn pipeline; tham gia insight, report, demo | Review handoff TV2, V07–V09, dashboard structure và consistency report |
+| TV1 | Modeling; V02–V06; Storytelling Lead; Report Coordinator; Defense Coordinator | Hiểu toàn pipeline; tham gia insight, report, demo; cross-review V01 khi cần | Review handoff TV2, V07–V09, dashboard structure và consistency report |
 | TV2 | Data Engineering; V07–V09; technical EDA; data report sections | Cung cấp field/measure semantics cho mọi visual; hiểu model/dashboard | Review data inputs TV1, measures liên quan source và data claims |
-| TV3 | Master Power BI integration; V10–V12; dashboard report/demo | Tích hợp V01–V09; tham gia story, report và defense | Review V01–V06/model outputs và visual/layout consistency |
+| TV3 | Master Power BI integration; V01; V10–V12; dashboard report/demo | Tích hợp V01–V09; tham gia story, report và defense | Review V02–V06/model outputs và visual/layout consistency |
 
 Không thành viên nào được tuyên bố task FINAL nếu chưa có reviewer bắt buộc sign-off.
 
@@ -22,7 +22,7 @@ TV1 sở hữu toàn bộ modeling roadmap: input gate, deterministic split, pre
 
 **Secondary support:** Data understanding, leakage/feature review, data-quality và TV2→TV1 handoff verification.
 
-TV1 trực tiếp sở hữu sáu visual V01–V06, dẫn Storytelling, điều phối báo cáo và defense. TV1 không trở thành sole owner của PBIX; TV3 vẫn là integration owner.
+TV1 trực tiếp sở hữu năm visual V02–V06, dẫn Storytelling, điều phối báo cáo và defense. V01 Geographic Risk Map do TV3 trực tiếp sở hữu; TV1 có thể cross-review nội dung khi cần. TV1 không trở thành sole owner của PBIX; TV3 vẫn là integration owner.
 
 ## TV2 — Data Engineering và technical EDA
 
@@ -34,11 +34,11 @@ TV2 trực tiếp sở hữu V07–V09 và là primary author cho dataset, prepr
 
 TV3 là primary owner của Master Power BI artifact: relationships, theme, page layout, slicers, filters, drill-down, tooltips, cross-filter, navigation/bookmarks, consistency và demo readiness.
 
-TV3 trực tiếp sở hữu V10–V12, tích hợp V01–V09 từ prototype/spec của hai thành viên còn lại, và là primary author cho dashboard architecture, UI/UX, interaction design và user guide.
+TV3 trực tiếp sở hữu V01 và V10–V12, tích hợp toàn bộ V01–V12 từ prototype/spec đã review, và là primary author cho dashboard architecture, UI/UX, interaction design và user guide. Page architecture provisional hiện tại có năm phần: Portfolio & Application Overview; Borrower Risk Profile; Model Risk & Explainability; Business Risk & Expected Loss; Individual Prediction / Decision Support. Chart type chưa final cho tới COURSE VISUALIZATION THEORY REVIEW.
 
 ## Story, report và defense
 
-Story chung đi theo chuỗi: ai đăng ký → ai được chấp nhận/từ chối → danh mục thay đổi theo thời gian → rủi ro tập trung ở đâu → đặc trưng nào liên quan rủi ro → model ước lượng PD → yếu tố ảnh hưởng dự đoán → Expected Loss/business impact.
+Story chung đi theo chuỗi: vấn đề credit-risk → dataset/application flow → borrower/geographic/time patterns → prediction và generalization → PD/risk tier → explanation → Expected Loss → individual prediction → evidence-based takeaways và limitations. Dashboard, full-report, video và defense có mục đích khác nhau; kế hoạch canonical nằm ở `docs/tasks/dashboard-visual-plan.md` và `docs/tasks/report-writing-plan.md`.
 
 TV1 điều phối final consistency. Report dùng primary author + cross reviewer; các phần Abstract, Introduction, Pipeline Overview, Storytelling summary, Limitations, Conclusion, Demo script và References cần cả ba thành viên duyệt.
 
