@@ -216,4 +216,3 @@ def test_ml13_reuses_existing_handoff_and_marks_visuals_ready_without_dashboard_
     assert handoff["power_bi_dashboard_built_or_reviewed"] is False
     assert not (output / "ml_lc_13_dashboard_handoff.parquet").exists()
     assert (reports / "tv1_stages/ml-lc-13.md").is_file()
-

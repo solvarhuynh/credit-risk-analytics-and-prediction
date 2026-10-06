@@ -155,4 +155,3 @@ def test_runner_is_deterministic_preserves_hashes_and_marks_v06_ready(tmp_path) 
     pd.testing.assert_frame_equal(first_tiers, pd.read_csv(output / "ml_lc_11_risk_tier_el_summary.csv"))
     assert second["portfolio_total_expected_loss"] == first["portfolio_total_expected_loss"]
     assert json.loads((reports / "tv1_stages/state/ml-lc-11.json").read_text())["status"] == "PASS"
-
