@@ -21,9 +21,11 @@ TV2 vẫn là **PRIMARY OWNER** độc quyền của Data Engineering; mở rộ
 
 TV2 chuẩn bị data source, field semantics, measures, filters và candidate insight. TV1 là cross reviewer; TV3 sẽ tích hợp vào Master PBIX.
 
-- V07 Loan Volume & Default Rate over Time — line/combo, có Year → Quarter → Month.
-- V08 Accepted vs Rejected Applications — funnel, amount/count và decision.
-- V09 Loan Purpose Analysis — treemap hoặc bar tùy final layout.
+- V07 Loan Volume & Risk over Time — hai line charts/small multiples phối hợp; tách all-accepted volume khỏi resolved-cohort observed default rate.
+- V08 Accepted vs Rejected Applications — 100% stacked bar cho hai outcome song song, không phải funnel tuần tự.
+- V09 Loan Purpose — ordered bar; accepted purpose vocabulary, không gộp rejected `loan_title`.
+
+Visual families đã LOCKED trong `docs/tasks/dashboard-visual-plan.md`. Power BI data model hiện `POWER_BI_DATA_MODEL_BLOCKED` cho tới khi application aggregates được tạo/kiểm tra và semantics date/purpose được giữ tách biệt.
 
 TV2 không cần trực tiếp chỉnh Master PBIX. Status: `PLANNED / WAITING FOR DATA`.
 

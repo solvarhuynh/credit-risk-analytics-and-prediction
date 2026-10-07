@@ -9,21 +9,22 @@ TV3 sở hữu data model và relationships, theme, page layout, slicers, filter
 TV3 trực tiếp sở hữu:
 
 - V01 Geographic Risk Map.
-- V10 Loan Amount vs Annual Income — scatter/bubble.
+- V10 Loan Amount vs Annual Income — binned heatmap.
 - V11 DTI/FICO Risk Matrix — heatmap.
-- V12 Borrower Segment Composition — donut hoặc 100% stacked bar.
+- V12 Borrower Segment — bar/stacked bar; segment đề nghị: `home_ownership`, evaluated frozen-test population, stack composition theo canonical risk tier.
 
 TV1 là reviewer chính cho V10 và model-facing visuals; TV2 review data inputs/measure semantics của V11–V12. Mọi visual có status `PLANNED / WAITING FOR DATA` cho tới khi usable schema/marts tồn tại.
 
-## MASTER DASHBOARD — CURRENT PROVISIONAL 5-PAGE STORY
+## MASTER DASHBOARD — 4 TRANG POWER BI + DASH BÊN NGOÀI / DATA MODEL BLOCKED
 
-Kế hoạch trang hiện hành được giữ chi tiết tại `docs/tasks/dashboard-visual-plan.md`. Đây là kiến trúc provisional; không quyết định chart type cho tới khi hoàn thành COURSE VISUALIZATION THEORY REVIEW.
+Kế hoạch trang và visual families hiện hành được khóa trong `docs/tasks/dashboard-visual-plan.md`; chart selection không mở lại trong Power BI Phase 2. Trạng thái data model là `POWER_BI_DATA_MODEL_BLOCKED`, không được bắt đầu build visuals trước khi blockers trong plan được đóng.
 
-1. **Portfolio & Application Overview:** V01, V07, V08, V09.
-2. **Borrower Risk Profile:** V04, V10, V11, V12.
-3. **Model Risk & Explainability:** V02, V03, V05.
-4. **Business Risk & Expected Loss:** V06 cùng KPI/support khi phù hợp.
-5. **Individual Prediction / Decision Support:** trang bắt buộc trong plan nhưng ngoài V01–V12; UI/implementation chưa quyết định và chưa được tuyên bố đã build.
+1. **Tổng quan danh mục:** KPI, V08, V01.
+2. **Xu hướng & Mục đích vay:** V07, V09.
+3. **Hồ sơ người vay:** V04, V11, V10, V12.
+4. **Rủi ro & Expected Loss:** KPI, V02, V03, V05, V06.
+
+Dự đoán cá nhân dùng ứng dụng Dash bên ngoài Power BI; không thêm trang thứ năm vào Master.
 
 Không đặt 12 visual trên một trang. TV3 giữ navigation và consistency; visual owner giữ logic/interpretation. Mọi interaction phải trả lời câu hỏi phân tích, không trang trí.
 
@@ -31,7 +32,7 @@ Không đặt 12 visual trên một trang. TV3 giữ navigation và consistency;
 
 TV1 cung cấp V02–V06 specification, fields, measures và caveats; có thể cross-review V01 khi cần. TV3 trực tiếp sở hữu V01 và V10–V12. TV2 cung cấp V07–V09 data semantics và EDA context. TV3 đưa các spec/prototype đã review vào Master PBIX, kiểm tra interactions và ghi nguồn/reviewer.
 
-Map dùng `state_code` + `country`; hierarchy thời gian là Year → Quarter → Month. Prediction/risk tier/Expected Loss chỉ bật khi TV1 bàn giao artifact thật. Thiếu model phải hiển thị `BLOCKED / WAITING FOR TV1 ARTIFACT`.
+V01 dùng `state_code` + `country` nhưng cần smoke-test Power BI map recognition. Time hierarchy dùng đúng date role: accepted `issue_d`, rejected `application_date`; không coi chúng là cùng một event date. Prediction/risk tier/Expected Loss artifacts đã có, nhưng evaluated score context mart còn thiếu state/bands; hiển thị readiness blocked cho tới khi được enrich/validated. V08 không tính default rate rejected.
 
 ## REPORT VÀ DEMO
 

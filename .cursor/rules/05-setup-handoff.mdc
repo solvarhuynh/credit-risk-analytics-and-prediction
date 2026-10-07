@@ -11,3 +11,4 @@ alwaysApply: true
 - Chỉ ghi lệnh đã tồn tại và đã kiểm tra; phần chưa implement phải ghi `PENDING` hoặc `BLOCKED`, không bịa command/output.
 - Log owner phải liệt kê đường dẫn guide khi guide được tạo hoặc thay đổi.
 - Không tạo thêm các tên cạnh tranh như `setup_new`, `run_latest`, `quickstart2`; cập nhật guide canonical hiện có.
+- Khi tạo hoặc chỉnh bất kỳ visual, slicer, tooltip, layout hay interaction Power BI nào, cập nhật `reports/figures/dashboard/huong-dan-thao-tac-power-bi.md` trong cùng task: ghi thao tác tương đương trong Power BI Desktop, trường/measure, định dạng, filter/interaction và cách tự kiểm tra. Phân biệt rõ thao tác GUI đã thực hiện với bước GUI tương đương khi thay đổi được tạo qua PBIR; không nhận là đã bấm GUI nếu thực tế không có.
