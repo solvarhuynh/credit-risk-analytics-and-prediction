@@ -1,0 +1,54 @@
+relationship AutoDetected_579f6020-b962-4840-a75e-a4acfdf86db8
+	fromColumn: ml_lc_09_local_explanations.feature
+	toColumn: ml_lc_09_global_importance.feature
+
+relationship AutoDetected_998a1bc1-d483-417d-ac1b-dfdfe251a7e4
+	fromColumn: ml_lc_09_shap_sample.feature
+	toColumn: ml_lc_09_global_importance.feature
+
+relationship dcea32f3-7680-4455-bea3-c16616c73a8e
+	joinOnDateBehavior: datePartOnly
+	fromColumn: application_funnel.application_date
+	toColumn: LocalDateTable_c0a81927-5109-4a9b-bac5-e6d69df7ba02.Date
+
+relationship 788c0f93-6ef0-4182-bb65-e7b9aefbe3d2
+	joinOnDateBehavior: datePartOnly
+	fromColumn: dim_date.date
+	toColumn: LocalDateTable_6e38d3c9-9cf0-45be-9eb3-ff3409a4f1b9.Date
+
+relationship AutoDetected_bf846af1-ecfb-44f8-a1c9-96254e9ce613
+	fromColumn: application_funnel.state_code
+	toColumn: dim_state.state_code
+
+relationship c0f04cbb-1488-486b-9607-d37563c7b278
+	joinOnDateBehavior: datePartOnly
+	fromColumn: cleaned_dataset.issue_d
+	toColumn: LocalDateTable_8b3068d0-3a00-4da4-b2d7-35d7f4ab1e3b.Date
+
+relationship 38e38e5b-7751-4b75-8263-5c34c0764356
+	joinOnDateBehavior: datePartOnly
+	fromColumn: cleaned_dataset.earliest_cr_line
+	toColumn: LocalDateTable_4949f904-0b7d-4442-bc29-e9e88af77135.Date
+
+relationship 7554f44c-7dc2-4aa1-9dde-4469521516c6
+	joinOnDateBehavior: datePartOnly
+	fromColumn: cleaned_dataset.sec_app_earliest_cr_line
+	toColumn: LocalDateTable_60291334-2603-4120-81b9-9862ffdc0163.Date
+
+relationship AutoDetected_f072893c-6680-4a75-a164-f56bb2905783
+	fromColumn: ml_lc_09_shap_sample.loan_id
+	toColumn: cleaned_dataset.loan_id
+
+relationship AutoDetected_81408dcd-bc00-45e6-83dc-6615a71ddbe2
+	crossFilteringBehavior: bothDirections
+	fromCardinality: one
+	fromColumn: fact_evaluated_loan.loan_id
+	toColumn: cleaned_dataset.loan_id
+
+relationship AutoDetected_882277f4-3375-4084-87cc-d583f3ce7a5d
+	fromColumn: cleaned_dataset.state_code
+	toColumn: dim_state.state_code
+
+relationship dim_date_to_cleaned_issue_d
+	fromColumn: cleaned_dataset.issue_d
+	toColumn: dim_date.date

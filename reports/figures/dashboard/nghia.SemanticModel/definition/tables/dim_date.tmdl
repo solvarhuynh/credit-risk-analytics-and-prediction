@@ -1,0 +1,68 @@
+table dim_date
+	lineageTag: b317b54f-b297-406a-9a00-6c2f066d1141
+
+	column date
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 6bf6b4cd-04aa-4b7a-bd7a-3a7806cbd481
+		summarizeBy: none
+		sourceColumn: date
+
+		variation Variation
+			isDefault
+			relationship: 788c0f93-6ef0-4182-bb65-e7b9aefbe3d2
+			defaultHierarchy: LocalDateTable_6e38d3c9-9cf0-45be-9eb3-ff3409a4f1b9.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+	column year
+		dataType: int64
+		formatString: 0
+		lineageTag: f0873572-3630-48df-aaef-0e21114f268f
+		summarizeBy: sum
+		sourceColumn: year
+
+		annotation SummarizationSetBy = Automatic
+
+	column quarter
+		dataType: string
+		lineageTag: 2ec81f1a-a880-487e-9ea7-5a05844be984
+		summarizeBy: none
+		sourceColumn: quarter
+
+		annotation SummarizationSetBy = Automatic
+
+	column month
+		dataType: int64
+		formatString: 0
+		lineageTag: f6f1bcb7-eb3c-4ab4-86e6-1d12448f9501
+		summarizeBy: sum
+		sourceColumn: month
+
+		annotation SummarizationSetBy = Automatic
+
+	column month_name
+		dataType: string
+		lineageTag: 7eb65ecb-01a5-4f05-9506-7d049617c172
+		summarizeBy: none
+		sourceColumn: month_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column year_month
+		dataType: string
+		lineageTag: 7bac37c2-eb3e-49ed-a1af-2086a3c705d9
+		summarizeBy: none
+		sourceColumn: year_month
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_date = m
+		mode: import
+		source =
+				let
+				    Source = Parquet.Document(File.Contents("d:\ttdltq\data\interim\dim_date.parquet"), [Compression=null, LegacyColumnNameEncoding=false, MaxDepth=null])
+				in
+				    Source
+
+	annotation PBI_ResultType = Table

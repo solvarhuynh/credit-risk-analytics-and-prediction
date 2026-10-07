@@ -1,0 +1,14 @@
+{
+  "name": "Custom",
+  "visualStyles": {
+    "*": {
+      "*": {
+        "outspacePane": [
+          {
+            "headerSize": 12
+          }
+        ]
+      }
+    }
+  }
+}

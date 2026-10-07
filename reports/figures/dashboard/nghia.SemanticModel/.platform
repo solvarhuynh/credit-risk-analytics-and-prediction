@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "nghia"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "1f6af2ff-279a-4765-a4e6-5accb0023de5"
+  }
+}
