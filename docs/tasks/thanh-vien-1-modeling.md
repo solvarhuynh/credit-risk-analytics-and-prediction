@@ -48,7 +48,7 @@ Mỗi visual phải có business question, source table, fields, measure, filter
 
 ## STORYTELLING LEAD
 
-TV1 kết hợp insight từ cả ba thành viên thành narrative: credit-risk problem → dataset/application flow → borrower risk → prediction/generalization → explainability → Expected Loss → individual prediction → limitations. Dashboard page story hiện tại là provisional trong `docs/tasks/dashboard-visual-plan.md`; chart types chỉ khóa sau lecturer theory review. TV1 kiểm tra câu chữ không biến association thành causation và chuẩn bị executive summary.
+TV1 kết hợp insight từ cả ba thành viên thành narrative: credit-risk problem → dataset/application flow → borrower risk → prediction/generalization → explainability → Expected Loss → individual prediction → limitations. Dashboard page story và V01–V12 visual families đã LOCKED trong `docs/tasks/dashboard-visual-plan.md`; TV1 giữ ownership V02–V06, không đổi chart selection hoặc workload ở phase data-model này. TV1 kiểm tra câu chữ không biến association thành causation và chuẩn bị executive summary.
 
 ## REPORT COORDINATOR
 

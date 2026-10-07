@@ -14,6 +14,7 @@ shap>=0.44,<1
 matplotlib>=3.7,<4
 seaborn>=0.12,<1
 plotly>=5.18,<7
+dash>=2.18,<4
 
 # Testing
 pytest>=7.4,<9
