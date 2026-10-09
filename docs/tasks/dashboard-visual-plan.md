@@ -6,14 +6,14 @@
 - **External companion:** Plotly Dash — Dự đoán cá nhân.
 - **TV1:** V02–V06.
 - **TV2:** V07–V09, Data Engineering.
-- **TV3:** V01, V10–V12, Master Power BI Integrator.
+- **TV3:** V01, V10–V13, Master Power BI Integrator.
 - Không thay model, target, threshold, risk-tier policy hoặc population bằng DAX.
 
 | Page | Big Idea | Visuals | Main takeaway |
 |---|---|---|---|
 | **01 — Tổng quan danh mục** | Sàng lọc hồ sơ rất chặt; rủi ro evaluated loans phân bố theo địa lý. | KPI → V08 → V01 | Accepted chỉ khoảng 7.56% tổng applications; rejected không có default outcome. |
 | **02 — Xu hướng & Mục đích vay** | Hoạt động danh mục thay đổi theo thời gian và tập trung vào một số nhu cầu vay chính. | V07A → V07B → V09 | Giữ riêng denominator của volume, resolved default rate và purpose. |
-| **03 — Hồ sơ người vay** | Đặc điểm người vay đi cùng các mức rủi ro tín dụng khác nhau. | V04 → V11 → V10 → V12 | FICO cao hơn đi cùng PD thấp hơn; các insight khác chỉ chốt sau final review. |
+| **03 — Hồ sơ vay** | Phân khúc hồ sơ và các đặc điểm tài chính đi cùng rủi ro ra sao? | V11 → V12 → V04 → V13 | V13 cho thấy PD trung bình nhìn chung cao hơn ở các nhóm tỷ lệ khoản vay/thu nhập lớn; chỉ là liên hệ mô tả. |
 | **04 — Rủi ro & Expected Loss** | **RỦI RO TẬP TRUNG Ở HẠNG B–C** | KPI → V02 → V03 → V05 → V06 | B–C >70% cohort; Tier C đóng góp EL lớn nhất tại LGD 45%. |
 
 ---
@@ -58,37 +58,66 @@
 
 ---
 
-## 4. Page 03 — Hồ sơ người vay
+## 4. Page 03 — Hồ sơ vay
 
-**Subtitle:** FICO, DTI, thu nhập, quy mô khoản vay và tình trạng nhà ở.
+**Subtitle:** Phân khúc FICO/DTI, cơ cấu nhà ở, phân bố PD và khoản vay so với thu nhập.
 
-### V04 — FICO cao hơn đi cùng phân bố PD thấp hơn
-- **Chart:** Box & Whisker.
-- **Population:** 269,070 evaluated loans.
-- **Bands có dữ liệu:** 650–699 = 164,277; 700–749 = 83,552; 750+ = 21,241.
-- **Median PD:** 0.208485 → 0.127668 → 0.067767.
-- **Insight:** FICO cao hơn đi cùng predicted PD thấp hơn.
-- **Limit:** association, không phải causation; không tạo box cho nhóm không có dữ liệu.
+Trang giữ đúng **bốn visual phân tích** trong lưới 2×2; KPI đầu trang và slicer điều hướng/lọc hiện có không tính là visual phân tích:
+
+| Ô | Visual | Loại | Population mặc định |
+|---|---|---|---|
+| Trên trái | V11 — FICO × DTI | Heatmap | `cleaned_dataset`, 1.345.350 khoản vay có kết quả |
+| Trên phải | V12 — Cơ cấu tình trạng nhà ở | Donut | `cleaned_dataset`, 1.345.350 khoản vay có kết quả |
+| Dưới trái | V04 — PD theo nhóm FICO | Box & Whisker | `fact_evaluated_loan`, 269.070 khoản vay evaluated |
+| Dưới phải | V13 — Loan-to-Income Ratio × PD dự đoán | Line chart có marker theo nhóm số học | `fact_evaluated_loan`, 268.991 evaluated loans có tỷ lệ hợp lệ |
 
 ### V11 — DTI × FICO
-- **Chart:** Heatmap.
-- **Measure chính:** mean PD; tooltip có cell N và observed default rate nếu đã validate.
-- **Insight:** **PENDING FINAL DATA REVIEW**.
-- **Rule:** cell N < 100 cần flag/suppress.
-- **Limit:** PD và observed default rate là hai quantity khác nhau.
+- **Business question:** nhóm FICO/DTI nào có default quan sát và PD trung bình khác nhau?
+- **Why this visual:** heatmap làm nổi cấu trúc hai chiều; `N` cần được đọc cùng mỗi ô.
+- **Population:** `cleaned_dataset`, 1.345.350 resolved loans khi không lọc năm/bang.
+- **Insight:** giữ insight theo dữ liệu/filters hiện tại; ô có `N < 100` phải được cảnh báo.
+- **Story connection:** bắt đầu bằng phân khúc hồ sơ; V12 mô tả cơ cấu người vay kế tiếp.
+- **Limit:** PD và tỷ lệ default quan sát là hai đại lượng riêng; association không chứng minh causation.
 
-### V10 — Loan amount × income
-- **Chart:** Binned heatmap.
-- **Measure chính:** evaluated count/cell; tooltip mean PD + N.
-- **Insight:** **PENDING FINAL DATA REVIEW**.
-- **Limit:** chỉ mô tả concentration/association.
+### V12 — Cơ cấu tình trạng nhà ở
+- **Chart:** Donut.
+- **Population:** `cleaned_dataset`, cùng resolved portfolio với V11.
+- **Business question:** danh mục có cơ cấu tình trạng nhà ở thế nào?
+- **Why this visual:** các lát thể hiện thành phần của một tổng; không diễn giải lát nhỏ bằng tỷ lệ rủi ro.
+- **Insight:** title hiện tại cho biết trạng thái mortgage chiếm gần một nửa; vẫn phụ thuộc bộ lọc năm/bang.
+- **Story connection:** thêm borrower context sau V11, trước khi chuyển sang kết quả model evaluated ở V04.
+- **Limit:** mô tả thành phần, không phải quan hệ nhân quả với default.
 
-### V12 — Home ownership × Risk tier
-- **Chart:** 100% stacked bar.
-- **Measures:** segment N, tier count/share; mean PD nếu validate.
-- **Insight:** **PENDING FINAL DATA REVIEW**.
-- **Note:** ANY/OTHER/NONE rất ít; nếu giữ cần gộp có nhãn hoặc cảnh báo low-N.
-- **Limit:** không causal; không gộp category nếu chưa có rule rõ.
+### V04 — FICO cao hơn đi cùng phân bố PD thấp hơn
+- **Chart:** giữ nguyên custom Box & Whisker.
+- **Population mặc định:** 269.070 khoản vay trong `fact_evaluated_loan`; slicer năm có thể thu hẹp cohort qua quan hệ loan ID.
+- **Bindings giữ nguyên:** `fico_band` làm Groups, `predicted_pd` làm Values, `loan_id` làm Samples; không thay kết quả/thuật toán quartile hoặc tooltip hiện hữu.
+- **Title:** `FICO cao hơn đi cùng phân bố PD thấp hơn`.
+- **Business question:** phân bố PD dự đoán thay đổi thế nào giữa các nhóm FICO?
+- **Why this visual:** box plot thể hiện median, quartiles và whiskers, thay vì chỉ một trung bình.
+- **Insight đã đối chiếu:** median PD ở ba nhóm có dữ liệu 650–699, 700–749, 750+ lần lượt là 0.208485, 0.127668, 0.067767.
+- **Limit:** quan hệ mô tả, không causal. Nếu custom visual tự lấy mẫu nội bộ, cần kiểm tra giới hạn lấy mẫu/tooltip trong Desktop trước khi báo cáo số quartile.
+
+### V13 — Loan-to-Income Ratio × PD dự đoán
+- **Business question:** khi quy mô khoản vay so với thu nhập năm cao hơn, PD do mô hình dự đoán thay đổi thế nào?
+- **Why this visual:** line chart có marker trên trục X số học giữ được khoảng cách giữa các vị trí đại diện số; nhóm theo bins giảm overplotting so với 269 nghìn điểm khoản vay.
+- **Title:** `Tỷ lệ vay/thu nhập cao hơn đi cùng PD dự đoán cao hơn`.
+- **Subtitle:** `PD trung bình theo nhóm ratio · tập evaluated; 79 dòng thiếu ratio không hiển thị`.
+- **Population:** `fact_evaluated_loan` (269.070 evaluated rows), cùng cohort chứa `predicted_pd` và `target`; 268.991 dòng có ratio hợp lệ. 79 dòng thiếu ratio vì `annual_inc <= 0`; không loại âm thầm mà được báo rõ.
+- **Bindings:** X = `Loan-to-Income Bin X`, số đại diện nhóm; Y = `[Mean PD]` duy nhất. Tooltip = `[Loan-to-Income Bin Tooltip]`, `[Evaluated Loan Count]`, `[Observed Default Rate]`, `[Grouped Observed − Predicted Difference]`, `[Loan-to-Income Sample Flag]`. Measure tooltip trả label từ cùng filter context vì native line chart giới hạn role Tooltips ở Measure; mọi giá trị vẫn lấy từ cùng evaluated cohort.
+- **Bin rule:** `[0,0.1)`, `[0.1,0.2)`, `[0.2,0.3)`, `[0.3,0.4)`, `[0.4,0.5)`, `[0.5,0.6)`, `[0.6,0.8)`, `[0.8,1.0)`, `[1.0,+∞)`. Chọn bins rộng 0.1 ở vùng tập trung, mở rộng ở đuôi lệch phải; tách nhóm từ 1.0 để không gom dải rất rộng/outliers thành một điểm. 9 nhóm tie-out N=268.991, N nhỏ nhất=222 (≥100). X đặt tại trung điểm của khoảng hữu hạn, nhóm mở `[1.0,+∞)` dùng median evaluated-cohort 1.3333; sort tăng dần theo số `Loan-to-Income Bin X`, không theo nhãn.
+- **Data quality / observation:** ratio có 79 missing (0,029%), không có giá trị âm hay vô hạn; median=0,20; 99th percentile=0,50; maximum=8.000 là ngoại lệ do annual income=$1. Trong bins trên, Mean PD từ 13,68% ở `[0,0.1)` lên 32,56% ở nhóm `≥1.0`; các trung bình PD tăng theo thứ tự chín nhóm, nhưng observed default rate không đơn điệu (30,50% ở `[0.4,0.5)`, 30,44% ở `[0.6,0.8)`, 31,53% ở `[0.8,1.0)`, 33,61% ở đuôi). Tiêu đề mô tả xu hướng PD nhóm, không biến observed outcomes thành quy luật.
+- **Insight and limitation:** các nhóm có loan-to-income cao hơn nhìn chung cũng có Mean PD cao hơn trong evaluated cohort. Đây là association mô tả của dự đoán trên nhóm, không chứng minh tăng khoản vay hoặc giảm thu nhập gây ra rủi ro; không suy ra tác động cá nhân. Loan-to-Income không phải DTI.
+- **Story connection:** V11 phân khúc FICO×DTI → V12 cơ cấu nhà ở → V04 phân bố PD theo FICO → V13 thêm góc nhìn khả năng vay so với thu nhập; cùng chuyển sang trang 04 về risk tier/SHAP/EL.
+
+### V10 — giữ ngoài Page 03
+- V10 binned heatmap Loan Amount × Annual Income được gỡ khỏi Page 03 vì trùng dạng heatmap với V11.
+- Định nghĩa visual cũ được lưu trong backup `reports/figures/dashboard/_merge_backup/20261008-page03-v13/retired-page03-v10/`; mọi measure/cột semantic và source table liên quan vẫn giữ nguyên để dùng lại.
+
+### Bộ lọc và population
+- V11/V12/KPI dùng `cleaned_dataset` (1.345.350 resolved loans khi không lọc).
+- V04 dùng `fact_evaluated_loan` (269.070 evaluated loans khi không lọc); V13 dùng cùng nguồn, 268.991 dòng ratio hợp lệ và tooltip báo 79 missing do mẫu số annual income không hợp lệ.
+- Slicer năm dùng active `dim_date → cleaned_dataset.issue_d`; active quan hệ loan ID hai chiều nối evaluated fact với canonical context, nên slicer năm lọc đúng các evaluated loans tương ứng. Không trộn default outcomes từ full cleaned population vào V13.
 
 ---
 
@@ -160,7 +189,7 @@
 4. **SHAP V05:** validation sample riêng; không join/filter lại bằng frozen-test slicers.
 5. **Full-refit inference:** chỉ dùng cho External Dash, không dùng báo unbiased test metrics.
 6. **FactEvaluatedLoan:** 1 row / loan_id, key unique và non-null.
-7. **Bands / tiers:** dùng canonical engineering/model policy; không tự re-bin trong Power BI.
+7. **Bands / tiers:** risk tiers và feature bands model dùng policy canonical. V13 có report-only Loan-to-Income display bins để tổng hợp, không ghi vào nguồn Parquet hoặc dùng làm model feature.
 8. **Measure semantics:** giữ riêng PD, observed default rate, count/share và EL.
 9. **V11:** cell N < 100 cần flag/suppress.
 10. **Expected Loss:** `PD × LGD × EAD proxy`; baseline LGD 45%, `loan_amnt` là EAD proxy, đơn vị nguồn.
@@ -173,7 +202,7 @@
 
 **Page 2:** Volume trend → Resolved risk trend → Purpose
 
-**Page 3:** FICO → DTI/FICO → Amount/Income → Borrower segment
+**Page 3:** DTI/FICO segmentation → home-ownership mix → evaluated PD distribution by FICO → loan-to-income ratio and grouped predicted-risk trend
 
 **Page 4:** PD → Risk Tier → SHAP → Expected Loss
 

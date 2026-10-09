@@ -48,7 +48,7 @@ Mỗi visual phải có business question, source table, fields, measure, filter
 
 ## STORYTELLING LEAD
 
-TV1 kết hợp insight từ cả ba thành viên thành narrative: credit-risk problem → dataset/application flow → borrower risk → prediction/generalization → explainability → Expected Loss → individual prediction → limitations. Dashboard page story và V01–V12 visual families đã LOCKED trong `docs/tasks/dashboard-visual-plan.md`; TV1 giữ ownership V02–V06, không đổi chart selection hoặc workload ở phase data-model này. TV1 kiểm tra câu chữ không biến association thành causation và chuẩn bị executive summary.
+TV1 kết hợp insight từ cả ba thành viên thành narrative: credit-risk problem → dataset/application flow → borrower risk → prediction/generalization → explainability → Expected Loss → individual prediction → limitations. Dashboard page story và V01–V13 visual families hiện được ghi trong `docs/tasks/dashboard-visual-plan.md`; TV1 giữ ownership V02–V06, TV3 sở hữu Page 03 V13. TV1 kiểm tra câu chữ không biến association thành causation và chuẩn bị executive summary.
 
 ## REPORT COORDINATOR
 
@@ -61,7 +61,7 @@ TV1 tạo shared question bank, kiểm tra rehearsal và bảo đảm ba thành 
 ## CROSS-REVIEW TASKS
 
 - Review TV2 processed-data handoff, V07–V09 và data/EDA report sections.
-- Review TV3 dashboard structure, V10–V12, interaction và final report consistency.
+- Review TV3 dashboard structure, V10–V13, interaction và final report consistency.
 - Đọc toàn bộ defense matrix trước khi sign-off.
 
 Trạng thái hiện tại: **ML-LC-01 đến ML-LC-13 PASS**; ML-LC-13 PASS là handoff audit thỏa bằng artifacts hiện có, không có nghĩa Power BI đã hoàn thành. `xgboost_candidate` là model được đánh giá ở ML-LC-08; threshold `0.22009515762329102` được chọn trên validation. ML-LC-12 tạo model refit riêng trên 1,345,350 labeled rows và in-sample demo scores; không mang metrics frozen-test sang refit. Không chọn model/threshold lại. Dashboard integration và review Master PBIX vẫn thuộc TV3. Bản tổng hợp modeling: `reports/tv1_stages/modeling_summary.md`.

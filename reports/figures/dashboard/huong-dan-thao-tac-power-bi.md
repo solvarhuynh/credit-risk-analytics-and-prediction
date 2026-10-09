@@ -217,14 +217,100 @@ Audit state đầy đủ nằm ở [v01_state_audit.md](v01_state_audit.md): 51 
 2. Chọn biểu đồ volume và default-rate: **X-axis** là `dim_date[year]` (có thể drill quarter/month), **Y-axis** lần lượt `cleaned_dataset[Total Loans]` và `cleaned_dataset[Observed Default Rate — Portfolio]`. Slicer năm cũng dùng `dim_date[year]`. Chọn 2007/2015 để thấy số thay đổi, thay vì cả hai luôn hiển thị tổng 1.345.350.
 3. Trong **Modeling → New measure**, sửa `Top Purpose` thành `VAR T = ADDCOLUMNS(ALLSELECTED(cleaned_dataset[purpose]), "LoanCount", [Total Loans]) RETURN MAXX(TOPN(1, T, [LoanCount], DESC, cleaned_dataset[purpose], ASC), cleaned_dataset[purpose])`. Sửa `Peak Year` thành `VAR T = ADDCOLUMNS(ALLSELECTED(dim_date[year]), "LoanCount", [Total Loans]) RETURN MAXX(TOPN(1, T, [LoanCount], DESC, dim_date[year], ASC), dim_date[year])`. `Label Peak Year` so `SELECTEDVALUE(dim_date[year])` với `[Peak Year]`; không so với hằng 2015. Kiểm tra bằng cách đổi year slicer. Chưa xác nhận runtime DAX trong Desktop ở vòng này.
 
-### 4. Trang 03 — điền KPI và đặt V04 vào đúng chỗ
+### 4. Trang 03 — bố cục bốn visual phân tích
 
-**Business question:** đặc điểm người vay/FICO/DTI đi cùng mức rủi ro nào? **Vì sao bố cục:** KPI để đọc nhanh, V11/V12 ở giữa, V10/V04 ở dưới; box plot V04 cho thấy phân bố PD thay vì chỉ trung bình. **Insight:** FICO cao hơn đi cùng PD dự đoán thấp hơn trong tập evaluated; không nói FICO gây giảm rủi ro. **Mạch chuyện:** tổng quan khách hàng → ma trận/phân khúc → rủi ro model ở trang 04.
+**Business question:** phân khúc hồ sơ và đặc điểm tài chính đi cùng rủi ro ra sao? **Why this visual:** V11 heatmap cho hai chiều FICO/DTI; V12 donut cho cơ cấu nhà ở; V04 box plot cho phân bố PD; V13 dùng binned numeric ratio trên trục X liên tục để tránh overplotting. **Insight:** trong evaluated cohort, Mean PD theo chín nhóm ratio nhìn chung tăng từ 13,68% ở `[0,0.1)` lên 32,56% ở `[1.0,+∞)`; observed rate có dao động. Đây là association mô tả, không phải causation. **Story connection:** phân khúc → borrower context → phân bố model PD → loan-to-income → trang 04 risk/SHAP/EL.
 
-1. Chọn card trống ở hàng KPI → **Build visual → Data**, kéo `cleaned_dataset[Total Loans]`; trong **Format visual → Label/Category label**, đặt nhãn **KHOẢN VAY CÓ KẾT QUẢ**. Card thứ nhất giữ `Average Loan Amount` (**GIÁ TRỊ VAY TRUNG BÌNH**), card thứ ba chọn measure `Average Annual Income = AVERAGE(cleaned_dataset[annual_inc])` (**THU NHẬP NĂM TRUNG BÌNH**), card thứ tư giữ `Average FICO Score`. Khi làm bằng GUI: **Modeling → New measure** để tạo Average Annual Income trước, Format như số thường, không `$`.
-2. Từ trang V04 thử nghiệm, chọn custom **Box & Whisker** → **Ctrl+C**; sang trang 03 → **Ctrl+V**; đặt ở ô dưới bên phải, khoảng `X=1106, Y=652, Width=793, Height=403`. Xóa shape/khung placeholder trắng nằm ở vị trí này. Giữ `fact_evaluated_loan[fico_band]`, `predicted_pd` và `loan_id` của visual; kiểm tra custom visual đã cài và renders. V04 dùng frozen-test evaluated population, không phải các KPI danh mục `cleaned_dataset`.
-3. V11 từng dùng riêng tooltip page `TT_V11`. Chọn ma trận V11 → **Build visual → Tooltips**, thêm `cleaned_dataset[Total Loans]` để đọc N; vào **Format visual → Tooltips → Type: Default** và bỏ report-page tooltip. Trang `TT_V11` đã được cất trong backup. Nếu Desktop không hỗ trợ field well Tooltips cho matrix này hoặc không hiển thị N, khôi phục `TT_V11` từ backup (ẩn khỏi navigator) và coi yêu cầu đúng bốn trang *vật lý* là blocker — không được âm thầm mất N.
-4. Đổi subtitle trang 03 sang câu phân biệt population: V04 evaluated; V10/V11/V12 và các KPI portfolio dùng `cleaned_dataset`. Trong **View → Page view**, dùng **Fit to page** để so kích cỡ với trang 04.
+#### A. Gỡ V10 khỏi Page 03, giữ lại để dùng sau
+
+1. Chọn tab **03 · Hồ sơ vay**. Mở **View → Selection pane** (hoặc chọn trực tiếp heatmap ở ô dưới bên trái) và chọn visual V10 có Loan Amount × Annual Income; xác nhận title/field wells trước khi xóa.
+2. Nhấn **Delete** để xóa visual khỏi Page 03. Không xóa measures, calculated columns, bảng `cleaned_dataset` hay semantic model dependency. Định nghĩa cũ đã lưu trong `reports/figures/dashboard/_merge_backup/20261008-page03-v13/retired-page03-v10/visual.json`.
+
+#### B. Giữ nguyên V04 Box & Whisker
+
+1. Chọn V04 ở hàng dưới bên phải. **Không đổi Visual type**; phải còn custom **Box & Whisker**. Trong **Build visual**, giữ `fact_evaluated_loan[fico_band]` ở Groups, `fact_evaluated_loan[predicted_pd]` ở Values và `fact_evaluated_loan[loan_id]` ở Samples.
+2. Đổi Title thành **FICO cao hơn đi cùng phân bố PD thấp hơn**; Subtitle thành **Tập evaluated, tối đa N = 269.070 · Box plot theo nhóm FICO**. Giữ hiện có median, quartiles, whiskers và tooltip. Nếu custom visual có thiết lập sampling, kiểm tra/ghi rõ sample size và không mô tả sample như toàn bộ 269.070 cho tới khi xác minh.
+
+#### C. Tạo nhóm Loan-to-Income cho V13 (chỉ nhóm hiển thị)
+
+Việc này chỉ thêm cột tính toán trong semantic model để gom bin và tạo trục số; **không sửa parquet, feature engineering hoặc model input**. Source measure `[Mean PD]` và `[Observed Default Rate]` đã có sẵn trong `fact_evaluated_loan`; không tạo measure dự đoán mới.
+
+1. Trong **Model view** → bảng `fact_evaluated_loan` → **New column**, tạo `Loan-to-Income Bin X`. Công thức trả về số đại diện của nhóm: 0,05; 0,15; 0,25; 0,35; 0,45; 0,55; 0,70; 0,90; nhóm đuôi ≥1,0 dùng median evaluated cohort 1,3333. Giá trị BLANK/âm trả BLANK.
+
+   ```DAX
+   VAR RatioValue = fact_evaluated_loan[loan_to_income_ratio]
+   RETURN
+       SWITCH(
+           TRUE(),
+           ISBLANK(RatioValue) || RatioValue < 0, BLANK(),
+           RatioValue < 0.1, 0.05,
+           RatioValue < 0.2, 0.15,
+           RatioValue < 0.3, 0.25,
+           RatioValue < 0.4, 0.35,
+           RatioValue < 0.5, 0.45,
+           RatioValue < 0.6, 0.55,
+           RatioValue < 0.8, 0.7,
+           RatioValue < 1.0, 0.9,
+           1.3333333333333333
+       )
+   ```
+
+2. Tạo `Loan-to-Income Bin Label` bằng **New column**; đây là nhãn tooltip, không dùng làm trục nên không bị sort chữ:
+
+   ```DAX
+   VAR RatioValue = fact_evaluated_loan[loan_to_income_ratio]
+   RETURN
+       SWITCH(
+           TRUE(),
+           ISBLANK(RatioValue) || RatioValue < 0, BLANK(),
+           RatioValue < 0.1, "0 – <0,1",
+           RatioValue < 0.2, "0,1 – <0,2",
+           RatioValue < 0.3, "0,2 – <0,3",
+           RatioValue < 0.4, "0,3 – <0,4",
+           RatioValue < 0.5, "0,4 – <0,5",
+           RatioValue < 0.6, "0,5 – <0,6",
+           RatioValue < 0.8, "0,6 – <0,8",
+           RatioValue < 1.0, "0,8 – <1,0",
+           "≥ 1,0 (nhóm đuôi)"
+       )
+   ```
+
+3. Trong **Modeling → New measure**, tạo hai measure để line chart nhận đúng cỡ mẫu và tooltip (role Tooltips của chart này chỉ nhận Measure):
+
+   ```DAX
+   Loan-to-Income Sample Flag =
+       IF([Evaluated Loan Count] < 100, "Cỡ mẫu thấp (N < 100)", "Cỡ mẫu đủ (N ≥ 100)")
+
+   Loan-to-Income Bin Tooltip =
+       SELECTEDVALUE('fact_evaluated_loan'[Loan-to-Income Bin Label])
+   ```
+
+   Chênh lệch mô tả sẵn có `[Grouped Observed − Predicted Difference]` = observed default rate − mean PD. Không gọi đây là sai số cá nhân hay calibration.
+
+#### D. Đổi V13 thành line chart có marker, X số liên tục
+
+1. Chọn V13 ở ô dưới bên phải → **Visualizations → Line chart**. Xóa các field FICO khỏi wells; kéo `Loan-to-Income Bin X` vào **X-axis**, `[Mean PD]` vào **Y-axis**, `[Loan-to-Income Bin Tooltip]`, `[Evaluated Loan Count]`, `[Observed Default Rate]`, `[Grouped Observed − Predicted Difference]` và `[Loan-to-Income Sample Flag]` vào **Tooltips**. Native line chart chỉ nhận Measure ở role Tooltips, vì vậy dùng measure `SELECTEDVALUE` để hiển thị label bin. Không đưa observed rate thành đường thứ hai; nó chỉ ở tooltip để chart bớt rối.
+2. Trong **Format visual → X-axis**, đặt **Type = Continuous** (Scalar) để khoảng cách thể hiện đúng các vị trí số, không để categorical/equidistant. Title trục: **Tỷ lệ vay / thu nhập năm**. Trong **Y-axis**, đặt **Start = 0**, format `[Mean PD]` là percentage, và không crop trục để phóng đại chênh lệch.
+3. Trong **Lines/Markers**, bật marker hình tròn nhỏ (khoảng 5 px), line thẳng 2 px; không bật smoothing, không fit trendline/hồi quy. Đặt series duy nhất xanh `#2F6BBD`; ẩn legend nếu chỉ có một measure.
+4. Title: **Tỷ lệ vay/thu nhập cao hơn đi cùng PD dự đoán cao hơn**. Subtitle: **PD trung bình theo nhóm ratio · tập evaluated; 79 dòng thiếu ratio không hiển thị**. Tooltip hiển thị label bin, N, mean PD, observed default rate, grouped difference và sample flag.
+5. Bin widths: 0,1 cho vùng dày `[0,0.6)`, 0,2 cho `[0.6,0.8)` và `[0.8,1.0)`, cộng nhóm đuôi `[1.0,+∞)` để không nhập một dải outlier rất rộng vào bin 0.8–1.0. Trục X dùng số đại diện, sắp tăng dần; nhãn bin nằm tooltip.
+
+#### E. Xếp lưới và kiểm tra slicers
+
+Giữ KPI hiện tại. Trong **Format → General → Properties** (hoặc **View → Selection pane** để chọn đúng visual) đặt bốn cell bằng nhau:
+
+| Vị trí | Visual | X | Y | Width | Height |
+|---|---|---:|---:|---:|---:|
+| Trên trái | V11 | 300,8 | 281,3 | 789,1 | 374,8 |
+| Trên phải | V12 | 1.109,9 | 281,3 | 789,1 | 374,8 |
+| Dưới trái | V04 | 300,8 | 676,2 | 789,1 | 374,8 |
+| Dưới phải | V13 | 1.109,9 | 676,2 | 789,1 | 374,8 |
+
+Slicer **LỌC NĂM** trên Page 03 dùng `dim_date[year]`. Quan hệ active `dim_date → cleaned_dataset.issue_d` lọc V11/V12 và canonical context; quan hệ `fact_evaluated_loan.loan_id ↔ cleaned_dataset.loan_id` hai chiều chuyển cùng lựa chọn sang V04/V13. Trong **Format ribbon → Edit interactions**, để year slicer ở biểu tượng **Filter** trên cả bốn visual. Nếu visual nào hiện **None**, khôi phục Filter. Nếu dùng page/report filter địa lý khác, kiểm tra filter đó đi qua cùng quan hệ loan ID. Không dùng outcome từ portfolio full resolved để tạo observed rate cho V13.
+
+Ở trạng thái không lọc, kiểm tra 9 bins V13 cộng lại thành 268.991 dòng hợp lệ; 79/269.070 dòng không có ratio vì annual income không hợp lệ. N nhỏ nhất=222; Mean PD tăng từ 13,68% ở bin `[0,0.1)` tới 32,56% ở bin `[1.0,+∞)`, observed default rate có dao động. Dùng tooltip kiểm tra N/observed rate và cảnh báo nếu filter làm N<100. X phải là continuous, sort numeric; không được để các khoảng số thưa cách đều như category. Kiểm tra V04 còn box/median/quartiles/whiskers và tooltip hoạt động; không kết luận GUI/render PASS nếu chưa xem trực tiếp Desktop.
+
+**Thao tác thực tế ở task này:** PBIR/TMDL được sửa khi `nghia.pbip` đóng; agent chưa thực hiện các thao tác click/drag trên GUI Power BI. Các bước trên là hướng dẫn GUI tương đương để người dùng có thể lặp lại và nghiệm thu.
 
 ### 5. Nghiệm thu trước khi Save
 

@@ -284,93 +284,16 @@ Input là `fact_evaluated_loan.parquet` và bảng SHAP đã import sẵn; khôn
 
 ## Individual Prediction / What-if — prototype cục bộ
 
-Trạng thái: **INDIVIDUAL_PREDICTION_PROTOTYPE_READY** cho Python inference + CSV handoff; **Trang 6 đã được dựng trong working `nghia.pbip` và render-review cục bộ**, chưa phải Master Dashboard của TV3. Mục đích: chọn một khoản vay đã có trong canonical, thay tối đa bốn input được duyệt, giữ mọi field khác từ hồ sơ nền, tính lại dependencies, dự đoán thật bằng full-refit và giải thích SHAP cho chính scenario. Không dùng DAX/frozen-test prediction để tạo PD; kết quả không phải chứng minh nhân quả hay unbiased test metric.
-
-Prerequisite: `.venv`/`requirements.txt` đã cài; `data/processed/cleaned_dataset.parquet`, `data/processed/modeling/xgboost_full_refit.joblib` và `ml_lc_12_manifest.json` còn nguyên hash đã khóa. Chạy từ repo root:
-
-```powershell
-.\.venv\Scripts\python.exe -m src.models.individual_prediction --loan-id 68407277
-.\.venv\Scripts\python.exe -m src.models.individual_prediction --loan-id 68407277 --loan-amnt 8600
-```
-
-Lệnh đầu chạy baseline (loan amount 3.600), lệnh sau thay **duy nhất** `loan_amnt`; output CURRENT sẽ thay lần trước. Các flag tùy chọn khác: `--annual-inc <số>`, `--dti <số>`, `--term-months 36|60`, `--lgd 0.30|0.45|0.60` (mặc định 0.45). Chỉ flag được truyền mới thay giá trị nền. Ranges: loan amount 500–40.000; annual income (0, 10.999.200]; DTI [0,999]; term 36 hoặc 60. `loan_amnt`/`annual_inc` tái tính ratio/band, `dti` tái tính DTI band; term cập nhật trực tiếp. Input sai, ID không có/trùng, schema/model/canonical hash sai phải dừng, không ghi kết quả mới.
-
-Output local/Git-ignored dưới `data/processed/dashboard/individual_prediction/`: `individual_prediction_result.csv` (1 dòng current), `individual_prediction_shap.csv` (10 đóng góp local), `individual_prediction_inputs.csv` (2 dòng baseline/current), `individual_prediction_manifest.json` (provenance/contract). `result.csv` dùng `project_credit_score` **không phải FICO**; `ead_proxy=loan_amnt` theo source units, EL = PD×LGD×proxy. SHAP ở raw margin/log-odds, không phải %PD. Ba CSV **đã được người dùng import** vào working PBIP dưới tên bảng chữ thường `individual_prediction_result`, `individual_prediction_shap`, `individual_prediction_inputs`. Sau mỗi lần chạy CLI, vào Power BI Desktop **Home → Refresh**; không có inference khi click slicer. Kiểm `scenario_id` ở cả ba bảng trùng manifest. Hướng dẫn GUI đầy đủ: `reports/figures/dashboard/huong-dan-thao-tac-power-bi.md`.
-
-Validation đã chạy:
-
-```powershell
-.\.venv\Scripts\python.exe -m pytest tests/models/test_individual_prediction.py -v
-.\.venv\Scripts\python.exe -m pytest tests/models tests/features -q
-.\.venv\Scripts\python.exe -m compileall src tests
-git diff --check
-```
-
-Trên máy hiện tại, pytest `tmp_path` mặc định dưới `C:\Users\Nghia\AppData\Local\Temp\pytest-of-Ga-eul` từng bị Windows `PermissionError`; lần kiểm cuối thành công dùng `--basetemp D:\ttdltq\.pytest_cache\individual_prediction_focused_final_20261007` (focused) và `...\individual_prediction_regression_final_20261007` (regression). Focused **22 passed**, regression **137 passed**, 3 warnings từ SHAP/matplotlib deprecation; `compileall` và `git diff --check` PASS, inference/CSV export PASS. Đây là ví dụ đường dẫn máy chạy hiện tại, không phải prerequisite bắt buộc ở máy khác. File audit/status: `reports/tv1_stages/individual-prediction-inference-audit.md`.
-
-### Trang 6 — thao tác chạy và kiểm tra
-
-1. Chạy một trong hai lệnh inference ở trên; **chờ CLI kết thúc**. CLI cập nhật ba CSV CURRENT, không tạo lịch sử scenario trong Power BI. Ví dụ đã nghiệm thu: `--loan-id 68407277 --loan-amnt 8600`.
-2. Mở `reports/figures/dashboard/nghia.pbip` bằng Power BI Desktop → **Home → Refresh** → tab **Trang 6 — Dự đoán cá nhân & What-if**. Không dùng slicer để chạy model; nếu muốn hồ sơ khác, chạy CLI mới rồi Refresh lại.
-3. Kiểm current row counts **Result=1, SHAP=10, Inputs=2**, cùng `scenario_id`; kiểm năm KPI, hai dòng input, 10 SHAP có dấu, EL và độ nhạy LGD. Nếu blank/ID lệch, dừng; không chỉnh số thủ công. Model DAX ở Trang 6 chỉ **đọc** CSV và fail-closed khi result không đúng một dòng. Khi source có `loan_id=68407277`, amount `8600`: PD `14,50%`, class `Không default`, risk score `14,50`, credit score `855`, tier `B`, EAD proxy `8.600`, LGD `45%`, EL `561,15` đơn vị nguồn.
-
-Trang 6 được tạo bằng PBIR/TMDL khi Desktop đóng; hướng dẫn click GUI tương đương cho từng visual/measure/setting tại `reports/figures/dashboard/huong-dan-thao-tac-power-bi.md`. Ảnh Desktop đã review là `reports/figures/dashboard/trang-6-render-review.png`. Không sửa V02–V06/Trang 3, không ghép Master. `powerbi-report-author` CLI không có ở máy hiện tại; kiểm cấu trúc JSON, DAX tổng hợp và ảnh render là các gate thực tế. Trước khi TV3 tích hợp, người dùng nên mở trang và nghiệm thu mắt một lần nữa.
-
-## Dash TV1 — form dự đoán demo 6-input
-
-Dash dùng sáu trường `loan_amnt`, `annual_inc`, `dti`, `term_months`, `fico_avg`, `home_ownership`. Dropdown model vẫn chỉ hiển thị **XGBoost** và **Logistic Regression**. Cả hai model demo sáu input đều là candidate phụ của giao diện; model chính ML-LC-12 (`xgboost_full_refit.joblib`, 103 input → 151 transformed) và ML-LC-08 không bị thay đổi.
-
-### Chọn candidate chỉ bằng validation
-
-Theo protocol đã được người dùng chốt, model 6-input được đánh giá/chọn bằng validation 269.070 dòng; **không chấm lại frozen test**. Mọi frozen-test metrics của 6-input phải ghi **NOT EVALUATED**. Các metric frozen-test 5-input là kết quả one-shot lịch sử, không dùng để chọn 6-input.
-
-| Candidate | Inputs | ROC-AUC | PR-AUC | F1 | Recall | Precision |
-|---|---:|---:|---:|---:|---:|---:|
-| XGBoost 5-input (validation baseline) | 5 | 0,680460 | 0,341929 | 0,400753 | 0,544751 | 0,316967 |
-| XGBoost 6-input (**ACTIVE**) | 6 | 0,685266 | 0,349475 | 0,403591 | 0,546482 | 0,319936 |
-| Logistic 5-input (validation baseline) | 5 | 0,672271 | 0,333273 | 0,391864 | 0,502103 | 0,321318 |
-| Logistic 6-input (**ACTIVE**) | 6 | 0,677361 | 0,341154 | 0,399090 | 0,535555 | 0,318048 |
-
-Cả hai model 6-input tăng ba metric chính ROC-AUC, PR-AUC, F1 trên cùng validation split. XGBoost precision nhích lên; Logistic precision giảm nhẹ nhưng recall và F1 tăng. Chọn cả hai để model selector dùng chung một form; đây là quyết định validation-only, không phải xác nhận hiệu năng test độc lập. Accuracy không dùng làm headline vì tỷ lệ default xấp xỉ 20% khiến Accuracy đơn lẻ dễ gây hiểu nhầm.
-
-Home ownership dùng đúng category có trong train: `MORTGAGE`, `RENT`, `OWN`, `ANY`, `NONE`, `OTHER`. MORTGAGE/RENT/OWN lần lượt có 399.613/320.855/86.453 dòng; category hiếm ANY/NONE/OTHER có 176/28/85 dòng. Ba category hiếm được giữ riêng, hiển thị “Nhóm rất hiếm (ANY/NONE/OTHER)” theo từng giá trị; không tự gộp hoặc tạo category `Khác`. OHE/preprocessing nằm trong model pipeline và unknown category bị từ chối.
-
-Artifact local/Git-ignored đang hoạt động: `xgboost_6input_demo.joblib` + manifest và `logistic_6input_demo.joblib` + manifest. Candidate 5-input cùng frozen-test prediction/one-shot lock vẫn là artifact lịch sử, không bị ghi đè. Threshold dùng chung `0.22009515762329102`, không retune. Không train lại hay mở frozen test trong workflow chạy app.
-
-Khởi chạy từ repo root:
-
 ```powershell
 .\run_prediction_app.bat
 ```
 
-Launcher dùng `.venv\Scripts\python.exe`, chờ `http://127.0.0.1:8050/` trả HTTP 200 rồi mở trình duyệt mặc định. Có thể chạy trực tiếp bằng lệnh trong README của ứng dụng. Dừng bằng `Ctrl+C`; app chỉ bind loopback, chưa có authentication và không deploy công khai. Nếu server Dash cũ còn chạy ở cổng 8050, dừng ở terminal cũ trước khi chạy launcher lại và refresh trang bằng `Ctrl+F5`; nếu không, browser có thể tiếp tục hiển thị code/UI cũ. Input form kiểm soát theo miền train, trong đó thu nhập phải dương, DTI không âm, term chỉ 36/60 và home ownership chỉ chọn một trong `OWN`/`MORTGAGE`/`RENT` qua dropdown. Chi tiết ranges/label ở `apps/individual_prediction_dash/README.md`.
+Launcher mặc định chạy phiên bản hiện tại của repo tại `http://127.0.0.1:8050/`. Mỗi port là một server/process riêng; launcher từ chối cổng đang dùng để tránh mở nhầm instance cũ. Nếu báo cổng bận, kiểm tra listener bằng `Get-NetTCPConnection -LocalPort 8050 -State Listen -ErrorAction SilentlyContinue | Select-Object LocalAddress, LocalPort, OwningProcess`; nếu có PID, dừng đúng app cũ bằng `Ctrl+C` trong cửa sổ tương ứng rồi chạy lại. Nếu lệnh kiểm tra không trả dòng nào nhưng launcher vẫn báo bận, cập nhật/sửa launcher và thử lại; không tự kết thúc process không xác định. Chỉ dùng `$env:DASH_PORT = "<port trống>"` khi đã kiểm tra port chưa có listener. `Ctrl+F5` chỉ xóa cache trình duyệt; nó không nâng cấp code nằm trong một process Python đang chạy.
 
-Kết quả chính có đúng **bốn card 2×2**: hàng 1 mức độ rủi ro (Tier A/B/C/D → THẤP/TRUNG BÌNH/CAO/RẤT CAO) và hạng rủi ro; hàng 2 **Điểm rủi ro cá nhân** (`xx / 100`) và **Điểm an toàn mô hình** (0–1000). Điểm rủi ro cá nhân là percentile của PD hồ sơ trong **269.070 dự đoán validation của chính model được chọn**: `100 × số PD validation ≤ PD hồ sơ / 269.070`, làm tròn để hiển thị. Đây là thứ hạng rủi ro tương đối, **không phải xác suất vỡ nợ**; reference XGBoost và Logistic tách riêng, được cache, không dùng frozen test hay rescore cả validation khi bấm. PD thật từ `predict_proba`, ngưỡng, quyết định và điểm cá nhân nằm trong **Chi tiết mô hình** thu gọn; không còn PD card/thước 0–100% ở khu vực chính. **Tình trạng nhà ở** là một dropdown: Sở hữu nhà→`OWN`, Đang trả thế chấp→`MORTGAGE`, Thuê nhà→`RENT` (mặc định). `OTHER`/`ANY`/`NONE` vẫn giữ riêng trong dữ liệu và model đã fit, chỉ ẩn khỏi form. Đổi input/model xóa kết quả cũ; bấm DỰ ĐOÁN để chấm hồ sơ mới. EL = PD × LGD × `loan_amnt` (EAD proxy); mức LGD 30/45/60% không chạy lại inference. Local explanation gồm đủ sáu biến; Home Ownership dùng contribution thật sau khi gom các OHE contribution theo category về trường gốc và chỉ mô tả hồ sơ hiện tại.
+Threshold slider trong [0, 1] chỉ đổi kết luận Default/Non-default, đường/màu và hai số đếm trên visual, cùng đối chiếu TP/TN/FP/FN cho preset nguyên bản; PD, tier, mức rủi ro, điểm an toàn, EL và SHAP giữ nguyên. Nút Đặt lại dùng giá trị nội bộ chính xác `0.22009515762329102` (hiển thị `0.2201`). Chọn một trong tám hồ sơ Validation để điền sáu input, xem PD Validation của model đang chọn, rồi bấm DỰ ĐOÁN để suy luận. Chuyển model sau khi có kết quả sẽ chấm lại hồ sơ bằng model mới; chỉnh input sẽ xóa kết quả và ẩn đối chiếu nhãn lịch sử. Biểu đồ dùng 120 PD lấy mẫu cố định từ prediction Validation đã kiểm provenance, số đếm chỉ áp dụng cho các chấm đang hiển thị. Kiểm tra tập trung: `.\.venv\Scripts\python.exe -m pytest tests/apps/test_individual_prediction_dash.py -v`.
 
-Lệnh chạy bản mới từ repo root:
+Trong khu vực **HIỆU NĂNG MÔ HÌNH · VALIDATION**, Brier Score/Log Loss và ROC-AUC/PR-AUC/F1 đọc từ manifest của model 6-input đang chọn. **Chi tiết mô hình** mặc định đóng, liệt kê model, hai ngưỡng, hai kết luận, cùng Recall/Precision/Accuracy của đúng model 6-input. Ba metric bổ sung và F1 được ghi rõ là kết quả Validation tại ngưỡng đánh giá trong manifest, không đổi theo slider. Visual ngưỡng dùng file `*_6input_demo_validation_predictions.parquet` đã kiểm hash model/split/prediction; nếu thiếu hoặc sai provenance thì hiện thông báo không khả dụng. Biểu đồ hiệu chuẩn cũ không còn trên UI chính. Khu EL có ba KPI, bar theo LGD và mục ⓘ mở để đọc công thức `PD × LGD × số tiền vay (EAD proxy)`.
 
-```powershell
-.\run_prediction_app.bat
-```
+Giải thích học thuật: Brier = trung bình `(PD − nhãn)²`, Log Loss phạt dự đoán xác suất quá chắc chắn nhưng sai; thấp hơn tốt hơn cho cả hai. Chúng là đánh giá tổng thể trên nhãn Validation, không phải khoảng sai số ± hay độ chính xác của hồ sơ đang nhập. Mỗi lần đổi model, metrics/chart đi theo manifest và validation predictions của đúng model. Metric nào thiếu trong manifest thì giao diện để `—`, không fallback sang model 103-feature hoặc frozen test.
 
-Launcher mặc định dùng cổng 8050. Nếu đang có instance cũ ở đó, có thể giữ instance cũ và chạy phiên bản mới ở cổng riêng:
-
-```powershell
-$env:DASH_PORT = "8051"
-.\run_prediction_app.bat
-```
-
-Launcher tự mở đúng URL cho cổng đã chọn. Đối chiếu tiêu đề trang và đủ sáu ô nhập; nếu vẫn thấy bản cũ, kiểm tra URL/cổng trên thanh địa chỉ rồi tải lại bằng `Ctrl+F5`.
-
-Validation lịch sử khi thêm form 6-input: focused `tests/apps/test_individual_prediction_dash.py tests/models/test_demo_6input.py` — **35 passed**, 3 cảnh báo SHAP deprecation. `compileall`/regression gate ghi tại `logs/log_tv1.md`. Trang 6 Power BI cũ vẫn là luồng CLI → CSV → Home/Refresh và không bị thay bởi app này.
-
-Kiểm tra riêng cho cập nhật điểm cá nhân/dropdown: từ repo root chạy `.\.venv\Scripts\python.exe -m pytest tests/apps/test_individual_prediction_dash.py tests/models/test_risk_index.py -q`; lượt kiểm hiện tại **23 passed**. Chrome tại cổng 8052 đã xác nhận giao diện 2×2 và cả hai model suy luận thật. Kiểm thêm model demo bằng `.\.venv\Scripts\python.exe -m pytest tests/apps tests/models/test_demo_6input.py tests/models/test_risk_index.py -q`; lượt này **29 passed**. Nếu pytest trên Windows báo lỗi quyền ở `%TEMP%`, thêm `--basetemp .pytest_cache/personal-risk-temp` vào lệnh. Chi tiết bài test/browser ở `logs/log_tv1.md`.
-
-Audit Home Ownership mới nhất: `reports/tv1_stages/home-ownership-model-audit.md`. Form công khai chỉ còn `OWN`/`MORTGAGE`/`RENT`; ba nhóm hiếm vẫn ở artifact đã fit. Đổi input hoặc model sẽ xóa kết quả cũ; phải bấm **DỰ ĐOÁN** để chạy lại. Menu dropdown được nâng stacking khi có focus, không bị card Expected Loss che. Để xem code mới khi các cổng 8050–8053 còn instance cũ, có thể chạy từ repo root trong PowerShell:
-
-```powershell
-$env:DASH_PORT = "8054"
-.\run_prediction_app.bat
-```
-
-Chỉ khởi chạy nếu cổng 8054 chưa có instance; nếu instance kiểm chứng còn chạy, mở `http://127.0.0.1:8054/` rồi dùng `Ctrl+F5`. Browser QA đã kiểm tra ba lựa chọn với cả hai model ở 1366×768 và 1440×900; test focused hiện **39 passed**, không train/chấm frozen test. Lệnh kiểm lại: `.\.venv\Scripts\python.exe -m pytest tests/models/test_demo_6input.py tests/apps/test_individual_prediction_dash.py tests/models/test_risk_index.py -q --basetemp .pytest_cache/home-ownership-final-tests`.
+Ngưỡng phân loại tương tác chạy từ `0` đến `1`, bước `0.01`, ngay dưới sáu input và phía trên **DỰ ĐOÁN**. Mặc định/nút **Đặt lại** giữ chính xác `0.22009515762329102` (nhãn hiển thị `0.2201`); giá trị sau đó được giữ trong `sessionStorage` của tab hiện tại. Sau khi có PD, slider chỉ đổi kết luận theo điều kiện `PD >= ngưỡng` và đường/màu trên visual, không chạy lại inference, SHAP hay Expected Loss. Tier, mức rủi ro, PD, điểm an toàn và EL không đổi. Precision/Recall/F1 trong phần Validation vẫn gắn với ngưỡng đánh giá trong artifact, không được diễn giải như metric của ngưỡng slider. Kiểm tra: `.\.venv\Scripts\python.exe -m pytest tests/apps/test_individual_prediction_dash.py -v --basetemp .pytest_cache/threshold-tests`.

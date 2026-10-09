@@ -1,14 +1,18 @@
 # Thiết lập TV3 — Dashboard
 
-Trạng thái Master PBIP làm việc: `nghia.pbip` chứa bảng dữ liệu TV2, model/visual TV1 và các trang Huy được chuyển thủ công. Ngày 2026-10-08 đã sửa measure dependency của Huy. Bản hiện tại đã rút còn **4 trang vật lý** theo `docs/tasks/dashboard-visual-plan.md`, sửa date relationship, KPI, V04 và **V01 từ Shape map sang native bubble Map**; kiểm tra cấu trúc PBIR **PASS**, model Desktop nạp được và DAX state audit **PASS**. **Render Map từng bubble và các visual khác vẫn cần nghiệm thu trực quan**. Map V01 vẫn phụ thuộc cài đặt Security của Desktop/tenant, không thể tự bật bằng PBIR.
+## Trạng thái hiện tại — BLOCKED (2026-10-09)
+
+Trong working tree hiện hành không tìm thấy entry file `nghia.pbip` hay `credit_risk_master_dashboard.pbip`. Có các thư mục Report/SemanticModel mang tên `credit_risk_master_dashboard`, nhưng chúng chưa có entry PBIP được xác nhận. Các file `nghia.pbip`/Report/SemanticModel cũ đang mang trạng thái deleted trong Git; đồng thời nội dung Power BI mới còn untracked. Đây là thay đổi đã có sẵn trước đợt dọn dẹp này và được giữ nguyên.
+
+Vì vậy các ghi nhận bên dưới về bốn trang, DAX, quan hệ và V01 là trạng thái audit lịch sử của phiên bản trước, **không xác nhận project hiện tại mở được hoặc đã render đúng**. Không mở/lưu một project thay thế theo suy đoán. TV3 cần xác định master `.pbip` hoàn chỉnh và phục hồi/đưa đúng entry file cùng dependencies vào working tree; sau đó mới chạy lại hướng dẫn nghiệm thu GUI.
 
 ## Mở và nghiệm thu bản bốn trang
 
 1. Mở `D:/ttdltq/reports/figures/dashboard/nghia.pbip` bằng Power BI Desktop khi không có phiên Desktop khác đang giữ project; kiểm tra chỉ có bốn tab `01 · Tổng quan`, `02 · Xu hướng`, `03 · Hồ sơ vay`, `04 · Rủi ro & EL`. Backup trước dọn: `reports/figures/dashboard/_merge_backup/20261008-four-page-polish/` (gồm 8 trang cũ và placeholder V04 để khôi phục).
 2. Nếu Map V01 báo *Map and filled map visuals aren't enabled for your org*: vào **File → Options and settings → Options → Global → Security → Use Map and Filled Map visuals**, bật và khởi động lại Desktop. Checkbox này chỉ là cài đặt local của file/ứng dụng; nếu đã có dấu kiểm mà canvas vẫn báo lỗi như ảnh kiểm tra ngày 2026-10-08, chính sách tenant vẫn đang chặn. Khi đó nhờ Power BI/Fabric tenant admin vào **Admin portal → Tenant settings → Map and filled map visuals**, bật cho toàn tổ chức hoặc security group của tài khoản rồi **Apply**; sau đó đăng xuất/đăng nhập và mở lại Desktop. Không có quyền admin thì V01 còn BLOCKED; không dùng vị trí giả.
 3. Trong **Model view → Manage relationships**, xác nhận `dim_date.date (1) → cleaned_dataset.issue_d (*)`, một chiều. TMDL dùng đúng hướng kỹ thuật `fromColumn: cleaned_dataset.issue_d` (Many), `toColumn: dim_date.date` (One), không ghi cardinality override. Sau đó trên trang 02, chọn các năm khác nhau trong slicer: tổng khoản vay và tỷ lệ default phải đổi; đối chiếu nguyên dữ liệu `cleaned_dataset` ở dưới. Kiểm tra Top Purpose và Peak Year không còn là hằng số khi filter thay đổi.
-4. Trên trang 03, xác nhận bốn KPI không rỗng/trùng logic: giá trị vay TB, số khoản vay có kết quả, thu nhập năm TB, FICO TB. V04 nằm góc dưới bên phải và dùng `fact_evaluated_loan`, không đọc như cùng population với các KPI `cleaned_dataset`.
-5. Kiểm tra style/nền/trang điều hướng giống trang 04, tooltip V11 có số khoản vay, V02–V06 ở trang 04 còn nguyên. Lưu bằng **File → Save** chỉ sau khi tự kiểm tra render. GUI tương đương mọi thay đổi ghi tại `reports/figures/dashboard/huong-dan-thao-tac-power-bi.md`.
+4. Trên trang 03, xác nhận bốn KPI không rỗng/trùng logic. Bốn visual phân tích theo lưới là V11 heatmap và V12 donut ở hàng trên, V04 box plot và V13 line chart có marker ở hàng dưới. V11/V12 dùng `cleaned_dataset`; V04/V13 dùng `fact_evaluated_loan` (tối đa 269.070, trước khi chọn năm).
+5. Kiểm tra V13 dùng Loan-to-Income Ratio trên trục X số liên tục và Mean PD trên Y; 9 bins phải có tổng N=268.991 (79 dòng ratio thiếu do annual income không hợp lệ), min N=222 trước filter. Tooltip có khoảng, N, observed default rate, chênh lệch grouped observed−predicted và cờ N<100. Chọn năm/bang để xác nhận các giá trị thay đổi. Kiểm tra tooltip V11 có N và V02–V06 ở trang 04 còn nguyên. Lưu bằng **File → Save** chỉ sau khi tự kiểm tra render. GUI tương đương mọi thay đổi ghi tại `reports/figures/dashboard/huong-dan-thao-tac-power-bi.md`.
 
 V01 state audit chi tiết: `reports/figures/dashboard/v01_state_audit.md`. Audit bằng DAX xác nhận 51 state/state-equivalent có dữ liệu, 269.070 evaluated loans, tổng theo state khớp tổng population; IA có 1 khoản vay/0 default và không phải missing state. Không coi blank referential member của dimension (0 loan) là state.
 
@@ -18,22 +22,16 @@ Các bước **EXPECTED / NOT YET VERIFIED AFTER DATASET RESET**:
 
 1. Đọc `docs/contracts/data_contract.md`, `model_contract.md` và task TV3.
 2. Không thay đổi visual families đã LOCKED; đọc Phase 2 sign-off và đóng các blocker data-model trước khi build.
-3. Theo 4 trang trong plan: Tổng quan danh mục (KPI, V08, V01); Xu hướng & Mục đích vay (V07, V09); Hồ sơ người vay (V04, V11, V10, V12); Rủi ro & Expected Loss (KPI, V02, V03, V05, V06). Dự đoán cá nhân là ứng dụng Dash bên ngoài, không phải trang Power BI thứ năm.
+3. Theo 4 trang trong plan: Tổng quan danh mục (KPI, V08, V01); Xu hướng & Mục đích vay (V07, V09); Hồ sơ vay (V11, V12, V04, V13; V10 đã rời trang nhưng giữ model); Rủi ro & Expected Loss (KPI, V02, V03, V05, V06). Dự đoán cá nhân là ứng dụng Dash bên ngoài, không phải trang Power BI thứ năm.
 4. Chỉ sau review mới thiết kế Power BI model với các fact/dimensions, relationships và measures thực sự cần; không import artifacts toàn bộ một cách máy móc.
 5. Xác minh data types/mapping thực tế cho `state_code` và `country` trước map; tạo filters, tooltip, drill-down, cross-filter và navigation chỉ khi chúng giúp trả lời câu hỏi phân tích.
 6. Dùng prediction sources sau khi TV1 handoff contract/artifacts; individual demo không phải official loan approval system.
 
-Kiểm tra simulator contract:
-
-```powershell
-python -c "from src.dashboard.simulator_engine import simulator_status; print(simulator_status('models/full_inference_pipeline.joblib'))"
-```
-
-Ý nghĩa: hiện phải báo `BLOCKED / WAITING FOR TV1 ARTIFACT`; không phải lỗi migration.
+Simulator TV3 chưa có model adapter đã được nghiệm thu. Không dùng đường dẫn cũ `models/full_inference_pipeline.joblib`: root `models/` không còn là nơi lưu artifact và simulator không tự chuyển đổi model TV1. Contract hiện tại nằm ở `src/dashboard/simulator_engine.py`; trạng thái tích hợp được theo dõi tại `reports/tv1_stages/ml-lc-13.md` và `reports/tv2_final_handoff_audit.md`. Chỉ bổ sung lệnh chạy simulator sau khi adapter/model schema được thống nhất và có test.
 
 ## Phạm vi trách nhiệm sau reorganize
 
-TV3 là primary owner của Master Power BI artifact, trực tiếp sở hữu V01 và V10–V12, đồng thời tích hợp V01–V12, relationships, layout, theme, slicers, filters, drill-down, tooltip, cross-filter, navigation và demo. TV1/TV2 có thể gửi prototype/spec local; chỉ TV3 tích hợp Master PBIX. TV1 cross-review V01 và các model-facing visuals khi cần; TV2 review data semantics.
+TV3 là primary owner của Master Power BI artifact, trực tiếp sở hữu V01 và V10–V13, đồng thời tích hợp visual hiện hành, relationships, layout, theme, slicers, filters, drill-down, tooltip, cross-filter, navigation và demo. TV1/TV2 có thể gửi prototype/spec local; chỉ TV3 tích hợp Master PBIX. TV1 cross-review model-facing visuals khi cần; TV2 review data semantics.
 
 ## Mở và kiểm tra measure Huy trong master
 

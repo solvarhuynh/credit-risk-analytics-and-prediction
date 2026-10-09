@@ -1,112 +1,76 @@
-# Phân tích Rủi ro Tín dụng & Dự báo Khả năng Vỡ nợ
+# Credit Risk Analytics & Default Prediction
 
-**Retail Credit Risk Analytics & Default Prediction Dashboard**
+**Đồ án HCMUTE — Tương tác dữ liệu trực quan**
+Phân tích rủi ro khoản vay Lending Club 2007–2018, kết hợp Data Engineering, mô hình dự báo và dashboard tương tác.
 
-Đồ án xây dựng một quy trình phân tích rủi ro tín dụng bán lẻ từ dữ liệu Lending Club giai đoạn **2007–2018**. Dự án kết hợp Data Engineering, phân tích khám phá, mô hình dự báo và Power BI để trả lời các câu hỏi: hồ sơ nào có nguy cơ vỡ nợ cao, rủi ro phân bố như thế nào trong danh mục, và kết quả mô hình có thể hỗ trợ quyết định tín dụng ra sao.
+## Dự án làm gì?
 
-Raw data được quản lý cục bộ vì dung lượng lớn và không đưa lên Git. Nguồn dữ liệu chính gồm:
+Pipeline chuẩn hóa dữ liệu accepted/rejected, tạo bộ accepted loans có nhãn cuối cùng, xây dựng Logistic Regression baseline và so sánh với Weighted Logistic Regression/XGBoost. Kết quả được dùng để phân tích xác suất vỡ nợ dự đoán (PD), phân nhóm rủi ro, giải thích mô hình bằng SHAP và minh họa Expected Loss.
 
-- `accepted_loans.csv`: các khoản vay đã được cấp, có kết quả trả nợ để phân tích default và huấn luyện mô hình.
-- `rejected_loans.csv`: các đơn đăng ký bị từ chối, dùng cho phân tích nhu cầu, funnel và cơ cấu hồ sơ; không dùng để huấn luyện default vì không có kết quả trả nợ tương lai.
+`Fully Paid → target 0`; `Charged Off` và `Default → target 1`. Trạng thái chưa có kết quả cuối cùng bị loại khỏi supervised modeling. Rejected applications không có kết quả trả nợ nên không tham gia target modeling. Đây là phân tích dữ liệu lịch sử, không phải hệ thống phê duyệt tín dụng thực tế.
 
-## Mục tiêu dự án
+## Dữ liệu và phương pháp
 
-1. Xây dựng pipeline dữ liệu có grain rõ ràng, kiểm soát chất lượng và tránh nhân bản dòng khi kết hợp các bảng nghiệp vụ.
-2. Chuẩn hóa target vỡ nợ và tạo bộ dữ liệu đầu vào an toàn cho mô hình.
-3. Phân tích đặc điểm khách hàng, khoản vay và các mẫu hình liên quan đến rủi ro tín dụng.
-4. Huấn luyện mô hình Logistic Regression làm baseline; có thể dùng XGBoost như mô hình so sánh.
-5. Giải thích kết quả bằng feature importance/SHAP, PD, risk tier và Expected Loss.
-6. Trình bày kết quả qua dashboard Power BI có tương tác, lọc, drill-down và hỗ trợ phân tích địa lý theo bang.
+- Nguồn: Lending Club 2007–2018; raw CSV và processed/model artifacts dung lượng lớn nằm local dưới `data/` và không được Git theo dõi.
+- TV2 sở hữu cleaning, business tables, canonical dataset, dictionary, quality gate và technical EDA.
+- TV1 sở hữu modeling. Logistic Regression là baseline; XGBoost là candidate được chọn bằng validation. Frozen-test metrics chỉ thuộc `xgboost_candidate`, không thuộc full-data refit hoặc app demo 6-input.
+- Kết quả frozen test đã ghi nhận: ROC-AUC 0.723186, PR-AUC 0.400000, Log Loss 0.447783, Brier 0.142643; tại threshold validation đã khóa 0.22009515762329102, F1 0.439590. Chi tiết, confusion matrix và giới hạn xem [modeling summary](reports/tv1_stages/modeling_summary.md).
+- SHAP mô tả contribution của model, không chứng minh quan hệ nhân quả. Expected Loss dùng `PD × LGD × EAD`; LGD là giả định 30/45/60%, `loan_amnt` là EAD proxy và đơn vị tiền chưa được xác minh.
 
-## Kiến trúc tổng thể
+## Ứng dụng và dashboard
 
-```text
-accepted + rejected raw
-        ↓ TV2 — Data Engineering
-business tables + dimensions + canonical labeled dataset
-        ↓ TV1 — Modeling
-Logistic baseline + optional XGBoost + scored outputs
-        ↓ TV3 — Dashboard
-Power BI: risk, portfolio, funnel, trend và geographic views
+Ứng dụng Dash tại `apps/individual_prediction_dash/` là demo riêng dùng hai model 6-input đã đánh giá validation-only. Chúng không thay thế model chính 103-input và không có frozen-test evaluation mới. Hướng dẫn, giới hạn và lệnh chạy nằm trong [Dash README](apps/individual_prediction_dash/README.md) và [TV1 setup](docs/setup/tv1_setup.md).
+
+Kế hoạch Power BI hiện định nghĩa bốn trang: Tổng quan; Xu hướng & Mục đích vay; Hồ sơ vay; Rủi ro & Expected Loss. Tuy nhiên, trạng thái PBIP trong worktree chưa qua kiểm tra mở/render ở lần audit này; không xem dashboard là đã nghiệm thu chỉ dựa trên file JSON/TMDL. Xem [TV3 setup](docs/setup/tv3_setup.md), [visual plan](docs/tasks/dashboard-visual-plan.md) và [repository audit](reports/repository_audit/repo_cleanup_audit.md) trước khi mở project.
+
+## Bắt đầu
+
+Từ PowerShell tại thư mục repository:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 ```
 
-TV2 chuẩn hóa dữ liệu từ raw thành các bảng nghiệp vụ, dimension và bộ dữ liệu canonical. TV1 nhận đầu vào đã qua data contract để xây dựng mô hình và các trường chấm điểm. TV3 tích hợp các đầu ra thành một báo cáo Power BI thống nhất.
+Chạy test:
 
-## Quy tắc dữ liệu và mô hình
-
-- Khóa canonical là `loan_id`, được chuẩn hóa từ trường `id` của raw data.
-- `Fully Paid` được mã hóa `target = 0`.
-- `Charged Off` và `Default` được mã hóa `target = 1`.
-- Trạng thái chưa có kết quả cuối cùng bị loại khỏi supervised modeling, không tự động gán thành không vỡ nợ.
-- Các trường payment, recovery, hardship, settlement và thông tin phát sinh sau khoản vay không được đưa vào feature dự báo tại thời điểm cấp tín dụng.
-- Các trường policy-derived, định danh, văn bản có cardinality cao và trường chưa phân loại được loại khỏi feature mặc định theo nguyên tắc fail-closed.
-- Phân tích Map sử dụng `addr_state` chuẩn hóa thành `state_code` và `country = United States`. ZIP được giữ như chuỗi đã che; không tự tạo latitude/longitude.
-
-Chi tiết được quy định tại [Data Contract](docs/contracts/data_contract.md) và [Feature Leakage Policy](docs/data/feature_leakage_policy.md).
-
-## Các nhóm phân tích và dashboard
-
-Dashboard được tổ chức theo ba lớp: tổng quan danh mục, chẩn đoán rủi ro và hỗ trợ quyết định.
-
-- **Risk & Model Views:** Geographic Risk Map, PD Distribution, Risk Tier Distribution, FICO so với Risk/PD, Feature Importance/SHAP và Expected Loss/Risk Contribution.
-- **Data & Portfolio Views:** Loan Volume và Default Rate theo thời gian, Accepted vs Rejected Funnel, Loan Purpose Analysis.
-- **Business & Segment Views:** Loan Amount so với Annual Income, DTI/FICO Risk Matrix và Borrower Segment Composition.
-
-Các thành phần được tích hợp với filter, cross-filtering, drill-down, tooltip, navigation và các quan hệ dữ liệu cần thiết trong Power BI.
-
-## Cấu trúc repository
-
-```text
-ttdltq/
-├── data/
-│   ├── raw/                  # accepted/rejected raw, local-only
-│   ├── interim/              # bảng trung gian sau làm sạch/tổng hợp
-│   └── processed/            # dataset, dictionary và output dùng chung
-├── dashboard/                # Power BI artifact và tài nguyên giao diện
-├── docs/
-│   ├── architecture/         # kiến trúc và quyết định kỹ thuật
-│   ├── contracts/            # data contract và model contract
-│   ├── data/                 # inventory, policy và data handoff
-│   ├── setup/                # runbook của TV1, TV2 và TV3
-│   └── tasks/                # phân công, visual plan và quy trình làm việc
-├── logs/                     # nhật ký làm việc theo thành viên
-├── models/                   # model artifacts và checkpoints
-├── notebooks/                # các notebook phân tích
-├── reports/                  # báo cáo, biểu đồ, slide và video demo
-├── src/
-│   ├── data/                 # loader, cleaning, aggregation và quality gate
-│   ├── features/             # feature engineering an toàn
-│   └── models/               # preprocessing, training, scoring và evaluation
-├── tests/                    # kiểm thử pipeline và chất lượng dữ liệu
-└── requirements.txt
+```powershell
+python -m pytest tests -v
 ```
 
-## Phân công trách nhiệm
+Chạy Dash sau khi có các artifact model demo được nêu trong app guide:
 
-### TV1 — Modeling, Storytelling & Report
+```powershell
+.\run_prediction_app.bat
+```
 
-TV1 là chủ trì mô hình hóa: xây dựng Logistic Regression baseline, mô hình so sánh tùy chọn, đánh giá, scoring, SHAP, risk tier và Expected Loss. TV1 phụ trách các visual V02–V06: PD, risk tier, FICO/PD, SHAP và Expected Loss; đồng thời giữ vai trò Storytelling Lead, Report Coordinator và Defense Coordinator. V01 Geographic Risk Map thuộc TV3.
+Data Engineering pipeline cần raw CSV local `data/raw/accepted_loans.csv` và `data/raw/rejected_loans.csv`; xem [TV2 runbook](docs/setup/tv2_setup.md). Không có raw data/model artifacts thì việc cài package một mình chưa đủ để chạy pipeline hoặc inference. Mở Power BI chỉ sau khi xác nhận `.pbip` và semantic model tương ứng còn đủ; hiện trạng cần theo dõi tại audit.
 
-### TV2 — Data Engineering & Technical EDA
+## Cấu trúc
 
-TV2 là chủ trì Data Engineering: kiểm kê raw, profiling schema, cleaning, aggregate, join/merge, data quality gate, data dictionary và canonical handoff cho TV1/TV3. TV2 phụ trách các visual V07–V09: trend theo thời gian, accepted/rejected funnel và loan purpose; đồng thời là primary author của các phần dataset, preprocessing, Join/Merge, calculated fields, quality và technical EDA.
+```text
+apps/individual_prediction_dash/  Ứng dụng dự đoán Dash
+data/                             Raw/interim/processed data và model artifacts local
+docs/                             Contracts, setup, nhiệm vụ và kiến trúc
+logs/                             Lịch sử TV1/TV2/TV3
+notebooks/                        Danh mục; hiện chưa có notebook nghiên cứu hoàn chỉnh
+reports/                          EDA, stage reports, figures và repository audit
+src/data/                         Data loading, cleaning, stages và quality gates
+src/features/                     Feature engineering
+src/models/                       Split, modeling, evaluation, scoring và explainability
+src/dashboard/                    Contract simulator TV3, chưa phải app inference
+tests/                            Unit/regression tests
+```
 
-### TV3 — Master Power BI & Integration
+## Phân công
 
-TV3 là chủ trì artifact Power BI tổng thể, layout, theme, relationships, filters, drill-down, tooltip, cross-filtering, navigation và demo. TV3 sở hữu trực tiếp V01 Geographic Risk Map và các visual V10–V12: loan amount/annual income, DTI/FICO risk matrix và borrower segment composition; đồng thời tích hợp V01–V09 vào Master PBIX duy nhất.
+- **TV1:** modeling, evaluation, explainability, scoring/Expected Loss và ứng dụng Dash demo.
+- **TV2:** PRIMARY OWNER của Data Engineering, canonical data handoff và technical EDA.
+- **TV3:** PRIMARY OWNER Power BI master, dashboard integration và các visual theo phân công.
 
-Mỗi phần báo cáo có primary author và cross reviewer. Tất cả thành viên cần hiểu luồng end-to-end, còn TV3 là đầu mối duy nhất quản lý bản Master PBIX.
+## Giới hạn và tái lập
 
-## Tài liệu tham chiếu
+Split model là stratified random split, không phải đánh giá out-of-time. Kết quả lịch sử Lending Club không đảm bảo hiệu năng hiện tại hay quyết định cho một cá nhân. Full-data refit scores là in-sample; chỉ frozen-test metrics của candidate được dùng làm bằng chứng đánh giá độc lập. SHAP/correlation không phải causality; Expected Loss là scenario, không phải realized loss.
 
-- [Kiến trúc repository và liên kết dữ liệu](docs/architecture/repo_structure_and_linkages.md)
-- [Data Contract](docs/contracts/data_contract.md)
-- [Model Contract](docs/contracts/model_contract.md)
-- [Chính sách Feature Leakage](docs/data/feature_leakage_policy.md)
-- [Data Workflow](docs/data/DATA_WORKFLOW.md)
-- [Data Rules](docs/data/DATA_RULES.md)
-- [Data Artifacts Guide](docs/data/data_artifacts.md)
-- [TV2 Data Handoff](docs/data/tv2_data_handoff.md)
-- [Phân công nhiệm vụ và RACI](docs/tasks/phan-cong-nhiem-vu.md)
-- [Kế hoạch visual dashboard](docs/tasks/dashboard-visual-plan.md)
-- [Quy trình phối hợp và Git](docs/tasks/working-protocol.md)
+Pipeline và tests có thể tái lập khi cung cấp đúng raw data, dependencies và các artifact theo từng stage. Raw data, model binaries và processed outputs không được lưu trong Git; báo cáo stage/manifests nhỏ ghi provenance và trạng thái hiện có. Cấu trúc chi tiết ở [repository structure](reports/repository_audit/repository_structure.md); contracts chuẩn là [data contract](docs/contracts/data_contract.md) và [model contract](docs/contracts/model_contract.md).

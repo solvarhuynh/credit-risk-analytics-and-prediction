@@ -12,7 +12,7 @@ Mọi thành viên đều phải hiểu end-to-end: dữ liệu raw/interim/proc
 |---|---|---|---|
 | TV1 | Modeling; V02–V06; Storytelling Lead; Report Coordinator; Defense Coordinator | Hiểu toàn pipeline; tham gia insight, report, demo; cross-review V01 khi cần | Review handoff TV2, V07–V09, dashboard structure và consistency report |
 | TV2 | Data Engineering; V07–V09; technical EDA; data report sections | Cung cấp field/measure semantics cho mọi visual; hiểu model/dashboard | Review data inputs TV1, measures liên quan source và data claims |
-| TV3 | Master Power BI integration; V01; V10–V12; dashboard report/demo | Tích hợp V01–V09; tham gia story, report và defense | Review V02–V06/model outputs và visual/layout consistency |
+| TV3 | Master Power BI integration; V01; V10–V13; dashboard report/demo | Tích hợp V01–V09; tham gia story, report và defense | Review V02–V06/model outputs và visual/layout consistency |
 
 Không thành viên nào được tuyên bố task FINAL nếu chưa có reviewer bắt buộc sign-off.
 
@@ -34,7 +34,7 @@ TV2 trực tiếp sở hữu V07–V09 và là primary author cho dataset, prepr
 
 TV3 là primary owner của Master Power BI artifact: relationships, theme, page layout, slicers, filters, drill-down, tooltips, cross-filter, navigation/bookmarks, consistency và demo readiness.
 
-TV3 trực tiếp sở hữu V01 và V10–V12, tích hợp toàn bộ V01–V12 từ prototype/spec đã review, và là primary author cho dashboard architecture, UI/UX, interaction design và user guide. Kiến trúc Power BI bốn trang + Dash bên ngoài và V01–V12 visual families hiện đã chốt tại `docs/tasks/dashboard-visual-plan.md`; data model Master đang BLOCKED bởi các dashboard marts/map-validation chưa hoàn tất. Ownership và workload không đổi.
+TV3 trực tiếp sở hữu V01 và V10–V13, tích hợp toàn bộ V01–V13 từ prototype/spec đã review, và là primary author cho dashboard architecture, UI/UX, interaction design và user guide. Kiến trúc Power BI bốn trang + Dash bên ngoài và visual families hiện hành được chốt tại `docs/tasks/dashboard-visual-plan.md`; V10 vẫn được giữ để dùng lại nhưng đã nhường ô Page 03 cho V13. Ownership và workload không đổi.
 
 ## Story, report và defense
 

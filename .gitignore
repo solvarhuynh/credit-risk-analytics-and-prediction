@@ -10,9 +10,8 @@ data/interim/*
 data/processed/*
 !data/processed/.gitkeep
 
-# 2. Model artifacts nang (>50MB)
-models/*
-!models/.gitkeep
+# 2. Codex/Cursor project-local instructions
+.cursor/
 
 # 3. Moi truong ao Python (Virtual Environments)
 .venv/
@@ -31,6 +30,7 @@ __pycache__/
 .pytest_tmp/
 .pytest_tmp*/
 .audit_tmp/
+.audit_pytest_tmp/
 .mypy_cache/
 
 # 5. Jupyter Notebook Checkpoints

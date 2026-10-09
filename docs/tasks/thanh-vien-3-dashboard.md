@@ -1,6 +1,6 @@
 # TV3 — Master Power BI Integration và Dashboard Roadmap
 
-TV3 là **MASTER DASHBOARD INTEGRATOR**, không phải sole author của mọi visual. TV3 sở hữu PBIX/master artifact, trực tiếp sở hữu V01 và V10–V12, đồng thời tích hợp toàn bộ V01–V12 từ specification/prototype đã review.
+TV3 là **MASTER DASHBOARD INTEGRATOR**, không phải sole author của mọi visual. TV3 sở hữu PBIX/master artifact, trực tiếp sở hữu V01 và V10–V13, đồng thời tích hợp các visual hiện hành từ specification/prototype đã review.
 
 ## PRIMARY INTEGRATION
 
@@ -9,11 +9,12 @@ TV3 sở hữu data model và relationships, theme, page layout, slicers, filter
 TV3 trực tiếp sở hữu:
 
 - V01 Geographic Risk Map.
-- V10 Loan Amount vs Annual Income — binned heatmap.
+- V10 Loan Amount vs Annual Income — binned heatmap (giữ trong semantic model; không còn đặt trên Page 03 hiện hành).
 - V11 DTI/FICO Risk Matrix — heatmap.
-- V12 Borrower Segment — bar/stacked bar; segment đề nghị: `home_ownership`, evaluated frozen-test population, stack composition theo canonical risk tier.
+- V12 Borrower Segment — Home Ownership Composition Donut trên `cleaned_dataset`.
+- V13 Loan-to-Income Ratio × PD dự đoán — xu hướng theo nhóm trên evaluated cohort.
 
-TV1 là reviewer chính cho V10 và model-facing visuals; TV2 review data inputs/measure semantics của V11–V12. Mọi visual có status `PLANNED / WAITING FOR DATA` cho tới khi usable schema/marts tồn tại.
+TV1 là reviewer chính cho V10 và model-facing visuals; TV2 review data inputs/measure semantics của V11–V13. Mọi visual có status `PLANNED / WAITING FOR DATA` cho tới khi usable schema/marts tồn tại.
 
 ## MASTER DASHBOARD — 4 TRANG POWER BI + DASH BÊN NGOÀI / DATA MODEL BLOCKED
 
@@ -21,7 +22,7 @@ Kế hoạch trang và visual families hiện hành được khóa trong `docs/t
 
 1. **Tổng quan danh mục:** KPI, V08, V01.
 2. **Xu hướng & Mục đích vay:** V07, V09.
-3. **Hồ sơ người vay:** V04, V11, V10, V12.
+3. **Hồ sơ vay:** V11, V12, V04, V13 (lưới 2×2; V10 được giữ ngoài trang để dùng lại).
 4. **Rủi ro & Expected Loss:** KPI, V02, V03, V05, V06.
 
 Dự đoán cá nhân dùng ứng dụng Dash bên ngoài Power BI; không thêm trang thứ năm vào Master.
@@ -30,7 +31,7 @@ Không đặt 12 visual trên một trang. TV3 giữ navigation và consistency;
 
 ## TÍCH HỢP V01–V09
 
-TV1 cung cấp V02–V06 specification, fields, measures và caveats; có thể cross-review V01 khi cần. TV3 trực tiếp sở hữu V01 và V10–V12. TV2 cung cấp V07–V09 data semantics và EDA context. TV3 đưa các spec/prototype đã review vào Master PBIX, kiểm tra interactions và ghi nguồn/reviewer.
+TV1 cung cấp V02–V06 specification, fields, measures và caveats; có thể cross-review V01/V13 khi cần. TV3 trực tiếp sở hữu V01 và V10–V13; V10 giữ ngoài Page 03 để dùng lại, V13 hiện chiếm ô đó. TV2 cung cấp V07–V09 data semantics và EDA context. TV3 đưa các spec/prototype đã review vào Master PBIX, kiểm tra interactions và ghi nguồn/reviewer.
 
 V01 dùng `state_code` + `country` nhưng cần smoke-test Power BI map recognition. Time hierarchy dùng đúng date role: accepted `issue_d`, rejected `application_date`; không coi chúng là cùng một event date. Prediction/risk tier/Expected Loss artifacts đã có, nhưng evaluated score context mart còn thiếu state/bands; hiển thị readiness blocked cho tới khi được enrich/validated. V08 không tính default rate rejected.
 

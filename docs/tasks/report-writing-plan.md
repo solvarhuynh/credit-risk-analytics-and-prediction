@@ -15,7 +15,7 @@
 
 - **TV1:** primary author modeling/prediction/evaluation/SHAP/scoring/Expected Loss; điều phối storyline và report consistency.
 - **TV2:** primary author dữ liệu, nguồn, schema, cleaning, target, quality, pipeline và technical EDA; PRIMARY OWNER Data Engineering; sở hữu V07–V09.
-- **TV3:** primary author dashboard architecture, Power BI data model/UI/UX/integration/user guide; sở hữu V01 và V10–V12; tích hợp Master PBIX.
+- **TV3:** primary author dashboard architecture, Power BI data model/UI/UX/integration/user guide; sở hữu V01 và V10–V13; tích hợp Master PBIX.
 - V01 thuộc TV3 (đã chuyển khỏi TV1). TV1 sở hữu V02–V06. TV3 là Master PBIX integrator, không phải sole author mọi visual.
 - Abstract, Introduction, pipeline overview, integrated story, limitations, conclusion, demo script và references cần cả ba thành viên review/approve. Reviewer kiểm tra semantics/evidence, không chỉ grammar.
 
