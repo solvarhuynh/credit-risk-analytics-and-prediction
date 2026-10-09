@@ -11,7 +11,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](requirements.txt)
 [![PowerBI](https://img.shields.io/badge/Power_BI-Desktop-F2C811?style=for-the-badge&logo=powerbi&logoColor=black)](reports/figures/dashboard/nghia.pbip)
 [![Dash](https://img.shields.io/badge/Plotly_Dash-Interactive_App-008DE4?style=for-the-badge&logo=plotly&logoColor=white)](apps/individual_prediction_dash/)
-[![Tests](https://img.shields.io/badge/Tests-287%20Passed-success.svg?style=for-the-badge&logo=pytest&logoColor=white)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-297%20Passed-success.svg?style=for-the-badge&logo=pytest&logoColor=white)](tests/)
 
 <br/>
 
@@ -26,11 +26,11 @@
 *Học phần: Tương tác Trực quan Dữ liệu (Interactive Data Visualization) — Học kỳ I, Năm học 2026–2027*  
 *Giảng viên hướng dẫn: **ThS. Đoàn Minh Trí** — Khoa Công nghệ Thông tin, Trường ĐH Sư phạm Kỹ thuật TP.HCM (HCMUTE)*
 
-| STT | Họ và Tên | MSSV | Vai Trò | Nhiệm Vụ Trọng Tâm | Liên Hệ |
-|:---:|:---|:---:|:---|:---|:---:|
-| 1 | **Hồ Trọng Sơn** | `24133049` | **TV2 — Data Engineering & EDA** | Thu thập, tiền xử lý dữ liệu 29.91M bản ghi, thiết kế kho dữ liệu trung gian, kiểm soát rò rỉ (Leakage Gate) và trực quan EDA tĩnh. | [![Email](https://img.shields.io/badge/Email-D14836?style=flat&logo=gmail&logoColor=white)](mailto:24133049@student.hcmute.edu.vn) |
-| 2 | **Huỳnh Trung Nghĩa** | `24133903` | **TV1 — Modeling & Điều phối Báo cáo** | Xây dựng pipeline học máy (Logistic, XGBoost), tối ưu ngưỡng quyết định, kiểm định Frozen Test, SHAP Explainability, Risk Tiers, Expected Loss và Web App Dash. | [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/solvarhuynh/) |
-| 3 | **Hoàng Ngọc Huy** | `24133023` | **TV3 — Power BI & Tích hợp** | Thiết kế Data Model, DAX Measures, triển khai Master Dashboard 10 trang (96 visuals) trên Power BI và đóng gói nghiệm thu. | [![Email](https://img.shields.io/badge/Email-D14836?style=flat&logo=gmail&logoColor=white)](mailto:24133023@student.hcmute.edu.vn) |
+| STT | Họ và Tên | MSSV | Vai Trò | Nhiệm Vụ Trọng Tâm |
+|:---:|:---|:---:|:---|:---|
+| 1 | **Hồ Trọng Sơn** | `24133049` | **TV2 — Data Engineering & EDA** | Thu thập, tiền xử lý dữ liệu 29.91M bản ghi, thiết kế kho dữ liệu trung gian, kiểm soát rò rỉ (Leakage Gate) và trực quan EDA tĩnh. |
+| 2 | **Huỳnh Trung Nghĩa** | `24133903` | **TV1 — Modeling & Điều phối Báo cáo** | Xây dựng pipeline học máy (Logistic, XGBoost), tối ưu ngưỡng quyết định, kiểm định Frozen Test, SHAP Explainability, Risk Tiers, Expected Loss và Web App Dash. |
+| 3 | **Hoàng Ngọc Huy** | `24133023` | **TV3 — Power BI & Tích hợp** | Thiết kế Data Model, DAX Measures, triển khai Master Dashboard 10 trang (96 visuals) trên Power BI và đóng gói nghiệm thu. |
 
 ---
 
@@ -204,6 +204,28 @@ $$\begin{aligned}
 - **Khả năng tổng quát hóa (Generalization Delta):** Độ lệch giữa Validation và Frozen Test cực kỳ nhỏ ($\Delta_{\text{ROC-AUC}} = -0.0013$; $\Delta_{\text{PR-AUC}} = +0.0007$; $\Delta_{\text{F1}} = -0.0004$). Mô hình hoàn toàn không xảy ra hiện tượng học vẹt (overfitting).
 - **Phân biệt Full-Data Refit:** Mô hình thẩm định (`xgboost_candidate.joblib`) giữ nguyên kết quả trên. Sau đó, bản refit (`xgboost_full_refit.joblib`) được huấn luyện trên toàn bộ 1.345M dòng phục vụ suy luận thực tế (in-sample demo, không dùng điểm số này làm bằng chứng đánh giá).
 
+### 4.5 Bộ Đồ Thị Đánh Giá Chuẩn Mực Tái Lập (Validation Evaluation Suite)
+
+Để phục vụ báo cáo khoa học và bảo đảm tính minh bạch tuyệt đối, toàn bộ biểu đồ đánh giá thực nghiệm trên tập Validation được tự động sinh bằng script kiểm định độc lập [`src/models/evaluation_figures.py`](src/models/evaluation_figures.py) kết hợp bản kê chứng minh [`figures_manifest.json`](reports/figures/modeling/figures_manifest.json):
+
+<div align="center">
+
+| Mã Hình | Tên Đồ Thị & File Lưu Trữ | Nội Dung Trực Quan & Phương Pháp Luận |
+|:---:|:---|:---|
+| **FIGURE-01** | [model_roc_curve.png](reports/figures/modeling/model_roc_curve.png) | Đường cong ROC so sánh 3 mô hình (Logistic, Weighted Logistic, XGBoost) trên tập Validation; minh chứng XGBoost đạt AUC cao nhất (0.7245). |
+| **FIGURE-02** | [model_precision_recall_curve.png](reports/figures/modeling/model_precision_recall_curve.png) | Đường cong Precision-Recall chuẩn Average Precision so với tỷ lệ vỡ nợ nền tảng (19.965%); khẳng định ưu thế phân loại nợ xấu của XGBoost (PR-AUC = 0.3993). |
+| **FIGURE-03** | [model_confusion_matrix.png](reports/figures/modeling/model_confusion_matrix.png) | Ma trận nhầm lẫn tại ngưỡng tối ưu F1 ($T^* = 0.2201$); hiển thị cả số lượng tuyệt đối và tỷ lệ phần trăm theo hàng (TN, FP, FN, TP). |
+| **FIGURE-04** | [model_calibration_curve.png](reports/figures/modeling/model_calibration_curve.png) | Biểu đồ hiệu chuẩn xác suất (10 phân vị bằng nhau, 26,907 dòng/bin); kèm chẩn đoán Log Loss (0.4474) và Brier Score (0.1426). |
+
+</div>
+
+<br/>
+
+Lệnh tái lập toàn bộ 4 biểu đồ đánh giá từ xác suất Validation đã lưu:
+```powershell
+.\.venv\Scripts\python.exe -m src.models.evaluation_figures
+```
+
 ---
 
 ## 5. GIẢI THÍCH MÔ HÌNH (SHAP) & ĐỊNH LƯỢNG RỦI RO (EXPECTED LOSS)
@@ -290,6 +312,8 @@ flowchart TD
 
 *Lưu ý phương pháp luận:* Mô hình 6 biến đầu vào chỉ đóng vai trò giao diện demo tương tác hỗ trợ người dùng cuối, hoàn toàn tách biệt với mô hình chính thức 103 biến được báo cáo ở Chương 3.
 
+- **Triển khai Đám Mây (Cloud Deployment via Render):** Ngoài việc chạy cục bộ, ứng dụng Dash được đóng gói tự vận hành (self-contained bundle) sẵn sàng triển khai dưới dạng **Python Web Service** trên Render theo hướng dẫn tại [`apps/individual_prediction_dash/DEPLOY_RENDER.md`](apps/individual_prediction_dash/DEPLOY_RENDER.md) và danh mục phụ thuộc tinh gọn [`requirements-deploy.txt`](apps/individual_prediction_dash/requirements-deploy.txt). Gói runtime chỉ yêu cầu 11.5 MB dữ liệu artifacts (hoàn toàn không cần tải 29.9M dòng dữ liệu thô), cấu hình 1 Gunicorn worker tối ưu hóa bộ nhớ cho môi trường Free 512 MB RAM.
+
 ---
 
 ## 7. CẤU TRÚC KHO LƯU TRỮ (REPOSITORY STRUCTURE)
@@ -297,7 +321,8 @@ flowchart TD
 ```text
 ttdltq/
 ├── README.md                           # Hồ sơ tổng quan toàn diện của đồ án
-├── requirements.txt                    # Thư viện phụ thuộc (Python 3.10+)
+├── requirements.txt                    # Thư viện phụ thuộc nghiên cứu & huấn luyện (Python 3.10+)
+├── pytest.ini                          # Cấu hình kiểm thử tự động
 ├── run_prediction_app.bat              # Script 1-click khởi chạy ứng dụng Plotly Dash
 ├── tv1_modeling_final_report_bundle.zip# Gói nén toàn bộ bằng chứng & số liệu Chương 3-4
 │
@@ -305,6 +330,10 @@ ttdltq/
 │   └── individual_prediction_dash/     # Web App Plotly Dash demo dự đoán cá nhân 6 biến
 │       ├── app.py                      # Mã nguồn giao diện Dash UI & Callbacks
 │       ├── logic.py                    # Logic suy luận, tính Percentile, Local SHAP & EL
+│       ├── DEPLOY_RENDER.md            # Hướng dẫn chi tiết triển khai Render Web Service
+│       ├── requirements-deploy.txt     # Phụ thuộc tinh gọn phục vụ Render Cloud
+│       ├── data/                       # Artifacts runtime demo 6 biến (11.5 MB, tracked Git)
+│       ├── src/                        # Package mirror phục vụ runtime Render độc lập
 │       └── README.md                   # Hướng dẫn chi tiết vận hành ứng dụng
 │
 ├── data/                               # Dữ liệu phân tích (Lưu trữ cục bộ, không Git track)
@@ -328,20 +357,30 @@ ttdltq/
 │   ├── data_quality_report.md          # Báo cáo chất lượng dữ liệu & Leakage Gate PASS
 │   ├── eda_report.md                   # Báo cáo phân tích khám phá dữ liệu
 │   ├── tv1_stages/                     # Báo cáo 13 giai đoạn modeling & modeling_summary.md
+│   ├── model_experiments/              # Báo cáo thực nghiệm mở rộng & pilot F1 cải tiến
+│   │   └── f1_improvement/             # Nghiên cứu pilot F1 (protocol, logs, chẩn đoán)
 │   └── figures/                        # Toàn bộ hình ảnh phục vụ báo cáo chính thức
 │       ├── eda/                        # 5 biểu đồ EDA tĩnh (Hình 2 - Hình 6)
-│       ├── modeling/                   # SHAP Global, SHAP Summary, ROC Curve & PR Curve
+│       ├── modeling/                   # 4 biểu đồ đánh giá chuẩn mực, SHAP Global & Summary
+│       │   ├── model_roc_curve.png     # FIGURE-01: ROC Curves so sánh 3 mô hình
+│       │   ├── model_precision_recall_curve.png # FIGURE-02: PR Curves chuẩn AP
+│       │   ├── model_confusion_matrix.png # FIGURE-03: Confusion Matrix tại T*=0.2201
+│       │   ├── model_calibration_curve.png # FIGURE-04: Hiệu chuẩn xác suất 10 bins
+│       │   ├── figures_manifest.json   # Bản kê kiểm định và provenance của đồ thị
+│       │   └── README.md               # Đặc tả tái lập đồ thị đánh giá
 │       └── dashboard/                  # Bản thiết kế Power BI (nghia.pbip, Report, SemanticModel)
 │
 ├── src/                                # Toàn bộ mã nguồn Python tái lập
 │   ├── data/                           # Ingestion, cleaning pipeline & quality checks
 │   ├── features/                       # Kỹ thuật tạo 10 trường tính toán
-│   └── models/                         # Preprocessing pipeline, models, evaluation, scoring, EL
+│   └── models/                         # Pipeline học máy, đánh giá, scoring, SHAP & EL
+│       ├── evaluation_figures.py       # Tự động hóa sinh 4 đồ thị đánh giá thực nghiệm
+│       └── experiments/                # Khung thử nghiệm mở rộng & giám sát pilot F1
 │
-└── tests/                              # Hệ thống 287 unit & regression tests tự động
-    ├── apps/                           # Kiểm thử ứng dụng Dash & tính toán Percentile
+└── tests/                              # Hệ thống 297 unit, integration & regression tests
+    ├── apps/                           # Kiểm thử ứng dụng Dash, Percentile & Render Bundle
     ├── data/                           # Kiểm thử Data Engineering & Leakage Gate
-    └── models/                         # Kiểm thử Preprocessing, Split, Scoring, SHAP & EL
+    └── models/                         # Kiểm thử Preprocessing, Evaluation Figures, SHAP & EL
 ```
 
 ---
@@ -364,13 +403,13 @@ pip install -r requirements.txt
 ```
 
 ### 8.2 Chạy Toàn Bộ Hệ Thống Kiểm Thử Tự Động (Regression Test Suite)
-Đảm bảo toàn bộ 287 kịch bản kiểm thử vượt qua thành công:
+Đảm bảo toàn bộ 297 kịch bản kiểm thử vượt qua thành công:
 
 ```powershell
 pytest tests -v
 ```
 
-### 8.3 Khởi Chạy Ứng Dụng Demo Dự Đoán Cá Nhân (Plotly Dash)
+### 8.3 Khởi Chạy Ứng Dụng Demo Dự Đoán Cá Nhân (Plotly Dash Cục Bộ)
 Chạy script tự động hóa khởi chạy Web App tại cổng `8050`:
 
 ```powershell
@@ -386,6 +425,20 @@ Truy cập trình duyệt tại địa chỉ: `http://127.0.0.1:8050` để thao
 1. Mở tệp dự án Power BI: `reports/figures/dashboard/nghia.pbip` bằng **Power BI Desktop**.
 2. Kiểm tra các kết nối dữ liệu đến thư mục `data/interim/` và `data/processed/modeling/`.
 3. Sử dụng các Slicer (Bộ lọc Năm, Kỳ hạn, Mục đích vay, Hạng rủi ro) để trải nghiệm tính năng Drill-down và Cross-filtering trên 10 trang phân tích.
+
+### 8.5 Triển Khai Ứng Dụng Web Lên Nền Tảng Đám Mây (Render Web Service)
+Ứng dụng Dash hỗ trợ triển khai trực tiếp từ GitHub lên Render mà không cần nạp bộ dữ liệu lớn:
+1. **Thiết lập dịch vụ Web Service trên Render:**
+   - **Root Directory:** `apps/individual_prediction_dash`
+   - **Runtime:** Python (phiên bản `3.12.10`)
+   - **Build Command:** `pip install -r requirements-deploy.txt`
+   - **Start Command:** `gunicorn app:server --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120`
+   - **Environment Variables:** `PYTHON_VERSION=3.12.10`
+2. **Kiểm tra tính tương thích bundle trước khi kết nối GitHub:**
+   ```powershell
+   python -m pytest tests/apps/test_render_bundle.py tests/apps/test_individual_prediction_dash.py -v
+   ```
+Chi tiết cấu hình và tối ưu hóa tài nguyên xem tại [`DEPLOY_RENDER.md`](apps/individual_prediction_dash/DEPLOY_RENDER.md).
 
 ---
 

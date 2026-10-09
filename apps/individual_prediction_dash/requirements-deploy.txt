@@ -1,0 +1,10 @@
+dash==3.4.0
+plotly==6.9.0
+numpy==2.5.3
+pandas==2.3.3
+scikit-learn==1.9.1
+xgboost==3.4.1
+shap==0.52.0
+joblib==1.6.0
+pyarrow==19.0.1
+gunicorn==23.0.0

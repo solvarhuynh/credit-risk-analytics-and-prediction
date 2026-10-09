@@ -64,5 +64,6 @@ REPO_TUTOR_HOME_CREDIT_OLD_*.local.md
 TV1_AGENT_RUNBOOK_HOME_CREDIT_OLD.local.md
 TV1_AGENT_RUNBOOK_HOME_CREDIT_OLD_*.local.md
 
-# 10. Power BI Desktop local cache and machine-specific settings
+# 10. Power BI Desktop local cache, binaries and machine-specific settings
 .pbi/
+*.pbix

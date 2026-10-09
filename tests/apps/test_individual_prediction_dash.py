@@ -112,6 +112,12 @@ def test_dash_layout_has_six_inputs_and_current_model_selector() -> None:
     assert not _find_props_by_id(layout, "probability-scale-content")
 
 
+def test_flask_server_is_exported_for_wsgi() -> None:
+    """Gunicorn must target the same Flask server used by local Dash."""
+    assert dash_app.server is not None
+    assert dash_app.app.server is dash_app.server
+
+
 def test_threshold_slider_has_full_range_marks_reference_and_session_store() -> None:
     """Ngưỡng có toàn miền 0–1 và state riêng theo session trình duyệt/tab."""
     layout = dash_app.server.test_client().get("/_dash-layout").get_json()
@@ -321,7 +327,7 @@ def test_model_details_are_compact_without_duplicate_metrics(
     prediction_pairs = list(zip(
         prediction_details.children[0::2], prediction_details.children[1::2], strict=True,
     ))
-    assert ("Threshold tham chiếu tối ưu", "0.2201") in [
+    assert ("Ngưỡng tham chiếu từ mô hình chính", "0.2201") in [
         (dt.children, dd.children) for dt, dd in prediction_pairs
     ]
     assert ("Mô hình đang dùng", "XGBoost") in [
@@ -573,7 +579,7 @@ def test_calibration_loader_checks_manifest_model_prediction_and_split_hashes(
     predictions_path = tmp_path / "xgboost_6input_demo_validation_predictions.parquet"
     validation_ids_path = tmp_path / "validation_ids.parquet"
     model_path.write_bytes(b"candidate-model")
-    ids = pd.DataFrame({"loan_id": ["L1", "L2"]})
+    ids = pd.DataFrame({"loan_id": ["L1", "L2"], "target": [0, 1]})
     ids.to_parquet(validation_ids_path, index=False)
     predictions = pd.DataFrame({
         "loan_id": ["L1", "L2"], "target": [0, 1],
@@ -603,6 +609,83 @@ def test_calibration_loader_checks_manifest_model_prediction_and_split_hashes(
     predictions.to_parquet(predictions_path, index=False)
     with pytest.raises(ValueError, match="Provenance"):
         dash_logic.validation_calibration_figure("xgboost")
+
+    predictions.loc[0, "predicted_pd"] = 0.2
+    predictions.loc[0, "target"] = 1
+    predictions.to_parquet(predictions_path, index=False)
+    manifest["validation_prediction_sha256"] = dash_logic._sha256(predictions_path)
+    with pytest.raises(ValueError, match="IDs/target"):
+        dash_logic.load_verified_validation_predictions("xgboost")
+
+
+@pytest.mark.parametrize("threshold", [0.0, 0.2, 0.5, 0.8, 1.0])
+def test_validation_threshold_index_matches_sklearn(threshold: float) -> None:
+    """Confusion và chỉ số của index khớp sklearn, kể cả biên và PD bằng ngưỡng."""
+    from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
+
+    frame = pd.DataFrame({"target": [0, 1, 1, 0, 1, 0],
+                          "predicted_pd": [0.0, 0.2, 0.5, 0.5, 0.8, 1.0]})
+    index = dash_logic.build_validation_threshold_index(frame)
+    result = dash_logic.threshold_metrics_from_index(index, threshold)
+    predicted = (frame["predicted_pd"].to_numpy() >= threshold).astype(int)
+    tn, fp, fn, tp = confusion_matrix(frame["target"], predicted, labels=[0, 1]).ravel()
+    assert (result["tn"], result["fp"], result["fn"], result["tp"]) == (tn, fp, fn, tp)
+    assert sum(result[key] for key in ("tn", "fp", "fn", "tp")) == len(frame)
+    assert result["flagged"] == int(predicted.sum())
+    assert result["precision"] == pytest.approx(precision_score(frame["target"], predicted, zero_division=0))
+    assert result["recall"] == pytest.approx(recall_score(frame["target"], predicted, zero_division=0))
+    assert result["f1"] == pytest.approx(f1_score(frame["target"], predicted, zero_division=0))
+    assert result["accuracy"] == pytest.approx(accuracy_score(frame["target"], predicted))
+
+
+def test_threshold_index_flagged_count_is_monotonic() -> None:
+    """Ngưỡng tăng không thể làm tăng số hồ sơ được gắn cờ."""
+    frame = pd.DataFrame({"target": [0, 1, 1, 0], "predicted_pd": [0.1, 0.2, 0.8, 1.0]})
+    index = dash_logic.build_validation_threshold_index(frame)
+    flagged = [dash_logic.threshold_metrics_from_index(index, value)["flagged"]
+               for value in (0.0, 0.2, 0.8, 1.0)]
+    assert flagged == [4, 3, 2, 1]
+
+
+def test_dynamic_validation_panel_uses_selected_model_and_threshold(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Panel đổi theo model/ngưỡng mà không gọi model inference hoặc SHAP."""
+    app_module = importlib.import_module("apps.individual_prediction_dash.app")
+    source = {
+        "xgboost": pd.DataFrame({"target": [0, 1, 1, 0], "predicted_pd": [0.1, 0.2, 0.8, 0.9]}),
+        "logistic": pd.DataFrame({"target": [0, 1, 1, 0], "predicted_pd": [0.1, 0.6, 0.7, 0.9]}),
+    }
+    def checked_metrics(model_key: str, threshold: float) -> dict[str, float | int]:
+        return dash_logic.threshold_metrics_from_index(
+            dash_logic.build_validation_threshold_index(source[model_key]), threshold,
+        )
+    monkeypatch.setattr(app_module, "validation_threshold_metrics", checked_metrics)
+    monkeypatch.setattr(app_module, "run_form_prediction", lambda *args: pytest.fail("Inference không được chạy"))
+    monkeypatch.setattr(app_module, "shap_figure", lambda *args: pytest.fail("SHAP không được tính"))
+    xgb = " ".join(_component_text(app_module.render_validation_threshold_metrics("xgboost", {"value": 0.5})))
+    logistic = " ".join(_component_text(app_module.render_validation_threshold_metrics("logistic", {"value": 0.5})))
+    assert "XGBoost" in xgb and "Logistic Regression" in logistic
+    assert "Toàn bộ 4 hồ sơ Validation" in xgb
+    assert xgb != logistic
+    assert "Validation ở ngưỡng đang kéo" in xgb
+
+
+def test_demo_validation_predictions_do_not_include_frozen_test_ids() -> None:
+    """Hai prediction artifacts demo có đúng ID/nhãn Validation và rời Test IDs."""
+    from src.config import MODELING_DIR
+    validation_path = MODELING_DIR / "validation_ids.parquet"
+    test_path = MODELING_DIR / "test_ids.parquet"
+    if not validation_path.is_file() or not test_path.is_file():
+        pytest.skip("Không có split artifacts cục bộ.")
+    validation = pd.read_parquet(validation_path, columns=["loan_id", "target"])
+    test_ids = set(pd.read_parquet(test_path, columns=["loan_id"])["loan_id"])
+    for model_key in ("xgboost", "logistic"):
+        predictions = dash_logic.load_verified_validation_predictions(model_key)
+        assert len(predictions) == len(validation) == 269_070
+        assert predictions["loan_id"].tolist() == validation["loan_id"].tolist()
+        assert predictions["target"].tolist() == validation["target"].tolist()
+        assert test_ids.isdisjoint(predictions["loan_id"])
 
 
 def test_form_home_ownership_value_is_forwarded_without_remapping(

@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "generated_by": "src/models/evaluation_figures.py",
+  "data_scope": "Saved Validation predictions only; no model loaded or fitted; no Frozen Test predictions read.",
+  "precision_recall_definition": "Average Precision from sklearn.metrics.average_precision_score; matches repo pr_auc (not trapezoidal area).",
+  "figures": [
+    {
+      "figure_id": "FIGURE-01",
+      "filename": "model_roc_curve.png",
+      "chart_type": "ROC curve",
+      "models": [
+        {
+          "model_name": "Logistic Regression",
+          "model_artifact_path": "data/processed/modeling/logistic_baseline.joblib",
+          "source_prediction_file": "data/processed/modeling/ml_lc_03_validation_predictions.parquet",
+          "validation_manifest": "data/processed/modeling/ml_lc_03_manifest.json"
+        },
+        {
+          "model_name": "Weighted Logistic Regression",
+          "model_artifact_path": "data/processed/modeling/logistic_weighted.joblib",
+          "source_prediction_file": "data/processed/modeling/ml_lc_04_weighted_validation_predictions.parquet",
+          "validation_manifest": "data/processed/modeling/ml_lc_04_manifest.json"
+        },
+        {
+          "model_name": "XGBoost Candidate",
+          "model_artifact_path": "data/processed/modeling/xgboost_candidate.joblib",
+          "source_prediction_file": "data/processed/modeling/ml_lc_05_xgboost_validation_predictions.parquet",
+          "validation_manifest": "data/processed/modeling/ml_lc_05_manifest.json"
+        }
+      ],
+      "evaluation_split": "Validation",
+      "sample_count": 269070,
+      "positive_class": {
+        "target": 1,
+        "meaning": "Default"
+      },
+      "labels_source": "data/processed/modeling/validation_ids.parquet",
+      "validation_cohort_verified": true,
+      "source_predictions_verified_against_validation_ids": true,
+      "metrics_displayed": {
+        "roc_auc": "ROC AUC per model"
+      },
+      "script": "src/models/evaluation_figures.py",
+      "verification_status": "PASS \u2014 source IDs, labels, metrics, and cohort verified against saved Validation artifacts"
+    },
+    {
+      "figure_id": "FIGURE-02",
+      "filename": "model_precision_recall_curve.png",
+      "chart_type": "Precision\u2013Recall curve",
+      "models": [
+        {
+          "model_name": "Logistic Regression",
+          "model_artifact_path": "data/processed/modeling/logistic_baseline.joblib",
+          "source_prediction_file": "data/processed/modeling/ml_lc_03_validation_predictions.parquet",
+          "validation_manifest": "data/processed/modeling/ml_lc_03_manifest.json"
+        },
+        {
+          "model_name": "Weighted Logistic Regression",
+          "model_artifact_path": "data/processed/modeling/logistic_weighted.joblib",
+          "source_prediction_file": "data/processed/modeling/ml_lc_04_weighted_validation_predictions.parquet",
+          "validation_manifest": "data/processed/modeling/ml_lc_04_manifest.json"
+        },
+        {
+          "model_name": "XGBoost Candidate",
+          "model_artifact_path": "data/processed/modeling/xgboost_candidate.joblib",
+          "source_prediction_file": "data/processed/modeling/ml_lc_05_xgboost_validation_predictions.parquet",
+          "validation_manifest": "data/processed/modeling/ml_lc_05_manifest.json"
+        }
+      ],
+      "evaluation_split": "Validation",
+      "sample_count": 269070,
+      "positive_class": {
+        "target": 1,
+        "meaning": "Default"
+      },
+      "labels_source": "data/processed/modeling/validation_ids.parquet",
+      "validation_cohort_verified": true,
+      "source_predictions_verified_against_validation_ids": true,
+      "metrics_displayed": {
+        "average_precision": "Average Precision per model",
+        "positive_prevalence": 0.19965064853012227
+      },
+      "script": "src/models/evaluation_figures.py",
+      "verification_status": "PASS \u2014 source IDs, labels, metrics, and cohort verified against saved Validation artifacts"
+    },
+    {
+      "figure_id": "FIGURE-03",
+      "filename": "model_confusion_matrix.png",
+      "chart_type": "Confusion matrix heatmap",
+      "models": [
+        {
+          "model_name": "XGBoost Candidate",
+          "model_artifact_path": "data/processed/modeling/xgboost_candidate.joblib",
+          "source_prediction_file": "data/processed/modeling/ml_lc_05_xgboost_validation_predictions.parquet",
+          "validation_manifest": "data/processed/modeling/ml_lc_05_manifest.json"
+        }
+      ],
+      "evaluation_split": "Validation",
+      "sample_count": 269070,
+      "positive_class": {
+        "target": 1,
+        "meaning": "Default"
+      },
+      "labels_source": "data/processed/modeling/validation_ids.parquet",
+      "validation_cohort_verified": true,
+      "source_predictions_verified_against_validation_ids": true,
+      "metrics_displayed": {
+        "locked_threshold": 0.22009515762329102,
+        "matrix_order": "[[TN, FP], [FN, TP]]",
+        "matrix": [
+          [
+            154276,
+            61074
+          ],
+          [
+            21344,
+            32376
+          ]
+        ]
+      },
+      "script": "src/models/evaluation_figures.py",
+      "verification_status": "PASS \u2014 source IDs, labels, metrics, and cohort verified against saved Validation artifacts"
+    },
+    {
+      "figure_id": "FIGURE-04",
+      "filename": "model_calibration_curve.png",
+      "chart_type": "Calibration plot",
+      "models": [
+        {
+          "model_name": "XGBoost Candidate",
+          "model_artifact_path": "data/processed/modeling/xgboost_candidate.joblib",
+          "source_prediction_file": "data/processed/modeling/ml_lc_05_xgboost_validation_predictions.parquet",
+          "validation_manifest": "data/processed/modeling/ml_lc_05_manifest.json"
+        }
+      ],
+      "evaluation_split": "Validation",
+      "sample_count": 269070,
+      "positive_class": {
+        "target": 1,
+        "meaning": "Default"
+      },
+      "labels_source": "data/processed/modeling/validation_ids.parquet",
+      "validation_cohort_verified": true,
+      "source_predictions_verified_against_validation_ids": true,
+      "metrics_displayed": {
+        "brier_score": 0.14259530821349362,
+        "log_loss": 0.44740213302667076,
+        "bin_strategy": "quantile",
+        "bin_count": 10,
+        "bin_sample_counts": [
+          26907,
+          26907,
+          26907,
+          26907,
+          26907,
+          26907,
+          26907,
+          26907,
+          26907,
+          26907
+        ]
+      },
+      "script": "src/models/evaluation_figures.py",
+      "verification_status": "PASS \u2014 source IDs, labels, metrics, and cohort verified against saved Validation artifacts"
+    }
+  ]
+}

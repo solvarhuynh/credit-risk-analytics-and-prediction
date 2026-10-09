@@ -10,24 +10,48 @@ from typing import Any
 
 from dash import Dash, Input, Output, State, ctx, dcc, html, no_update
 
-from apps.individual_prediction_dash.logic import (
-    MODEL_LABELS,
-    DEMO_PRESETS,
-    ML_LC_10_LOCKED_THRESHOLD,
-    classify_at_threshold,
-    compare_observed_outcome,
-    expected_loss_figure,
-    model_performance,
-    result_view,
-    run_form_prediction,
-    shap_big_idea,
-    shap_figure,
-    threshold_demo_figure,
-    threshold_sample_counts,
-    validation_demo_sample,
-    validation_calibration_figure,
-    vi_number,
-)
+try:
+    from apps.individual_prediction_dash.logic import (
+        MODEL_LABELS,
+        DEMO_PRESETS,
+        ML_LC_10_LOCKED_THRESHOLD,
+        classify_at_threshold,
+        compare_observed_outcome,
+        expected_loss_figure,
+        model_performance,
+        result_view,
+        run_form_prediction,
+        shap_big_idea,
+        shap_figure,
+        threshold_demo_figure,
+        threshold_sample_counts,
+        validation_demo_sample,
+        validation_calibration_figure,
+        validation_threshold_metrics,
+        vi_number,
+    )
+except ModuleNotFoundError as exc:
+    if exc.name not in {"apps", "apps.individual_prediction_dash"}:
+        raise
+    from logic import (
+        MODEL_LABELS,
+        DEMO_PRESETS,
+        ML_LC_10_LOCKED_THRESHOLD,
+        classify_at_threshold,
+        compare_observed_outcome,
+        expected_loss_figure,
+        model_performance,
+        result_view,
+        run_form_prediction,
+        shap_big_idea,
+        shap_figure,
+        threshold_demo_figure,
+        threshold_sample_counts,
+        validation_demo_sample,
+        validation_calibration_figure,
+        validation_threshold_metrics,
+        vi_number,
+    )
 from src.models.demo_5input import LGD_OPTIONS
 from src.models.demo_6input import HOME_OWNERSHIP_FORM_LABELS
 
@@ -201,7 +225,7 @@ app.layout = html.Div(className="app-shell", children=[
                 ),
                 html.Div(className="threshold-footer", children=[
                     html.Small(
-                        "Ngưỡng tham chiếu tối ưu F1 trên Validation của mô hình chính: 0,2201.",
+                        "Ngưỡng tham chiếu từ mô hình chính: 0,2201 (tối ưu F1 trên Validation).",
                         className="threshold-note",
                     ),
                     html.Button("Đặt lại", id="threshold-reset", n_clicks=0,
@@ -237,6 +261,10 @@ app.layout = html.Div(className="app-shell", children=[
                     html.Div(id="interactive-threshold-details", className="interactive-threshold-details"),
                     html.Div(id="model-details-content"),
                 ]),
+            ]),
+            html.Details(className="validation-threshold-details", children=[
+                html.Summary("ĐÁNH GIÁ PHÂN LOẠI THEO NGƯỠNG"),
+                html.Div(id="validation-threshold-content"),
             ]),
         ]),
         html.Section(className="panel el-panel", children=[
@@ -311,7 +339,7 @@ def render_threshold_classification(
         return "Kết quả dự đoán chưa hợp lệ.", "threshold-status threshold-status-empty", ""
     decision = _decision_text(is_flagged)
     details = html.Dl(className="details-grid threshold-details", children=[
-        html.Dt("Threshold đang chọn"), html.Dd(f"{threshold:.4f}"),
+        html.Dt("Ngưỡng người dùng đang chọn"), html.Dd(f"{threshold:.4f}"),
         html.Dt("Kết luận theo threshold đang chọn"), html.Dd(decision),
     ])
     return (
@@ -320,6 +348,68 @@ def render_threshold_classification(
         else "threshold-status threshold-status-safe",
         details,
     )
+
+
+@app.callback(
+    Output("validation-threshold-content", "children"),
+    Input("model-selector", "value"), Input("threshold-store", "data"),
+)
+def render_validation_threshold_metrics(
+    model_key: str, threshold_state: dict[str, Any] | None,
+) -> Any:
+    """Đối chiếu toàn bộ Validation khi kéo ngưỡng, độc lập với hồ sơ cá nhân."""
+    try:
+        threshold = float((threshold_state or {}).get("value", ML_LC_10_LOCKED_THRESHOLD))
+        values = validation_threshold_metrics(model_key, threshold)
+    except (ValueError, TypeError, FileNotFoundError, KeyError):
+        LOGGER.exception("Không nạp được đánh giá Validation theo ngưỡng")
+        return html.P("Chưa có dữ liệu Validation hợp lệ cho mô hình này.", className="empty-value")
+    cells = (
+        ("Thực tế Non-default", "Dự báo Non-default", "TN", values["tn"], "correct"),
+        ("Thực tế Non-default", "Dự báo Default", "FP", values["fp"], "error"),
+        ("Thực tế Default", "Dự báo Non-default", "FN", values["fn"], "error"),
+        ("Thực tế Default", "Dự báo Default", "TP", values["tp"], "correct"),
+    )
+    matrix = html.Table(className="validation-confusion", children=[
+        html.Thead(html.Tr([html.Th("Thực tế / Dự báo"), html.Th("Non-default"), html.Th("Default")])),
+        html.Tbody([
+            html.Tr([html.Th("Non-default"), *[
+                html.Td([html.Strong(code), html.Span(vi_number(count, 0))],
+                        className=f"confusion-{tone}", title=f"{actual} → {predicted}")
+                for actual, predicted, code, count, tone in cells[:2]
+            ]]),
+            html.Tr([html.Th("Default"), *[
+                html.Td([html.Strong(code), html.Span(vi_number(count, 0))],
+                        className=f"confusion-{tone}", title=f"{actual} → {predicted}")
+                for actual, predicted, code, count, tone in cells[2:]
+            ]]),
+        ]),
+    ])
+    return html.Div([
+        html.P(
+            f"{MODEL_LABELS[model_key]} · Toàn bộ {vi_number(values['rows'], 0)} hồ sơ Validation "
+            f"· Ngưỡng đang chọn {threshold:.4f}. 1 = Default; 0 = Non-default.",
+            className="validation-threshold-caption",
+        ),
+        matrix,
+        html.Div([_performance_chip(label, _metric_text(values, field, 3)) for label, field in (
+            ("Precision · ngưỡng đang chọn", "precision"),
+            ("Recall · ngưỡng đang chọn", "recall"),
+            ("F1 · ngưỡng đang chọn", "f1"),
+            ("Accuracy · ngưỡng đang chọn", "accuracy"),
+        )], className="performance-chip-grid dynamic-metric-grid"),
+        html.P(
+            f"Gắn cờ: {vi_number(values['flagged'], 0)} · Phát hiện Default thật (TP): "
+            f"{vi_number(values['tp'], 0)} · Cảnh báo nhầm (FP): {vi_number(values['fp'], 0)} "
+            f"· Bỏ sót Default (FN): {vi_number(values['fn'], 0)}.",
+            className="validation-threshold-caption",
+        ),
+        html.P(
+            "Các chỉ số này chỉ mô tả Validation ở ngưỡng đang kéo. "
+            "Không phải kết quả frozen test mới và không thay đổi ngưỡng chính thức.",
+            className="validation-threshold-caveat",
+        ),
+    ])
 
 
 @app.callback(
@@ -459,7 +549,7 @@ def render_model_performance(model_key: str) -> tuple[Any, Any]:
         html.Div([_performance_chip(label, _metric_text(metrics, field, 3))
                   for label, field in (("ROC-AUC", "roc_auc"), ("PR-AUC", "pr_auc"))]
                  + [_performance_chip(
-                     "F1", _metric_text(metrics, "f1", 3),
+                     "F1 · ngưỡng đánh giá cố định", _metric_text(metrics, "f1", 3),
                      f"F1 trên Validation tại ngưỡng đánh giá {_metric_text(metrics, 'threshold', 4)}; không đổi theo thanh trượt.",
                  )],
                  className="performance-chip-grid"),
@@ -600,7 +690,7 @@ def render_outputs(payload: dict[str, Any] | None, lgd: float) -> tuple[Any, Any
     ]
     prediction_details = html.Dl(className="details-grid prediction-details", children=[
         html.Dt("Mô hình đang dùng"), html.Dd(MODEL_LABELS[payload["model_key"]]),
-        html.Dt("Threshold tham chiếu tối ưu"), html.Dd(f"{float(payload['threshold']):.4f}"),
+        html.Dt("Ngưỡng tham chiếu từ mô hình chính"), html.Dd(f"{float(payload['threshold']):.4f}"),
         html.Dt("Kết luận theo threshold tham chiếu"),
         html.Dd(_decision_text(classify_at_threshold(float(payload["predicted_pd"]), float(payload["threshold"])))),
     ])
@@ -621,7 +711,11 @@ def render_outputs(payload: dict[str, Any] | None, lgd: float) -> tuple[Any, Any
     ], className="el-content-wrap")
     shap_content = html.Div([
         html.H2(shap_big_idea(payload["shap"]), className="shap-big-idea"),
-        html.P("Đóng góp của các yếu tố vào dự đoán của hồ sơ hiện tại", className="shap-subtitle"),
+        html.P(
+            "XGBoost: TreeSHAP; Logistic: hệ số × input đã biến đổi. "
+            "Đơn vị log-odds, không phải điểm %PD.",
+            className="shap-subtitle",
+        ),
         dcc.Graph(figure=shap_figure(payload["shap"]),
                   config={"displayModeBar": False, "responsive": True}),
         html.P("Dương: tăng rủi ro · Âm: giảm rủi ro", className="shap-note"),

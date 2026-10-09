@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Mapping
@@ -263,12 +264,15 @@ def load_verified_validation_predictions(model_key: str) -> pd.DataFrame:
     predictions = pd.read_parquet(
         prediction_path, columns=["loan_id", "target", "predicted_pd", "predicted_class"],
     )
-    validation_ids = pd.read_parquet(validation_ids_path, columns=["loan_id"])["loan_id"]
+    validation_ids = pd.read_parquet(validation_ids_path, columns=["loan_id", "target"])
     if (len(predictions) != manifest.get("validation_rows")
-            or not np.array_equal(predictions["loan_id"].to_numpy(), validation_ids.to_numpy())
+            or not np.array_equal(predictions["loan_id"].to_numpy(), validation_ids["loan_id"].to_numpy())
+            or not np.array_equal(predictions["target"].to_numpy(), validation_ids["target"].to_numpy())
             or predictions["loan_id"].isna().any()
             or not predictions["loan_id"].is_unique
             or not predictions["target"].isin([0, 1]).all()
+            or not np.isfinite(predictions["predicted_pd"].to_numpy(dtype=float)).all()
+            or not predictions["predicted_pd"].between(0, 1).all()
             or not np.array_equal(
                 predictions["predicted_class"].to_numpy(),
                 (predictions["predicted_pd"].to_numpy() >= manifest["threshold"]).astype("int8"),
@@ -278,9 +282,72 @@ def load_verified_validation_predictions(model_key: str) -> pd.DataFrame:
 
 
 @lru_cache(maxsize=2)
+def _cached_validation_predictions(model_key: str) -> pd.DataFrame:
+    """Đọc và kiểm provenance một lần mỗi model trong vòng đời app."""
+    return load_verified_validation_predictions(model_key)
+
+
+@dataclass(frozen=True)
+class ValidationThresholdIndex:
+    """PD đã sắp thứ tự và số default tích lũy của đúng tập Validation."""
+
+    sorted_pd: np.ndarray
+    positive_prefix: np.ndarray
+    positive_total: int
+    rows: int
+
+
+def build_validation_threshold_index(predictions: pd.DataFrame) -> ValidationThresholdIndex:
+    """Tạo index O(N log N) một lần; callback ngưỡng chỉ cần binary search."""
+    if predictions.empty or not {"target", "predicted_pd"}.issubset(predictions.columns):
+        raise ValueError("Thiếu nhãn hoặc PD Validation.")
+    target = pd.to_numeric(predictions["target"], errors="coerce").to_numpy(dtype=float)
+    probability = pd.to_numeric(predictions["predicted_pd"], errors="coerce").to_numpy(dtype=float)
+    if (not np.isfinite(target).all() or not np.isin(target, [0, 1]).all()
+            or not np.isfinite(probability).all() or ((probability < 0) | (probability > 1)).any()):
+        raise ValueError("Nhãn/PD Validation không hợp lệ.")
+    order = np.argsort(probability, kind="mergesort")
+    prefix = np.concatenate(([0], np.cumsum(target[order], dtype=np.int64)))
+    return ValidationThresholdIndex(probability[order], prefix, int(prefix[-1]), len(probability))
+
+
+@lru_cache(maxsize=2)
+def _validation_threshold_index(model_key: str) -> ValidationThresholdIndex:
+    """Index riêng cho đúng prediction artifact của model sáu input."""
+    return build_validation_threshold_index(_cached_validation_predictions(model_key))
+
+
+def threshold_metrics_from_index(index: ValidationThresholdIndex, threshold: float) -> dict[str, float | int]:
+    """Confusion và metrics tại PD >= ngưỡng; zero denominator trả về 0."""
+    if isinstance(threshold, bool) or not math.isfinite(float(threshold)) or not 0 <= threshold <= 1:
+        raise ValueError("Threshold phải nằm trong [0, 1].")
+    below = int(np.searchsorted(index.sorted_pd, threshold, side="left"))
+    fn = int(index.positive_prefix[below])
+    tp = index.positive_total - fn
+    tn = below - fn
+    fp = index.rows - below - tp
+    precision = tp / (tp + fp) if tp + fp else 0.0
+    recall = tp / (tp + fn) if tp + fn else 0.0
+    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+    return {
+        "rows": index.rows, "threshold": float(threshold), "tn": tn, "fp": fp,
+        "fn": fn, "tp": tp, "flagged": tp + fp,
+        "precision": precision, "recall": recall, "f1": f1,
+        "accuracy": (tp + tn) / index.rows,
+    }
+
+
+def validation_threshold_metrics(model_key: str, threshold: float) -> dict[str, float | int]:
+    """Tính chỉ số Validation của model đã chọn, không gọi inference."""
+    if model_key not in MODEL_LABELS:
+        raise ValueError("Mô hình dự đoán không hợp lệ.")
+    return threshold_metrics_from_index(_validation_threshold_index(model_key), threshold)
+
+
+@lru_cache(maxsize=2)
 def validation_demo_sample(model_key: str) -> tuple[tuple[float, ...], dict[str, float]]:
     """Lấy mẫu cố định từ Validation của đúng model và PD của tám hồ sơ có nhãn."""
-    predictions = load_verified_validation_predictions(model_key)
+    predictions = _cached_validation_predictions(model_key)
     lookup = predictions.set_index("loan_id")
     preset_pds: dict[str, float] = {}
     for preset in DEMO_PRESETS:
@@ -354,7 +421,7 @@ def shap_figure(records: list[Mapping[str, Any]]) -> go.Figure:
             vi_number(float(row["value"]), 2)
             if isinstance(row["value"], (int, float)) else str(row["value"])
         ] for row in ranked],
-        hovertemplate="%{y}<br>Giá trị: %{customdata[0]}<br>Đóng góp: %{x:.4f}<extra></extra>",
+        hovertemplate="%{y}<br>Giá trị: %{customdata[0]}<br>Đóng góp (log-odds): %{x:.4f}<extra></extra>",
     ))
     figure.update_layout(
         height=340,
@@ -363,7 +430,7 @@ def shap_figure(records: list[Mapping[str, Any]]) -> go.Figure:
         plot_bgcolor="rgba(0,0,0,0)",
         font=dict(family="Segoe UI, Arial, sans-serif", color="#19304f", size=13),
         showlegend=False,
-        xaxis=dict(title="Đóng góp vào dự đoán", zeroline=True, zerolinecolor="#566a83",
+        xaxis=dict(title="Đóng góp vào log-odds (không phải %PD)", zeroline=True, zerolinecolor="#566a83",
                    zerolinewidth=2, gridcolor="#e6edf5"),
         yaxis=dict(autorange="reversed", title=None),
     )

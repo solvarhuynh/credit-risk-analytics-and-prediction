@@ -8,9 +8,11 @@ Phân loại nhị phân khả năng khoản vay đi đến default: 0 = non-def
 
 ## 2. Input / leakage gate
 
-Canonical accepted data có 1,345,350 dòng và 107 cột theo split manifest (loan_id, target và các field). Gate duyệt 106 cột model-safe theo policy; XGBoost dùng chính xác 103 actual features, sau preprocessing thành 151 transformed features. Các date field an toàn nhưng không dùng trực tiếp: issue_d, earliest_cr_line, sec_app_earliest_cr_line.
+Canonical labeled accepted hiện có **1.345.350 dòng và 113 cột** (gồm `loan_id`, `target`, các field nguồn và engineered), khớp `split_manifest.json` và `data_dictionary.csv`. Policy đánh dấu **106 cột có thể xét cho model**; XGBoost dùng **103 actual inputs** sau khi loại ba raw date `issue_d`, `earliest_cr_line`, `sec_app_earliest_cr_line`; preprocessing của artifact tạo **151 transformed features**. Số 107 trong bản tài liệu cũ không khớp artifact canonical hiện tại và không được dùng làm tổng số cột model.
 
 Chỉ feature APPLICATION_TIME hoặc CREDIT_SNAPSHOT được đưa vào X. Loại loan_id, target, loan_status, outcome/post-loan fields (ví dụ total_pymnt, recoveries), POLICY_DERIVED, geography và UNKNOWN_REVIEW_REQUIRED. Danh sách feature thực tế và audit nằm trong ML-LC-05/12 manifests và feature audit.
+
+**TIME AVAILABILITY NOT FULLY VERIFIED:** policy class và dictionary không có timestamp nguồn cho từng field. Đặc biệt `issue_year/quarter/month` lấy từ ngày phát hành `issue_d`, còn `chargeoff_within_12_mths`, `delinq_amnt` và các trường `sec_app_*` cần đối chiếu nghĩa và thời điểm chụp snapshot trước khi dùng cho quyết định trước phát hành. Đây là giới hạn xác minh, chưa phải kết luận rằng các field đó rò rỉ nhãn. Xem phụ lục khắc phục trong `reports/model_audit/chapter09_full_model_audit.md`.
 
 ## 3. Train / Validation / Frozen Test
 

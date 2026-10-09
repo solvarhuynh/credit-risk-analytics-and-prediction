@@ -1,5 +1,21 @@
 # Hướng dẫn tạo và kiểm tra V02–V06 trong Power BI Desktop
 
+> Cập nhật 09/10/2026: mục ngay dưới ghi trạng thái master PBIP mới nhất. Các ghi nhận Desktop PASS/bốn trang ở phần lịch sử phía sau không chứng nhận bản master hiện tại; hiện có 10 page IDs và chưa Refresh/render lại.
+
+## Cập nhật master PBIP — nguồn và measure (09/10/2026)
+
+**Đã sửa qua PBIP/PBIR/TMDL, chưa bấm GUI:** `nghia.pbip` nay trỏ vào Report/SemanticModel `credit_risk_master_dashboard.*` đang có; `definition.pbir` trỏ đúng model. Tám Power Query Source đổi từ máy Huy sang tám file dưới `D:\ttdltq\data\...`. `Top Purpose` và `Peak Year` không còn là hằng số, `Label Peak Year` đi theo năm cao nhất. Không chỉnh visual/slicer/tooltip/interaction V02–V06. `pages.json` hiện có **10 IDs, gồm một tooltip page**; chưa ẩn/xóa trang nào do chưa xác định ownership staging. Desktop open/Refresh/DAX/render sau sửa đều **CHƯA XÁC NHẬN**.
+
+**Business question:** mục đích vay nào phổ biến nhất và năm nào có nhiều khoản vay nhất trong lựa chọn hiện tại? **Why this visual:** card/nhãn một giá trị phù hợp câu hỏi tổng hợp. **Insight:** giá trị thực tế sau filter chỉ được xác nhận khi chạy Desktop; không suy diễn từ code tĩnh. **Story connection:** chỉ số tổng quan dẫn sang trang xu hướng/mục đích; đây là sửa measure, không tạo chart mới.
+
+Nếu làm hoàn toàn bằng Power BI Desktop, TV3 làm tương đương như sau:
+
+1. Đóng phiên đang giữ project, mở `D:\ttdltq\reports\figures\dashboard\nghia.pbip` qua **File → Open → Browse**. Kiểm tên report và Data pane. Nếu báo lỗi, chụp thông báo rồi đóng không lưu; không tạo project master song song.
+2. Vào **Home → Transform data → Transform data**. Với từng query `application_funnel`, `cleaned_dataset`, `dim_date`, `dim_state`, `fact_evaluated_loan`, `ml_lc_09_global_importance`, `ml_lc_09_local_explanations`, `ml_lc_09_shap_sample`, chọn query → **Applied Steps → Source** hoặc **Advanced Editor**. Chỉ thay path trong `File.Contents(...)` lần lượt thành `D:\ttdltq\data\interim\application_funnel.parquet`, `D:\ttdltq\data\processed\cleaned_dataset.parquet`, `D:\ttdltq\data\interim\dim_date.parquet`, `D:\ttdltq\data\interim\dim_state.parquet`, `D:\ttdltq\data\processed\modeling\ml_lc_11_expected_loss.parquet`, `D:\ttdltq\data\processed\modeling\ml_lc_09_global_importance.csv`, `D:\ttdltq\data\processed\modeling\ml_lc_09_local_explanations.csv`, `D:\ttdltq\data\processed\modeling\ml_lc_09_shap_sample.parquet`. Không đổi connector/kiểu cột. Chọn **Close & Apply → Home → Refresh** và kiểm cả tám query không lỗi.
+3. Trong **Data/Model view**, chọn bảng `*Measure table`, chọn lần lượt `Top Purpose`, `Peak Year`, `Label Peak Year` và kiểm công thức trên formula bar. Nếu nhập bằng GUI, dùng **Modeling → New measure** hoặc chọn measure hiện có để sửa bằng đúng DAX trong `%2AMeasure table.tmdl`: `Top Purpose` đếm `cleaned_dataset` theo purpose trong `ALLSELECTED`; `Peak Year` đếm `[Total Loans]` theo `dim_date[year]` trong `ALLSELECTED`; `Label Peak Year` chỉ hiện tại `[Peak Year]`. Tie-break lần lượt theo chữ cái/năm tăng dần. Không nhập chuỗi “Debt Consolidation” hay năm `2015` cố định.
+4. Ở trang có slicer năm và card/nhãn mục đích, thử **All** rồi một vài năm/mục đích khác nhau. Xác nhận measure đổi đúng theo filter thích hợp, không báo DAX error. Vào **Model view → Manage relationships** kiểm `dim_date[date]` lọc `cleaned_dataset[issue_d]`; kiểm V02–V06 không lỗi field sau Refresh. Đây là **bước nghiệm thu cần làm**, chưa phải kết quả đã đạt.
+5. Đối chiếu các tab và **View → Selection pane** với plan bốn trang; tooltip page có thể không thành tab thường. Không ẩn/xóa trang của TV1/TV3 khi TV3 chưa xác nhận trang staging. Chỉ **File → Save** sau khi mở, Refresh và render đều ổn. V01 Map nếu còn bị tenant chặn thì theo `docs/setup/tv3_setup.md`; không bịa vị trí.
+
 ## Cách tạo một biểu đồ
 
 1. Chọn trang cần làm ở thanh tab dưới cùng. Nhấn một vùng trống trên canvas để bỏ chọn visual cũ.

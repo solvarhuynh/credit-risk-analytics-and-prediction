@@ -4,6 +4,8 @@ Trạng thái: **ML-LC-01 đến ML-LC-13 PASS**. ML-LC-08 frozen-test metrics t
 
 TV1 chỉ nhận `cleaned_dataset.parquet`, dictionary và manifest khi TV2 quality/leakage gate PASS. `X` chỉ gồm cột đã duyệt thuộc `APPLICATION_TIME` hoặc `CREDIT_SNAPSHOT`; loại `loan_id`, `target`, `loan_status`, geography, policy-derived, post-loan, text cardinality cao và unknown.
 
+**Giới hạn triển khai: TIME AVAILABILITY NOT FULLY VERIFIED.** Policy kỹ thuật không chứa timestamp theo từng feature để chứng minh mọi input đã biết tại thời điểm ra quyết định. Các field dựa `issue_d` và một số credit-snapshot như `chargeoff_within_12_mths`, `delinq_amnt`, `sec_app_chargeoff_within_12_mths` cần xác nhận nghĩa nguồn và thời điểm snapshot. Không suy diễn một feature đã an toàn chỉ vì được xếp `CREDIT_SNAPSHOT`; cũng không kết luận có leakage khi chưa có bằng chứng. Nếu xác nhận post-decision leakage, phải mở protocol model revision riêng; không ghi đè artifact/metrics đã khóa.
+
 Logistic Regression là baseline bắt buộc. XGBoost là so sánh tùy chọn và không thay thế yêu cầu Logistic. Split cố định, threshold chọn bằng development/validation; frozen test chỉ đánh giá cuối.
 
 ## ML-LC-06 — Quy tắc khóa candidate

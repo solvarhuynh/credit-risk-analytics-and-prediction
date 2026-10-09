@@ -1,0 +1,128 @@
+{
+  "stage": "xgboost-6input-demo-validation-candidate",
+  "status": "PASS",
+  "model_role": "secondary_ui_demo_candidate_only",
+  "primary_model": "xgboost_full_refit_ml-lc-12",
+  "features": [
+    "loan_amnt",
+    "annual_inc",
+    "dti",
+    "term_months",
+    "fico_avg",
+    "home_ownership"
+  ],
+  "feature_count": 6,
+  "transformed_feature_count": 11,
+  "transformed_feature_names": [
+    "numeric__loan_amnt",
+    "numeric__annual_inc",
+    "numeric__dti",
+    "numeric__term_months",
+    "numeric__fico_avg",
+    "categorical__home_ownership_ANY",
+    "categorical__home_ownership_MORTGAGE",
+    "categorical__home_ownership_NONE",
+    "categorical__home_ownership_OTHER",
+    "categorical__home_ownership_OWN",
+    "categorical__home_ownership_RENT"
+  ],
+  "dataset_id": "lending_club_2007_2018",
+  "canonical_dataset_sha256": "7629ee0c58d18e3cda720abf71c1db13a908309754a3f411d730d255494d09ef",
+  "split_artifact_sha256": {
+    "train": "648248206501fd7c8d63054464b19740cd8f05442ca2a0b0e35c056aabf9d794",
+    "validation": "8b0fe9ec7f5d88887e4e33e8f0a44a88189ca0b15e550ee89747b4934e14753f"
+  },
+  "home_ownership_categories_from_train": [
+    "ANY",
+    "MORTGAGE",
+    "NONE",
+    "OTHER",
+    "OWN",
+    "RENT"
+  ],
+  "home_ownership_train_counts": {
+    "RENT": 320855,
+    "MORTGAGE": 399613,
+    "OWN": 86453,
+    "NONE": 28,
+    "ANY": 176,
+    "OTHER": 85
+  },
+  "numeric_input_bounds_from_train": {
+    "loan_amnt": {
+      "min": 500.0,
+      "max": 40000.0
+    },
+    "annual_inc": {
+      "min": 0.0,
+      "max": 9550000.0
+    },
+    "dti": {
+      "min": -1.0,
+      "max": 999.0
+    },
+    "term_months": {
+      "min": 36.0,
+      "max": 60.0
+    },
+    "fico_avg": {
+      "min": 627.0,
+      "max": 847.5
+    }
+  },
+  "preprocessing_fit_partition": "train only",
+  "preprocessing": "train-fit median numeric imputation + standard scaling for Logistic; train-fit categorical most-frequent imputation + OneHotEncoder(handle_unknown=ignore)",
+  "model_parameters": {
+    "n_estimators": 200,
+    "max_depth": 4,
+    "learning_rate": 0.05,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "random_state": 42,
+    "objective": "binary:logistic",
+    "eval_metric": "logloss",
+    "tree_method": "hist",
+    "n_jobs": 4
+  },
+  "threshold": 0.22009515762329102,
+  "validation_rows": 269070,
+  "train_rows": 807210,
+  "validation_metrics": {
+    "rows": 269070,
+    "roc_auc": 0.6852660078114884,
+    "pr_auc": 0.34947513912902534,
+    "log_loss": 0.46411499179647536,
+    "brier_score": 0.1481706174924988,
+    "precision": 0.3199359190924051,
+    "recall": 0.5464817572598659,
+    "f1": 0.4035908962805628,
+    "accuracy": 0.6775374437878618,
+    "confusion_matrix": [
+      [
+        152948,
+        62402
+      ],
+      [
+        24363,
+        29357
+      ]
+    ],
+    "threshold": 0.22009515762329102
+  },
+  "validation_prediction_artifact": "D:\\ttdltq\\data\\processed\\modeling\\xgboost_6input_demo_validation_predictions.parquet",
+  "validation_prediction_sha256": "67973059f78c03d98ab85536df60226e70744ee4ae73dc5e6aa07cd734010860",
+  "model_artifact": "D:\\ttdltq\\data\\processed\\modeling\\xgboost_6input_demo.joblib",
+  "model_sha256": "d17953f717a8b983c737c9f8f36c877e0bae5739f089c15bcdd39a51bae8d7ea",
+  "frozen_test_accessed": false,
+  "frozen_test_metrics": null,
+  "frozen_test_status": "NOT_EVALUATED_BY_USER_SELECTED_VALIDATION_ONLY_PROTOCOL",
+  "protected_artifact_hashes_before": {
+    "xgboost_full_refit.joblib": "00fbab68eef6a5f5d75b1c6933d6843123c2038613eea327cc30c3851643796e",
+    "ml_lc_12_manifest.json": "2f5709f9c03857b64fa877c8eb0affbcc7f9fe95b42fd66a5f46be8997f90f1b",
+    "xgboost_5input_demo.joblib": "36aae12049798f573f8afce28de5e31b030002bdb90728ff8f6dd577f6e8954f",
+    "xgboost_5input_demo_manifest.json": "cfff2fd364f65f1708f4f815f3ab2ceab2f773bcf95536c12856b82bbad3ef3a",
+    "logistic_5input_demo.joblib": "c266a294cd75c66aeff9e228375a79d7b22fbf5446c88e42236422d536e2d74b",
+    "logistic_5input_demo_manifest.json": "799177e0a6cec60cdc3b7481ba50c7b0f7ebd753ee237ad0ebf8ec6efaacfd92"
+  },
+  "created_at_utc": "2026-10-07T10:57:26.528130+00:00"
+}
