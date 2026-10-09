@@ -155,7 +155,7 @@ Trong vòng chỉnh sửa này, agent đã cập nhật PBIR khi Desktop đóng 
 
 **Lưu ý lịch sử:** đoạn này ghi thao tác hợp nhất measure ở vòng trước. Các format `$`, `Top Purpose = "Debt Consolidation"`, `Peak Year = 2015`, nguồn Map và danh sách 12 trang phía dưới đã được thay đổi trong vòng sửa bốn trang ngày 2026-10-08. Muốn dựng trạng thái **hiện tại**, làm theo mục “Bản Master bốn trang” ở cuối file.
 
-Các trang Huy đã có trong `nghia.pbip` do người dùng chuyển thủ công. Phần sửa ngày 2026-10-08 thêm 7 measure vào `cleaned_dataset`, dùng lại `Total Loans` hiện có và đổi binding của 18 visual thuộc Portfolio Overview, Portfolio Trends & Purpose, Borrower Risk Profile và TT_V11. Danh sách visual ID và validation tĩnh nằm ở [merge-huy-into-nghia-audit.md](merge-huy-into-nghia-audit.md).
+Các trang Huy đã có trong `nghia.pbip` do người dùng chuyển thủ công. Phần sửa ngày 2026-10-08 thêm 7 measure vào `cleaned_dataset`, dùng lại `Total Loans` hiện có và đổi binding của 18 visual thuộc Portfolio Overview, Portfolio Trends & Purpose, Borrower Risk Profile và TT_V11. Danh sách visual ID và validation tĩnh nằm ở `merge-huy-into-nghia-audit.md`.
 
 **Cách làm tương đương hoàn toàn trong Power BI Desktop — tạo measure:**
 
@@ -214,7 +214,7 @@ Các thay đổi dưới đây do agent chỉnh **PBIR/TMDL khi Desktop đóng**
 
 **Business question:** rủi ro trên các bang/khu vực Hoa Kỳ phân bố thế nào trong tập evaluated? **Vì sao Map:** `state_code` là mã địa lý thật; bản đồ cho thấy vị trí, không suy từ masked ZIP. **Insight:** chỉ đọc bang có N đủ lớn sau khi Map render, chưa kết luận vùng rủi ro cao từ tên cột. **Mạch chuyện:** quy mô/funnel → địa lý → xu hướng ở trang 02.
 
-Audit state đầy đủ nằm ở [v01_state_audit.md](v01_state_audit.md): 51 state/state-equivalent có dữ liệu, tổng 269.070 evaluated loans, country là United States.
+Audit state đầy đủ nằm ở `v01_state_audit.md`: 51 state/state-equivalent có dữ liệu, tổng 269.070 evaluated loans, country là United States.
 
 1. Chọn V01 → **Build visual**. Visual phải là **Map** (bubble map), không phải **Filled map/Shape map**. Trong `Location`, giữ `dim_state[state_code]` và `dim_state[country]`; `state_code` có **Data category = State or Province**, `country` có **Data category = Country/Region**. Đặt **Size** = `fact_evaluated_loan[Evaluated Loan Count]`. Nguồn là **269.070 evaluated loans**, không phải application funnel hay toàn bộ cleaned portfolio.
 2. Trong **Tooltips**, kéo lần lượt: `Evaluated Loan Count`, `Observed Default Count — State Map`, `Observed Default Rate — State Map`, `Mean PD`. Đổi nhãn hiển thị thành **Số khoản vay**, **Số default**, **Tỷ lệ default quan sát**, **PD trung bình**; định dạng count là số nguyên, rate/PD là phần trăm. Measure `State Map` trả `0` cho bang có zero default, không biến thành BLANK.

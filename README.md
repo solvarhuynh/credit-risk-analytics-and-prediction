@@ -427,6 +427,7 @@ ttdltq/
 │   ├── data_quality_report.md          # Báo cáo chất lượng dữ liệu & Leakage Gate PASS
 │   ├── eda_report.md                   # Báo cáo phân tích khám phá dữ liệu
 │   ├── tv1_stages/                     # Báo cáo 13 giai đoạn modeling & modeling_summary.md
+│   ├── tv2_stages/                     # Báo cáo 10 giai đoạn Data Engineering & final handoff audit
 │   ├── model_experiments/              # Báo cáo thực nghiệm mở rộng & pilot F1 cải tiến
 │   │   └── f1_improvement/             # Nghiên cứu pilot F1 (protocol, logs, chẩn đoán)
 │   └── figures/                        # Toàn bộ hình ảnh phục vụ báo cáo chính thức

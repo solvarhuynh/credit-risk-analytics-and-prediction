@@ -17,7 +17,7 @@ TV2 data handoff được phê duyệt cho TV1 Modeling.
 - Root cause trước đây: `_stage_09` gán `excluded_unresolved_status_rows = None`; manifest chỉ có `accepted_labeled_rows` và thiếu các row counts/provenance bắt buộc.
 - DE-LC-09 hiện derive `accepted_rows` từ năm accepted business tables, `rejected_rows` từ `rejected_applications.parquet`, và `unresolved_rows = accepted_rows - labeled_rows`; không hard-code dataset-specific count.
 - Validation fail-closed kiểm tra count reconciliation, target sum, canonical/dictionary coverage, leakage gate, baseline forbidden list và run/stage status trước khi ghi artifact PASS.
-- [data_quality_report.md](data_quality_report.md) hiện ghi unresolved **915,351**; [cleaned_dataset_manifest.json](../data/processed/cleaned_dataset_manifest.json) có đầy đủ count, status, paths và provenance.
+- [data_quality_report.md](../data_quality_report.md) hiện ghi unresolved **915,351**; [cleaned_dataset_manifest.json](../../data/processed/cleaned_dataset_manifest.json) có đầy đủ count, status, paths và provenance.
 
 Canonical modeling dataset không bị rebuild hoặc thay đổi semantics trong repair.
 
@@ -119,7 +119,7 @@ Funnel hiện dùng index alignment đúng, kiểm tra row preservation, ghi par
 
 ## 8. EDA audit
 
-Đúng 5 hình canonical tồn tại, non-empty và khớp [eda_report.md](eda_report.md):
+Đúng 5 hình canonical tồn tại, non-empty và khớp [eda_report.md](../eda_report.md):
 
 1. `reports/figures/eda/eda_01_loan_amount_distribution.png` — histogram loan amount.
 2. `reports/figures/eda/eda_02_dti_by_target.png` — boxplot DTI by target; P99 display cap `38.35`, chỉ ảnh hưởng hiển thị.
@@ -163,9 +163,9 @@ Kết quả: **DE-LC-09 PASS**; marker và stage report cập nhật thành côn
 
 Các tài liệu kỹ thuật về target, leakage, artifact names, funnel, manifest và 5 EDA charts khớp runtime artifacts. Đã cập nhật:
 
-- [docs/data/tv2_data_handoff.md](../docs/data/tv2_data_handoff.md) để trạng thái `GENERATED / QUALITY AND LEAKAGE GATE PASS` và ghi các count handoff hiện hành.
-- [docs/tasks/thanh-vien-2-data-engineering.md](../docs/tasks/thanh-vien-2-data-engineering.md) đã thay dòng `Next step: DE-LC-01` bằng trạng thái `TV2_HANDOFF_PASS`.
-- Các entry cũ trong [logs/log_tv2.md](../logs/log_tv2.md) có status `NOT RUN`/`INTERRUPTED` của những lần chạy trước. Đây là lịch sử, không dùng làm current runtime evidence; không rewrite lịch sử trong audit này.
+- [docs/data/tv2_data_handoff.md](../../docs/data/tv2_data_handoff.md) để trạng thái `GENERATED / QUALITY AND LEAKAGE GATE PASS` và ghi các count handoff hiện hành.
+- [docs/tasks/thanh-vien-2-data-engineering.md](../../docs/tasks/thanh-vien-2-data-engineering.md) đã thay dòng `Next step: DE-LC-01` bằng trạng thái `TV2_HANDOFF_PASS`.
+- Các entry cũ trong [logs/log_tv2.md](../../logs/log_tv2.md) có status `NOT RUN`/`INTERRUPTED` của những lần chạy trước. Đây là lịch sử, không dùng làm current runtime evidence; không rewrite lịch sử trong audit này.
 
 Không còn contradiction current-status nào ảnh hưởng handoff.
 
