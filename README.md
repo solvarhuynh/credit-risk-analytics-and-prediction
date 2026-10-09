@@ -14,7 +14,7 @@
 
 <br/>
 
-[📄 **Báo Cáo Đồ Án Cuối Kỳ (PDF)**](reports/figures/paper/NHOM14_HO_TRONG_SON_HUYNH_TRUNG_NGHIA_HOANG_NGOC_HUY_IDV_REPORT.pdf) &nbsp;&nbsp;•&nbsp;&nbsp; [📊 **Trực Tiếp Power BI Master Dashboard**](https://app.powerbi.com/view?r=eyJrIjoiYzlmMmM3YzAtMzE4OC00ZThjLThkMjktNzVmYTNmOTMyYzk2IiwidCI6IjM3NDE3YTJmLWYzMWEtNDZjMC05NzQyLTU0Yjg1OWY1ZmI0YyIsImMiOjEwfQ%3D%3D) &nbsp;&nbsp;•&nbsp;&nbsp; [🌐 **Trực Tiếp Web App Dự Đoán (Render)**](https://credit-risk-analytics-and-prediction.onrender.com/)
+[**Báo Cáo Đồ Án Cuối Kỳ**](reports/figures/paper/NHOM14_HO_TRONG_SON_HUYNH_TRUNG_NGHIA_HOANG_NGOC_HUY_IDV_REPORT.pdf) &nbsp;&nbsp;•&nbsp;&nbsp; [**Trực Tiếp Power BI Master Dashboard**](https://app.powerbi.com/view?r=eyJrIjoiYzlmMmM3YzAtMzE4OC00ZThjLThkMjktNzVmYTNmOTMyYzk2IiwidCI6IjM3NDE3YTJmLWYzMWEtNDZjMC05NzQyLTU0Yjg1OWY1ZmI0YyIsImMiOjEwfQ%3D%3D) &nbsp;&nbsp;•&nbsp;&nbsp; [**Trực Tiếp Web App Dự Đoán**](https://credit-risk-analytics-and-prediction.onrender.com/)
 
 </div>
 
@@ -291,7 +291,7 @@ Nhóm triển khai hệ thống báo cáo tương tác chính thức gồm **4 t
 
 [![PowerBI Live](https://img.shields.io/badge/Báo_Cáo_Trực_Tuyến-Power_BI_Service-F2C811?style=for-the-badge&logo=powerbi&logoColor=black)](https://app.powerbi.com/view?r=eyJrIjoiYzlmMmM3YzAtMzE4OC00ZThjLThkMjktNzVmYTNmOTMyYzk2IiwidCI6IjM3NDE3YTJmLWYzMWEtNDZjMC05NzQyLTU0Yjg1OWY1ZmI0YyIsImMiOjEwfQ%3D%3D)
 
-*Truy cập trực tiếp Dashboard tại: [Power BI Interactive Report (Nhóm 14)](https://app.powerbi.com/view?r=eyJrIjoiYzlmMmM3YzAtMzE4OC00ZThjLThkMjktNzVmYTNmOTMyYzk2IiwidCI6IjM3NDE3YTJmLWYzMWEtNDZjMC05NzQyLTU0Yjg1OWY1ZmI0YyIsImMiOjEwfQ%3D%3D) • Tệp thiết kế nguồn: [`reports/figures/dashboard/nghia.pbip`](reports/figures/dashboard/nghia.pbip)*
+*Truy cập trực tiếp báo cáo tương tác tại: [Power BI Interactive Report (Nhóm 14)](https://app.powerbi.com/view?r=eyJrIjoiYzlmMmM3YzAtMzE4OC00ZThjLThkMjktNzVmYTNmOTMyYzk2IiwidCI6IjM3NDE3YTJmLWYzMWEtNDZjMC05NzQyLTU0Yjg1OWY1ZmI0YyIsImMiOjEwfQ%3D%3D)*
 
 </div>
 
@@ -439,7 +439,7 @@ ttdltq/
 │       │   ├── model_calibration_curve.png # FIGURE-04: Hiệu chuẩn xác suất 10 bins
 │       │   ├── figures_manifest.json   # Bản kê kiểm định và provenance của đồ thị
 │       │   └── README.md               # Đặc tả tái lập đồ thị đánh giá
-│       └── dashboard/                  # Bản thiết kế Power BI (nghia.pbip, Report, SemanticModel)
+│       └── dashboard/                  # Hướng dẫn thao tác và tài liệu Power BI Dashboard
 │
 ├── src/                                # Toàn bộ mã nguồn Python tái lập
 │   ├── data/                           # Ingestion, cleaning pipeline & quality checks
@@ -492,10 +492,9 @@ Hoặc khởi chạy trực tiếp thông qua Python:
 ```
 Truy cập trình duyệt tại địa chỉ: `http://127.0.0.1:8050` để thao tác nhập hồ sơ, so sánh XGBoost vs Logistic và quan sát đóng góp cục bộ SHAP.
 
-### 9.4 Mở & Tương Tác Với Power BI Dashboard
-1. Mở tệp dự án Power BI: `reports/figures/dashboard/nghia.pbip` bằng **Power BI Desktop** (hoặc truy cập trực tiếp qua [Power BI Service Live](https://app.powerbi.com/view?r=eyJrIjoiYzlmMmM3YzAtMzE4OC00ZThjLThkMjktNzVmYTNmOTMyYzk2IiwidCI6IjM3NDE3YTJmLWYzMWEtNDZjMC05NzQyLTU0Yjg1OWY1ZmI0YyIsImMiOjEwfQ%3D%3D)).
-2. Kiểm tra các kết nối dữ liệu đến thư mục `data/interim/` và `data/processed/modeling/`.
-3. Sử dụng các Slicer (Bộ lọc Năm, Kỳ hạn, Mục đích vay, Hạng rủi ro) để trải nghiệm tính năng Drill-down và Cross-filtering trên 4 trang phân tích chính.
+### 9.4 Trải Nghiệm & Tương Tác Với Power BI Dashboard
+1. Truy cập trực tiếp qua dịch vụ đám mây [Power BI Service Live](https://app.powerbi.com/view?r=eyJrIjoiYzlmMmM3YzAtMzE4OC00ZThjLThkMjktNzVmYTNmOTMyYzk2IiwidCI6IjM3NDE3YTJmLWYzMWEtNDZjMC05NzQyLTU0Yjg1OWY1ZmI0YyIsImMiOjEwfQ%3D%3D) để tương tác đầy đủ các tính năng không cần cài đặt phần mềm.
+2. Sử dụng các Slicer (Bộ lọc Năm, Kỳ hạn, Mục đích vay, Hạng rủi ro) để trải nghiệm tính năng Drill-down và Cross-filtering trên 4 trang phân tích chính.
 
 ### 9.5 Triển Khai Ứng Dụng Web Lên Nền Tảng Đám Mây (Render Web Service)
 Ứng dụng Dash hỗ trợ triển khai trực tiếp từ GitHub lên Render mà không cần nạp bộ dữ liệu lớn:
