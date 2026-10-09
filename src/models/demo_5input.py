@@ -97,7 +97,6 @@ class SanitizeDemoInputs(BaseEstimator, TransformerMixin):
         return result
 
 
-# Stable pickle path is required when training via python -m (where __name__ is __main__).
 SanitizeDemoInputs.__module__ = "src.models.demo_5input"
 
 
@@ -331,7 +330,6 @@ def train_demo_model(
     validation_pd = validate_probability_of_default(pipeline.predict_proba(validation_x)[:, 1])
     validation_metrics = _metrics(validation_y, validation_pd, ML_LC_10_LOCKED_THRESHOLD)
 
-    # Đặt one-shot lock trước khi mở test IDs/label; mọi lỗi sau đây giữ lock.
     test_lock_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         lock_fd = os.open(test_lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
@@ -449,7 +447,7 @@ def train_demo_model(
 @lru_cache(maxsize=2)
 def load_demo_model(signature: tuple[int, int, int, int] | None = None) -> tuple[Any, dict[str, Any]]:
     """Nạp model demo một lần và kiểm manifest/hash/schema trước khi infer."""
-    del signature  # cache key comes from load_demo_model_cached below
+    del signature
     if not XGBOOST_5INPUT_DEMO_PATH.is_file() or not XGBOOST_5INPUT_DEMO_MANIFEST_PATH.is_file():
         raise FileNotFoundError("Chưa có 5-input demo model. Chạy lệnh huấn luyện một lần trước.")
     manifest = _read_json(XGBOOST_5INPUT_DEMO_MANIFEST_PATH)

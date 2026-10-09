@@ -52,7 +52,6 @@ def test_monotonicity_higher_pd_lower_score(
     probabilities = np.array([0.01, 0.05, 0.10, 0.20, 0.50, 0.80])
     scores = probability_to_credit_score(probabilities, config=default_score_config)
 
-    # Đảm bảo hiệu số score liền kề luôn âm (giảm dần)
     assert np.all(np.diff(scores) < 0)
 
 
@@ -70,7 +69,6 @@ def test_pd_extremes_do_not_produce_inf(
 
 def test_score_clipping_bounds(default_score_config: CreditScoreConfig) -> None:
     """Điểm số được clip chuẩn xác trong khoảng [min_score, max_score]."""
-    # Cấu hình boundary hẹp để kiểm tra clipping
     bounded_config = CreditScoreConfig(
         base_score=600.0,
         base_odds=0.05,
@@ -83,8 +81,8 @@ def test_score_clipping_bounds(default_score_config: CreditScoreConfig) -> None:
 
     assert np.all(scores >= 500.0)
     assert np.all(scores <= 700.0)
-    assert scores[0] == 700.0  # Rủi ro cực thấp chạm max_score
-    assert scores[-1] == 500.0  # Rủi ro cực cao chạm min_score
+    assert scores[0] == 700.0
+    assert scores[-1] == 500.0
 
 
 def test_score_calculation_reproducibility(
@@ -125,12 +123,6 @@ def test_risk_tier_assignment_deterministic() -> None:
 
     tiers = assign_risk_tier(scores, score_thresholds=thresholds, tier_labels=labels)
 
-    # searchsorted side='left':
-    # 500 < 550 -> index 0 (HIGH_RISK)
-    # 550 <= 550 -> index 0 (HIGH_RISK)
-    # 600 in (550, 650] -> index 1 (MEDIUM_RISK)
-    # 650 <= 650 -> index 1 (MEDIUM_RISK)
-    # 700 > 650 -> index 2 (LOW_RISK)
     expected = ["HIGH_RISK", "HIGH_RISK", "MEDIUM_RISK", "MEDIUM_RISK", "LOW_RISK"]
     assert list(tiers) == expected
 
@@ -151,7 +143,7 @@ def test_tier_labels_mismatch_rejected() -> None:
         assign_risk_tier(
             [600.0],
             score_thresholds=[550.0, 650.0],
-            tier_labels=["HIGH", "LOW"],  # 2 labels nhưng có 2 thresholds
+            tier_labels=["HIGH", "LOW"],
         )
 
 

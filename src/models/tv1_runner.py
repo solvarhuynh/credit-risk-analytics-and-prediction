@@ -1894,7 +1894,6 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if status == "PASS" else 1
     except (GateError, SplitValidationError, FileNotFoundError, ValueError, OSError) as exc:
         if args.stage == ML_LC_08_STAGE:
-            # A rejected rerun must never replace a prior PASS report/state with FAIL.
             print(json.dumps({"stage": args.stage, "status": "FAIL", "message": str(exc)}, ensure_ascii=False))
             return 1
         result = _write_stage_evidence(

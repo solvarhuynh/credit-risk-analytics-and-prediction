@@ -162,7 +162,6 @@ def run_ml_lc_08(
     expected_test_rows: int = EXPECTED_TEST_ROWS,
 ) -> dict[str, Any]:
     """Thực hiện đúng một lần; mọi rerun hoặc output dở dang đều fail closed."""
-    # Local imports avoid changing the older runner's public helper surface.
     from src.models.tv1_runner import _atomic_write_dataframe, _atomic_write_text, _sha256
 
     output_dir, reports_dir = Path(output_dir), Path(reports_dir)
@@ -218,7 +217,6 @@ def run_ml_lc_08(
         raise GateError("ML-LC-08 đã được đặt one-shot lock.") from exc
     with os.fdopen(fd, "w", encoding="utf-8") as stream:
         stream.write(datetime.now(timezone.utc).isoformat())
-    # Sau điểm này, lỗi phải giữ reservation để không vô tình đánh giá test lần hai.
     probabilities = np.asarray(model.predict_proba(ordered.loc[:, features])[:, 1], dtype=float)
     if (probabilities.shape != (expected_test_rows,) or not np.isfinite(probabilities).all()
             or not ((0 <= probabilities) & (probabilities <= 1)).all()):

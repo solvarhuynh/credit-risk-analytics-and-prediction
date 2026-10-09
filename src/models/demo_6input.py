@@ -506,6 +506,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    # Make joblib's stable import path resolve to this module under `python -m`.
     sys.modules.setdefault("src.models.demo_6input", sys.modules[__name__])
     raise SystemExit(main())

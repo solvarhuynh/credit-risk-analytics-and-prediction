@@ -32,7 +32,6 @@ def test_perfect_prediction_metrics() -> None:
     assert result.accuracy == 1.0
     assert result.threshold == 0.5
 
-    # Confusion matrix: TN=2, FP=0, FN=0, TP=2
     np.testing.assert_array_equal(result.confusion, np.array([[2, 0], [0, 2]]))
 
 
@@ -118,7 +117,6 @@ def test_threshold_table_generation() -> None:
         "false_negative",
     }
     assert expected_cols.issubset(set(table.columns))
-    # Bảng là báo cáo khách quan, không tự ý thêm cột decision hay select threshold
     assert "is_optimal" not in table.columns
     assert "selected" not in table.columns
 

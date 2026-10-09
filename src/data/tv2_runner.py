@@ -331,8 +331,6 @@ def _remove_business_table_partials(partial_paths: dict[str, Path]) -> None:
         try:
             path.unlink(missing_ok=True)
         except OSError:
-            # Giữ exception chính của stage; cleanup best-effort không được xóa
-            # nhầm canonical output hoặc che mất nguyên nhân gốc.
             pass
 
 
@@ -382,7 +380,6 @@ def _promote_business_table_partials(
                     pass
         raise
     else:
-        # Sau promotion thành công, rollback artifact chỉ là transient file.
         for backup_path in backups.values():
             try:
                 backup_path.unlink(missing_ok=True)
@@ -1223,7 +1220,6 @@ def _stage_10(context: RunnerContext) -> dict[str, Any]:
         plt.close(figure)
         figures.append(str(path))
 
-    # EDA-01 — histogram. This chart uses the deterministic 200k plotting sample.
     loan_amounts = pd.to_numeric(sample["loan_amnt"], errors="coerce").dropna()
     if loan_amounts.empty:
         raise StageValidationError("Không có loan_amnt hợp lệ cho EDA-01.")
@@ -1235,7 +1231,6 @@ def _stage_10(context: RunnerContext) -> dict[str, Any]:
     axis.xaxis.set_major_formatter(mticker.StrMethodFormatter("{x:,.0f}"))
     save_figure("eda_01_loan_amount_distribution.png", figure)
 
-    # EDA-02 — boxplot. The cap is a display limit; canonical values are untouched.
     dti_plot, dti_cap = prepare_dti_boxplot_data(sample)
     if dti_plot.empty or not np.isfinite(dti_cap):
         raise StageValidationError("Không có DTI hợp lệ cho EDA-02.")
@@ -1249,7 +1244,6 @@ def _stage_10(context: RunnerContext) -> dict[str, Any]:
     axis.set_ylim(top=dti_cap)
     save_figure("eda_02_dti_by_target.png", figure)
 
-    # EDA-03 — ordered FICO bar chart, aggregated from the full canonical dataset.
     present_fico = mask_sparse_fico_groups(fico_table).loc[fico_table["count"] > 0].copy()
     figure, axis = plt.subplots(figsize=(8, 4.8))
     positions = np.arange(len(present_fico))
@@ -1270,7 +1264,6 @@ def _stage_10(context: RunnerContext) -> dict[str, Any]:
                           xytext=(0, 5), textcoords="offset points", ha="center", fontsize=8)
     save_figure("eda_03_default_by_fico.png", figure)
 
-    # EDA-04 — FICO × DTI heatmap with a minimum cell count.
     heatmap_counts = heatmap_rates.attrs["counts"]
     display_rates = mask_sparse_heatmap_cells(heatmap_rates, heatmap_counts)
     figure, axis = plt.subplots(figsize=(8.5, 5.5))
@@ -1293,7 +1286,6 @@ def _stage_10(context: RunnerContext) -> dict[str, Any]:
                           ha="center", va="center", fontsize=7)
     save_figure("eda_04_fico_dti_heatmap.png", figure)
 
-    # EDA-05 — all accepted/issued loans, not resolved-only canonical rows.
     figure, axis = plt.subplots(figsize=(10, 4.8))
     dates = accepted_volume_table["year_month"]
     axis.plot(dates, accepted_volume_table["accepted_loan_count"], color="#4472C4", linewidth=1.8)

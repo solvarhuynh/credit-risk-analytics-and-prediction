@@ -124,7 +124,6 @@ def train_logistic_demo() -> dict[str, Any]:
     if not np.isfinite(pipeline.named_steps["model"].coef_).all():
         raise ValueError("Hệ số Logistic không hữu hạn.")
 
-    # Tất cả kiểm tra train/validation hoàn tất trước khi tạo one-shot lock.
     LOGISTIC_5INPUT_DEMO_TEST_LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
     lock_fd = os.open(LOGISTIC_5INPUT_DEMO_TEST_LOCK_PATH, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
     with os.fdopen(lock_fd, "w", encoding="utf-8") as stream:

@@ -15,7 +15,6 @@ from src.models.cost_optimization import (
 
 def test_expected_loss_formula_and_zeros() -> None:
     """Expected Loss = PD * LGD * EAD; một trong các thành phần bằng 0 thì EL bằng 0."""
-    # PD = 0 -> EL = 0
     el_zero_pd = calculate_expected_loss(
         probability_of_default=0.0,
         loss_given_default=0.45,
@@ -23,7 +22,6 @@ def test_expected_loss_formula_and_zeros() -> None:
     )
     assert el_zero_pd[0] == 0.0
 
-    # LGD = 0 -> EL = 0
     el_zero_lgd = calculate_expected_loss(
         probability_of_default=0.1,
         loss_given_default=0.0,
@@ -31,7 +29,6 @@ def test_expected_loss_formula_and_zeros() -> None:
     )
     assert el_zero_lgd[0] == 0.0
 
-    # EAD = 0 -> EL = 0
     el_zero_ead = calculate_expected_loss(
         probability_of_default=0.1,
         loss_given_default=0.45,
@@ -39,7 +36,6 @@ def test_expected_loss_formula_and_zeros() -> None:
     )
     assert el_zero_ead[0] == 0.0
 
-    # Tính toán chuẩn: 0.1 * 0.5 * 200000 = 10000
     el_standard = calculate_expected_loss(
         probability_of_default=0.1,
         loss_given_default=0.5,
@@ -109,11 +105,6 @@ def test_missing_or_nan_values_rejected() -> None:
 
 def test_evaluate_threshold_policy() -> None:
     """Đánh giá threshold policy: record approve khi PD < threshold, reject khi PD >= threshold."""
-    # 4 records:
-    # 0: PD=0.1 (target=0, approved), EL = 0.1 * 0.5 * 1000 = 50
-    # 1: PD=0.2 (target=1, approved), EL = 0.2 * 0.5 * 1000 = 100
-    # 2: PD=0.3 (target=0, rejected)
-    # 3: PD=0.4 (target=1, rejected)
     targets = [0, 1, 0, 1]
     pds = [0.1, 0.2, 0.3, 0.4]
     lgd = 0.5
@@ -138,8 +129,8 @@ def test_evaluate_threshold_policy_target_mismatch_rejected() -> None:
     """target length hoặc series index không khớp phải raise ValueError."""
     with pytest.raises(ValueError, match="target phải không null và có cùng length"):
         evaluate_threshold_policy(
-            target=[0, 1],  # length 2
-            probability_of_default=[0.1, 0.2, 0.3],  # length 3
+            target=[0, 1],
+            probability_of_default=[0.1, 0.2, 0.3],
             loss_given_default=0.5,
             exposure_at_default=1000.0,
             threshold=0.5,

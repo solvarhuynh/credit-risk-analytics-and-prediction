@@ -305,7 +305,7 @@ def test_ml_lc_05_candidate_uses_frozen_split_and_preserves_logistic(tmp_path) -
     assert sum(map(sum, result["validation_metrics"]["confusion_matrix"])) == len(predictions)
     loaded = joblib.load(output_dir / "xgboost_candidate.joblib")
     assert loaded.named_steps["model"].random_state == 42
-    assert result["sparse_output"] is False  # toy input chỉ có numeric; production có categorical
+    assert result["sparse_output"] is False
     assert (reports_dir / "tv1_stages" / "ml-lc-05.md").is_file()
     assert json.loads((reports_dir / "tv1_stages" / "state" / "ml-lc-05.json").read_text())["status"] == "PASS"
     assert json.loads((output_dir / "ml_lc_05_manifest.json").read_text())["final_model_selected"] is False

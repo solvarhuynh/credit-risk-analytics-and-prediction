@@ -97,7 +97,6 @@ def _stage_fixture(tmp_path):
     canonical.to_parquet(canonical_path, index=False)
     validation_ids = pd.DataFrame({"loan_id": ids, "target": target, "split": "validation"})
     validation_ids.to_parquet(output / "validation_ids.parquet", index=False)
-    # A test ID file exists only to detect accidental reads by the stage.
     pd.DataFrame({"loan_id": [999], "target": [0], "split": ["test"]}).to_parquet(output / "test_ids.parquet", index=False)
     pd.DataFrame({"column_name": ["dti", "purpose"],
                   "policy_class": ["CREDIT_SNAPSHOT", "APPLICATION_TIME"],

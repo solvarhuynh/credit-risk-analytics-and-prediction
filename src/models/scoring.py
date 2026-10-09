@@ -672,7 +672,6 @@ def run_ml_lc_10(
     }
     if forbidden_context:
         raise GateError(f"Dashboard context có policy class không an toàn: {forbidden_context}")
-    # Đọc duy nhất key và các trường mô tả được duyệt; không kéo toàn bộ 113 cột.
     context = pd.read_parquet(
         canonical_path,
         columns=["loan_id", *ML_LC_10_CONTEXT_COLUMNS],
@@ -755,7 +754,6 @@ def run_ml_lc_10(
         "protected_sha256_before": protected_before,
     }
 
-    # Kiểm tra hash trước/sau computation, rồi mới công bố PASS artifacts.
     protected_after = {path.name: _file_sha256(path) for path in required_files}
     if protected_after != protected_before or _file_sha256(dictionary_path) != dictionary_hash_before:
         raise GateError("ML-LC-10 đã làm thay đổi model/input/prior locked artifacts.")

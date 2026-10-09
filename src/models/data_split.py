@@ -83,8 +83,6 @@ def _partition(
     feature_columns: Sequence[str] | None = None,
 ) -> ModelingPartition:
     if feature_columns is None:
-        # ML-LC-02 chỉ quyết định row membership. X không được suy diễn là
-        # toàn bộ cột còn lại; ML-LC-01/model schema quyết định feature list.
         features = pd.DataFrame(index=frame.index)
     else:
         features = frame.loc[:, list(feature_columns)].copy()

@@ -8,7 +8,6 @@ RAW_DIR = DATA_DIR / "raw"
 INTERIM_DIR = DATA_DIR / "interim"
 PROCESSED_DIR = DATA_DIR / "processed"
 MODELING_DIR = PROCESSED_DIR / "modeling"
-MODELS_DIR = PROJECT_ROOT / "models"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 
 ACCEPTED_RAW_PATH = RAW_DIR / "accepted_loans.csv"

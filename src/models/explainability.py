@@ -257,8 +257,6 @@ def run_ml_lc_09(
     predictions_path = output_dir / "ml_lc_05_xgboost_validation_predictions.parquet"
     predictions = pd.read_parquet(predictions_path)
     canonical_columns = ["loan_id", "target", *features]
-    # Push the validation ID predicate into the Parquet reader: explainability
-    # materializes validation rows only, never the frozen-test partition.
     canonical = pd.read_parquet(
         canonical_path, columns=canonical_columns,
         filters=[("loan_id", "in", validation_ids["loan_id"].tolist())],
@@ -299,7 +297,7 @@ def run_ml_lc_09(
 
     try:
         import shap
-    except Exception as exc:  # optional dependency; retain native gain deliverables
+    except Exception as exc:
         shap = None
         shap_error = f"{type(exc).__name__}: {exc}"
     else:
