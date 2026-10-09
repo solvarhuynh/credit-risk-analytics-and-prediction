@@ -1,0 +1,314 @@
+cultureInfo en-US
+
+	linguisticMetadata =
+			{
+			  "Version": "2.0.0",
+			  "Language": "en-US",
+			  "Entities": {
+			    "ml_lc_09_global_importance.original_feature": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "ml_lc_09_global_importance",
+			          "ConceptualProperty": "original_feature"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Đặc trưng": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "fact_evaluated_loan.risk_tier": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "fact_evaluated_loan",
+			          "ConceptualProperty": "risk_tier"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Hạng rủi ro": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "fact_evaluated_loan.fico_band": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "fact_evaluated_loan",
+			          "ConceptualProperty": "fico_band"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Nhóm FICO": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "fact_evaluated_loan.pd_bin_label": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "fact_evaluated_loan",
+			          "ConceptualProperty": "pd_bin_label"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Khoảng PD": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "fact_evaluated_loan.pd_bin_share": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "fact_evaluated_loan",
+			          "ConceptualProperty": "PD Bin Share"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Tỷ trọng": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "fact_evaluated_loan.pd_bin_count": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "fact_evaluated_loan",
+			          "ConceptualProperty": "PD Bin Count"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Số khoản vay": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "fact_evaluated_loan.risk_tier_share": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "fact_evaluated_loan",
+			          "ConceptualProperty": "Risk Tier Share"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Tỷ trọng": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "fact_evaluated_loan.mean_pd": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "fact_evaluated_loan",
+			          "ConceptualProperty": "Mean PD"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "PD trung bình": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        },
+			        {
+			          "PD DỰ ĐOÁN TB": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "fact_evaluated_loan.observed_default_rate": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "fact_evaluated_loan",
+			          "ConceptualProperty": "Observed Default Rate"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Tỷ lệ default thực tế": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "fact_evaluated_loan.evaluated_loan_count": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "fact_evaluated_loan",
+			          "ConceptualProperty": "Evaluated Loan Count"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Số khoản vay": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        },
+			        {
+			          "KHOẢN VAY ĐÁNH GIÁ": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "fact_evaluated_loan.el_contribution_": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "fact_evaluated_loan",
+			          "ConceptualProperty": "EL Contribution %"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Tỷ trọng Expected Loss": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "fact_evaluated_loan.total_ead_proxy": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "fact_evaluated_loan",
+			          "ConceptualProperty": "Total EAD Proxy"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Tổng EAD proxy": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "fact_evaluated_loan.total_expected_loss": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "fact_evaluated_loan",
+			          "ConceptualProperty": "Total Expected Loss"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Tổng Expected Loss": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        },
+			        {
+			          "TỔN THẤT KỲ VỌNG": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    }
+			  }
+			}
+		contentType: json
+

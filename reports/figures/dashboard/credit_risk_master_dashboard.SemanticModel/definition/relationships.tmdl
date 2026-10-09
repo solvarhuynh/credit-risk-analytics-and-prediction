@@ -1,0 +1,39 @@
+relationship e7778d6d-c43d-4964-a6c5-482909718a10
+	joinOnDateBehavior: datePartOnly
+	fromColumn: dim_date.date
+	toColumn: LocalDateTable_4407ee28-3bd2-4669-b8a6-07494d622f7d.Date
+
+relationship 5b4da051-ba38-48ff-b6ac-409809f66831
+	joinOnDateBehavior: datePartOnly
+	fromColumn: cleaned_dataset.earliest_cr_line
+	toColumn: LocalDateTable_0b29e5be-8a11-4746-bc0a-65042c513b27.Date
+
+relationship b16247dc-751f-47b3-b586-4ede87b5ecd2
+	joinOnDateBehavior: datePartOnly
+	fromColumn: cleaned_dataset.sec_app_earliest_cr_line
+	toColumn: LocalDateTable_91b24a92-b750-4e28-94de-89d0ff08e23a.Date
+
+relationship AutoDetected_3196a9f2-9c66-4716-9976-6e66427e58a7
+	fromColumn: cleaned_dataset.state_code
+	toColumn: dim_state.state_code
+
+relationship 9f3c3422-6f85-a9ce-121c-1f01e4be1fac
+	fromColumn: cleaned_dataset.issue_d
+	toColumn: dim_date.date
+
+relationship AutoDetected_901effc4-e85b-451c-95cb-f9310128e973
+	fromColumn: application_funnel.state_code
+	toColumn: dim_state.state_code
+
+relationship 460b6c0b-b19f-d1b8-3dfb-2a41cdf925c2
+	fromColumn: application_funnel.application_date
+	toColumn: dim_date.date
+
+relationship AutoDetected_28cb141f-4868-4aba-8729-519a2b68a39f
+	fromColumn: ml_lc_09_local_explanations.rank
+	toColumn: ml_lc_09_global_importance.rank
+
+relationship AutoDetected_39894bf2-65c1-4b19-930c-ec5770585787
+	fromColumn: ml_lc_09_shap_sample.feature
+	toColumn: ml_lc_09_global_importance.feature
+

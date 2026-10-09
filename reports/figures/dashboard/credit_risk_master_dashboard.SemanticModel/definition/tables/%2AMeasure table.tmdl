@@ -1,0 +1,74 @@
+table '*Measure table'
+	lineageTag: 57696c9e-6d89-4b83-9757-2efcbe43c286
+
+	measure 'Total Loans' = COUNTROWS(cleaned_dataset)
+		formatString: 0
+		lineageTag: 140f8607-0700-4c23-b6dd-32804d253f2f
+
+	measure 'Observed Default Rate' = ```
+			
+			VAR TotalCount = COUNTROWS(cleaned_dataset)
+			VAR DefaultCount = CALCULATE(COUNTROWS(cleaned_dataset), cleaned_dataset[target] = 1)
+			RETURN
+			IF(
+			    TotalCount >= 100, 
+			    DIVIDE(DefaultCount, TotalCount), 
+			    BLANK()
+			)
+			```
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: cd21f44e-9bbf-421d-9416-858d938ad08f
+
+	measure 'Total Funded Amount' = SUM(cleaned_dataset[loan_amnt])
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: fb604a24-b802-4c2b-bd8f-8f193b3398ec
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Average FICO Score' = AVERAGE(cleaned_dataset[fico_avg])
+		formatString: 0
+		lineageTag: 2704b96f-4a20-49ff-b382-a21c7f40ad40
+
+	measure 'Average Loan Amount' = AVERAGE(cleaned_dataset[loan_amnt])
+		formatString: \$#,0.###############;(\$#,0.###############);\$#,0.###############
+		lineageTag: 32add578-679b-4f34-8bd6-00cde6cc32aa
+
+	measure 'Top Purpose' = "Debt Consolidation"
+		lineageTag: 6f92f7d8-f98b-45c7-aec1-4902df6f65e3
+
+	measure 'Peak Year' = 2015
+		formatString: 0
+		lineageTag: dc2430b8-a004-47c7-bfe1-5f0204cbf08d
+
+	measure 'Label Peak Year' = ```
+			
+			IF(
+			    SELECTEDVALUE(dim_date[year]) = 2015, 
+			    FORMAT([Total Loans], "0.00M") & " (Peak)", 
+			    BLANK()
+			)
+			```
+		lineageTag: 3b8038d7-ea23-4e22-9716-2ed88d249786
+
+	measure 'Average Annual Income' = AVERAGE('cleaned_dataset'[annual_inc])
+		lineageTag: 2ac91116-7c6f-4648-b071-75cabd5ec2e9
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Column
+		formatString: 0
+		lineageTag: e73484ca-bea8-4db7-88b8-982a5aba2350
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Column]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition '*Measure table' = calculated
+		mode: import
+		source = Row("Column", BLANK())
+
+	annotation PBI_Id = 2543d82a991342608c912e4908c8317f
+
+	annotation 436ba87b-9c83-4389-a31b-ebd06a36be98 = {"Expression":""}
+

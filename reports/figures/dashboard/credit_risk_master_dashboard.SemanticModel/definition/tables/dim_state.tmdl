@@ -1,0 +1,31 @@
+table dim_state
+	lineageTag: a84b2f2d-b2c5-44d8-b795-13ad562887ee
+
+	column state_code
+		dataType: string
+		lineageTag: c6f1a376-3b69-4b90-a7d5-d552d5029ce2
+		summarizeBy: none
+		sourceColumn: state_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column country
+		dataType: string
+		lineageTag: 9fda3848-5a14-4488-af88-7206dbce9e67
+		summarizeBy: none
+		sourceColumn: country
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_state = m
+		mode: import
+		source =
+				let
+				    Source = Parquet.Document(File.Contents("D:\Huy\HCMUTE\Nam3\D1\TTDL\DACK\credit-risk-analytics-and-prediction\data\interim\dim_state.parquet"), [Compression=null, LegacyColumnNameEncoding=false, MaxDepth=null])
+				in
+				    Source
+
+	changedProperty = Name
+
+	annotation PBI_ResultType = Table
+

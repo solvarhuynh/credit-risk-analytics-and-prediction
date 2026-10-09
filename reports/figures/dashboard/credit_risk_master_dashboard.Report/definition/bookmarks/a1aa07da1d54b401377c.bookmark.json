@@ -1,0 +1,397 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/2.1.0/schema.json",
+  "displayName": "Reset Bookmark",
+  "name": "a1aa07da1d54b401377c",
+  "options": {
+    "targetVisualNames": [
+      "13521b87db3056e4279f"
+    ]
+  },
+  "explorationState": {
+    "version": "1.3",
+    "activeSection": "ce7979183a9313cd4a54",
+    "sections": {
+      "ce7979183a9313cd4a54": {
+        "visualContainers": {
+          "13521b87db3056e4279f": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "f3b57a50fb841769504a",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "dim_state"
+                        }
+                      },
+                      "Property": "state_code"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "f122e8090548e63ec9cc",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "*Measure table"
+                        }
+                      },
+                      "Property": "Total Loans"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "map",
+              "objects": {},
+              "activeProjections": {
+                "Category": [
+                  {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "dim_state"
+                        }
+                      },
+                      "Property": "state_code"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "537d3cd8a06cac65c00a": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "cb480043fe112b255c26",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "application_funnel"
+                        }
+                      },
+                      "Property": "decision"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "7cda000d598c4fe764fd",
+                  "type": "Advanced",
+                  "expression": {
+                    "Aggregation": {
+                      "Expression": {
+                        "Column": {
+                          "Expression": {
+                            "SourceRef": {
+                              "Entity": "application_funnel"
+                            }
+                          },
+                          "Property": "application_id"
+                        }
+                      },
+                      "Function": 5
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "clusteredBarChart",
+              "objects": {},
+              "orderBy": [
+                {
+                  "Direction": 2,
+                  "Expression": {
+                    "Aggregation": {
+                      "Expression": {
+                        "Column": {
+                          "Expression": {
+                            "SourceRef": {
+                              "Entity": "application_funnel"
+                            }
+                          },
+                          "Property": "application_id"
+                        }
+                      },
+                      "Function": 5
+                    }
+                  }
+                }
+              ],
+              "activeProjections": {
+                "Category": [
+                  {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "application_funnel"
+                        }
+                      },
+                      "Property": "decision"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "5dc5245623a5789431a8": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "a09ad6652a196cf54936",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "*Measure table"
+                        }
+                      },
+                      "Property": "Average FICO Score"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "cardVisual",
+              "objects": {},
+              "orderBy": [
+                {
+                  "Direction": 2,
+                  "Expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "*Measure table"
+                        }
+                      },
+                      "Property": "Average FICO Score"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "81644e3dad5041a225a2": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "53b6dd8a245167723260",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "dim_state"
+                        }
+                      },
+                      "Property": "state_code"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "slicer",
+              "objects": {
+                "merge": {
+                  "data": [
+                    {
+                      "properties": {
+                        "mode": {
+                          "expr": {
+                            "Literal": {
+                              "Value": "'Dropdown'"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "activeProjections": {
+                "Values": [
+                  {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "dim_state"
+                        }
+                      },
+                      "Property": "state_code"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "99fbfeb01668ee67e68d": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "825bc735ed34a6e485cf",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "*Measure table"
+                        }
+                      },
+                      "Property": "Total Loans"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "cardVisual",
+              "objects": {},
+              "orderBy": [
+                {
+                  "Direction": 2,
+                  "Expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "*Measure table"
+                        }
+                      },
+                      "Property": "Total Loans"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "acf45ee8b7a3a5bd3086": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "d8e59bfa1262ec362b4a",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "*Measure table"
+                        }
+                      },
+                      "Property": "Total Funded Amount"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "cardVisual",
+              "objects": {},
+              "orderBy": [
+                {
+                  "Direction": 2,
+                  "Expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "*Measure table"
+                        }
+                      },
+                      "Property": "Total Funded Amount"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "c2644a24da8debd50f6f": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "ce9f3991d67503a5a0b9",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "*Measure table"
+                        }
+                      },
+                      "Property": "Observed Default Rate"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "cardVisual",
+              "objects": {},
+              "orderBy": [
+                {
+                  "Direction": 2,
+                  "Expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "*Measure table"
+                        }
+                      },
+                      "Property": "Observed Default Rate"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "84d300e21e81ad2a6487": {
+            "singleVisual": {
+              "visualType": "shape",
+              "objects": {}
+            }
+          },
+          "b16b5dd10d775e4e00b1": {
+            "singleVisual": {
+              "visualType": "textbox",
+              "objects": {}
+            }
+          }
+        }
+      }
+    },
+    "objects": {
+      "merge": {
+        "outspacePane": [
+          {
+            "properties": {
+              "expanded": {
+                "expr": {
+                  "Literal": {
+                    "Value": "false"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

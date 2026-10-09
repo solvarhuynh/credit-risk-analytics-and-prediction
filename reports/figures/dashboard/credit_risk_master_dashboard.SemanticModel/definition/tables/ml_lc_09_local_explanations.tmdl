@@ -1,0 +1,101 @@
+table ml_lc_09_local_explanations
+	lineageTag: 7140681b-584a-4c88-b3f1-c5e4b2d4f7ca
+
+	column loan_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 513fae33-8dcb-4e3a-8124-e6b9dbd64b79
+		summarizeBy: sum
+		sourceColumn: loan_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column target
+		dataType: int64
+		formatString: 0
+		lineageTag: b79d66be-38bb-45f6-a32a-cd19230fb9fe
+		summarizeBy: sum
+		sourceColumn: target
+
+		annotation SummarizationSetBy = Automatic
+
+	column predicted_pd
+		dataType: double
+		lineageTag: 6d042ff6-bf4e-45bb-9043-f0e0f7f84b1e
+		summarizeBy: sum
+		sourceColumn: predicted_pd
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column predicted_class
+		dataType: int64
+		formatString: 0
+		lineageTag: 933b40d0-e693-48d0-8634-7ec95616f705
+		summarizeBy: sum
+		sourceColumn: predicted_class
+
+		annotation SummarizationSetBy = Automatic
+
+	column risk_example_type
+		dataType: string
+		lineageTag: 520bcfe5-bb30-4957-9be2-4a3cc377582f
+		summarizeBy: none
+		sourceColumn: risk_example_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column feature
+		dataType: string
+		lineageTag: 6420a5df-0e0e-4a11-a902-3d04ff5e7f7c
+		summarizeBy: none
+		sourceColumn: feature
+
+		annotation SummarizationSetBy = Automatic
+
+	column feature_value
+		dataType: string
+		lineageTag: 17471072-5436-49a9-99f8-771ff63f5963
+		summarizeBy: none
+		sourceColumn: feature_value
+
+		annotation SummarizationSetBy = Automatic
+
+	column shap_value
+		dataType: double
+		lineageTag: 710dd9ab-692d-47f2-89ac-7e0ad52fd78b
+		summarizeBy: sum
+		sourceColumn: shap_value
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column direction
+		dataType: string
+		lineageTag: 348a0c75-19c8-4dde-b4e2-549760bab9a5
+		summarizeBy: none
+		sourceColumn: direction
+
+		annotation SummarizationSetBy = Automatic
+
+	column rank
+		dataType: int64
+		formatString: 0
+		lineageTag: 451c06b4-2511-4dd0-b5c5-4be923cca372
+		summarizeBy: none
+		sourceColumn: rank
+
+		annotation SummarizationSetBy = Automatic
+
+	partition ml_lc_09_local_explanations = m
+		mode: import
+		source =
+				let
+				  Source = Csv.Document(File.Contents("D:\Huy\HCMUTE\Nam3\D1\TTDL\DACK\credit-risk-analytics-and-prediction\data\processed\modeling\ml_lc_09_local_explanations.csv"), [Delimiter = ",", Columns = 10, QuoteStyle = QuoteStyle.None]),
+				  #"Promoted headers" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				  #"Changed column type" = Table.TransformColumnTypes(#"Promoted headers", {{"loan_id", Int64.Type}, {"target", Int64.Type}, {"predicted_pd", type number}, {"predicted_class", Int64.Type}, {"risk_example_type", type text}, {"feature", type text}, {"feature_value", type text}, {"shap_value", type number}, {"direction", type text}, {"rank", Int64.Type}})
+				in
+				  #"Changed column type"
+

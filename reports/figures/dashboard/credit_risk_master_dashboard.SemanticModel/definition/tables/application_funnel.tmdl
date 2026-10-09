@@ -1,0 +1,74 @@
+table application_funnel
+	lineageTag: edba196f-dc56-4edd-8b8c-0b500cfb52a6
+
+	column application_id
+		dataType: string
+		lineageTag: f869cbfc-b4a4-447c-b6d2-d524eb89d565
+		summarizeBy: none
+		sourceColumn: application_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column application_date
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 48ca408a-e159-4a1c-82e6-4ec361138323
+		summarizeBy: none
+		sourceColumn: application_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column requested_amount
+		dataType: double
+		lineageTag: 3060e5f9-972d-4aed-af0d-1a0324fea472
+		summarizeBy: sum
+		sourceColumn: requested_amount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column state_code
+		dataType: string
+		lineageTag: 6c469ab8-b561-4b53-ad21-42cc7aa19452
+		summarizeBy: none
+		sourceColumn: state_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column zip_code
+		dataType: string
+		lineageTag: 3d6f636d-e5c0-4821-b68a-c2ab229f3c12
+		summarizeBy: none
+		sourceColumn: zip_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column purpose
+		dataType: string
+		lineageTag: 127d2864-6a56-46a4-9aee-35ea0e10ea46
+		summarizeBy: none
+		sourceColumn: purpose
+
+		annotation SummarizationSetBy = Automatic
+
+	column decision
+		dataType: string
+		lineageTag: 023dfa46-77df-4083-a598-9e3ba099276b
+		summarizeBy: none
+		sourceColumn: decision
+
+		annotation SummarizationSetBy = Automatic
+
+	partition application_funnel = m
+		mode: import
+		source =
+				let
+				    Source = Parquet.Document(File.Contents("D:\Huy\HCMUTE\Nam3\D1\TTDL\DACK\credit-risk-analytics-and-prediction\data\interim\application_funnel.parquet"), [Compression=null, LegacyColumnNameEncoding=false, MaxDepth=null])
+				in
+				    Source
+
+	changedProperty = Name
+
+	annotation PBI_ResultType = Table
+

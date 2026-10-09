@@ -1,0 +1,31 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["dim_date","dim_state","cleaned_dataset","application_funnel","ml_lc_09_global_importance","ml_lc_09_local_explanations","fact_evaluated_loan","ml_lc_09_shap_sample"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table dim_date
+ref table DateTableTemplate_5538d9ae-5ba9-4977-a91a-701425008cc2
+ref table LocalDateTable_4407ee28-3bd2-4669-b8a6-07494d622f7d
+ref table dim_state
+ref table cleaned_dataset
+ref table LocalDateTable_0b29e5be-8a11-4746-bc0a-65042c513b27
+ref table LocalDateTable_91b24a92-b750-4e28-94de-89d0ff08e23a
+ref table '*Measure table'
+ref table application_funnel
+ref table ml_lc_09_global_importance
+ref table ml_lc_09_local_explanations
+ref table fact_evaluated_loan
+ref table ml_lc_09_shap_sample
+
+ref cultureInfo en-US
+
