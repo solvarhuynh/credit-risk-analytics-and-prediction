@@ -306,6 +306,18 @@ Tạo bốn hình ROC, Precision–Recall, confusion matrix và calibration từ
 
 Script không load model, không fit, không mở Frozen Test predictions và xác thực AUC/AP/confusion với ML-LC-03/04/05/07 manifests trước khi xuất PNG 300 DPI vào `reports/figures/modeling/`. Xem `reports/figures/modeling/README.md` và `figures_manifest.json` để biết nguồn, cohort, threshold, metrics và quy ước PR-AUC/AP.
 
+## Thử nghiệm F1 — chỉ Train OOF
+
+Chạy preflight 120 giây rồi 5-fold stratified OOF tuần tự trên split Train hiện có:
+
+```powershell
+.\.venv\Scripts\python.exe -m src.models.experiments.f1_pilot_monitor --mode oof --run-id f1-oof-20261009-02 --preflight-seconds 120
+```
+
+Lệnh run ID trên đã dùng; không chạy lại cùng ID vì guard sẽ từ chối ghi đè. Với lượt thí nghiệm mới, dùng ID mới chưa tồn tại. Hard stop giữ nguyên: available RAM <5 GiB, system commit ≥95%, process-tree private commit >16 GiB hoặc severe paging kéo dài. Dừng nếu preflight không qua.
+
+Runner chỉ lấy Train IDs/canonical Train rows, fit imputer/encoder/model trong từng 4/5 fold, dự đoán held-out Train fold và lưu `oof_predictions.parquet` + `oof_result.json` trong `data/processed/modeling_experiments/f1_improvement/<run-id>/` (Git-ignored). Không đọc Validation/Frozen Test, không sửa model chính hay Dash/Power BI. Threshold chọn từ pooled OOF labels có selection optimism; metric đó không phải independent performance. Kết quả run `f1-oof-20261009-02` được ghi tại `reports/model_experiments/f1_improvement/oof-20261009.md`. Nested hyperparameter search chưa được chạy.
+
 ## Render preparation
 
 Hướng dẫn độc lập tại `apps/individual_prediction_dash/DEPLOY_RENDER.md`. Root Directory là `apps/individual_prediction_dash`; ứng dụng có runtime source mirror và bảy runtime artifacts cần thiết dưới thư mục này để không phụ thuộc source/dữ liệu bên ngoài root. Không có bước train khi start; giới hạn RAM Free chưa được xác nhận trên Linux và hiện là rủi ro cần theo dõi.

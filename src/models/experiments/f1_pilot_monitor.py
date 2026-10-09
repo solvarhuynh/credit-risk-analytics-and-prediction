@@ -7,6 +7,7 @@ import base64
 import ctypes
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -483,37 +484,53 @@ def run_monitored(
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-id", required=True)
+    parser.add_argument("--mode", choices=("pilot", "oof"), default="pilot")
     parser.add_argument("--preflight-seconds", type=int, default=PREFLIGHT_SECONDS)
     parser.add_argument("--sample-seconds", type=float, default=SAMPLE_SECONDS)
     args = parser.parse_args(argv)
     run_dir = PROJECT_ROOT / "data" / "processed" / "modeling_experiments" / "f1_improvement" / args.run_id
-    protected = (run_dir / "xgboost_pilot.joblib", run_dir / "pilot_result.json")
+    protected = (
+        run_dir / "xgboost_pilot.joblib", run_dir / "pilot_result.json",
+        run_dir / "oof_result.json", run_dir / "oof_predictions.parquet",
+    )
     if run_dir.exists() or any(path.exists() for path in protected):
         raise FileExistsError(f"Refusing to reuse existing pilot directory/artifacts: {run_dir}")
     run_dir.mkdir(parents=True)
     log_path = run_dir / f"resource-monitor-{datetime.now().strftime('%Y%m%d-%H%M%S')}.jsonl"
-    command = [
-        str(PROJECT_ROOT / ".venv" / "Scripts" / "python.exe"),
-        "-u", "-m", "src.models.experiments.f1_pilot",
-    ]
+    module = "src.models.experiments.f1_pilot" if args.mode == "pilot" else "src.models.experiments.f1_oof"
+    command = [str(PROJECT_ROOT / ".venv" / "Scripts" / "python.exe"), "-u", "-m", module]
     if not Path(command[0]).is_file():
         raise FileNotFoundError(f"Verified venv interpreter missing: {command[0]}")
-    os.environ["F1_PILOT_RUN_ID"] = args.run_id
-    return run_monitored(
-        command, log_path, preflight_seconds=args.preflight_seconds,
-        sample_seconds=args.sample_seconds, progress_path=run_dir / "pilot-progress.jsonl",
-    )
+    os.environ["F1_PILOT_RUN_ID" if args.mode == "pilot" else "F1_OOF_RUN_ID"] = args.run_id
+    try:
+        return run_monitored(
+            command, log_path, preflight_seconds=args.preflight_seconds,
+            sample_seconds=args.sample_seconds, progress_path=run_dir / "pilot-progress.jsonl",
+        )
+    finally:
+        _cleanup_pilot_scratch(run_dir)
+
+
+def _cleanup_pilot_scratch(run_dir: Path) -> None:
+    """Remove only the pilot-owned temporary matrix directory after child exit."""
+    root = (PROJECT_ROOT / "data" / "processed" / "modeling_experiments" / "f1_improvement").resolve()
+    resolved_run = run_dir.resolve()
+    if resolved_run.parent != root or resolved_run.name in {"", ".", ".."}:
+        raise ValueError(f"Refusing scratch cleanup outside a pilot run directory: {run_dir}")
+    for scratch in resolved_run.iterdir():
+        if scratch.is_dir() and scratch.name.startswith("_preprocess_matrix_work"):
+            shutil.rmtree(scratch)
 
 
 def _last_completed_phase(progress_path: Path | None) -> str:
     if progress_path is None or not progress_path.is_file():
         return "START_NOT_REACHED"
-    completed_phases = {"START", "DATA_LOADED", "PREPROCESSING_COMPLETE", "FIT_COMPLETE", "ARTIFACT_SAVED"}
+    completed_phases = {"START", "DATA_LOADED", "PREPROCESSING_COMPLETE", "FIT_COMPLETE", "ARTIFACT_SAVED", "OOF_METRICS_COMPLETE"}
     last_completed = "START_NOT_REACHED"
     try:
         for line in progress_path.read_text(encoding="utf-8").splitlines():
             phase = json.loads(line).get("phase")
-            if phase in completed_phases:
+            if phase in completed_phases or (phase.startswith("FOLD_") and phase.endswith("_COMPLETE")):
                 last_completed = phase
     except (OSError, json.JSONDecodeError):
         return last_completed

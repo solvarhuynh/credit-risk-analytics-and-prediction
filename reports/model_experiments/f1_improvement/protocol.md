@@ -1,7 +1,7 @@
 # Protocol nghiên cứu cải thiện F1 — Lending Club
 
 Ngày: 2026-10-09  
-Trạng thái: **BASELINE/PROTOCOL READY; PILOT ABORTED BEFORE FIT; STAGE B BLOCKED**
+Trạng thái: **PILOT PASS; 5-FOLD TRAIN-ONLY OOF PASS; NESTED SEARCH NOT STARTED**
 
 ## 1. Phạm vi và bảo vệ kết quả gốc
 
@@ -84,3 +84,13 @@ Monitor process-tree đã được sửa và kiểm thử tổng hợp; nguyên 
 Lần thử tiếp theo theo yêu cầu người dùng trên `pilot-20261009-04` **không đạt preflight**: sample đầu đã ghi RAM khả dụng 4,38 GiB và system commit 96,92%; cực trị lần đo 3,70 GiB / 98,65%. Paging counters của phiên bản monitor lúc chạy đều thiếu; không có `CHILD_STARTED` và không đọc Train/fit. Monitor hiện đã được sửa để fail-fast, yêu cầu paging counters hợp lệ, và đo đúng 120 giây theo thời gian thực; chưa chạy lại. Pilot vẫn BLOCKED tới một preflight mới đạt.
 
 Run `pilot-20261009-05` sau đó **đạt preflight**, load đúng 807.210 Train rows × 103 inputs rồi bị monitor dừng trong `PREPROCESSING` vì available RAM xuống 4,323 GiB. `FIT_START` không được ghi, không có bằng chứng model fit chạy và không có result/model artifact. Không tiếp tục retry sau hard stop. Xem `monitor-diagnosis-20261009.md`.
+
+Run `pilot-20261009-06` cũng đạt preflight nhưng dừng trong `PREPROCESSING`: available RAM thấp nhất 4,585 GiB; last completed phase `DATA_LOADED`; không có `FIT_START`, fit, hay result/model artifact. Không tiếp tục retry hoặc Stage B/OOF. Preprocessing hiện tại không an toàn dưới hard-stop 5 GiB trên máy này; cần phương án giảm peak-memory được xem xét trước, không nới guardrails. Chi tiết telemetry trong `monitor-diagnosis-20261009.md`.
+
+### Kết quả mới nhất — Pilot và Stage A OOF (2026-10-09)
+
+Sau khi giữ nguyên toàn bộ hard stop, pilot runner được tối ưu thành preprocessing theo batch với CSR disk-backed. `pilot-20261009-11` hoàn tất một fit trên Train: 807.210 rows × 103 inputs → 151 transformed features; fit **20,18 giây**. Không scoring/đọc Validation/Frozen Test. RAM khả dụng thấp nhất 9,119 GiB; process-tree Working Set đỉnh 5,857 GiB; private commit đỉnh 8,188 GiB; system commit đỉnh 64,03%.
+
+Theo yêu cầu tiếp tục lấy kết quả Stage 2, đã chạy đúng 5-fold stratified Train-only OOF, sequential, seed 42, incumbent parameters; thời gian toàn run 342,66 giây gồm preflight. OOF threshold tối ưu là 0,2106764764, pooled OOF F1 0,440015; áp dụng threshold ML-LC-07 0,2200951576 lên cùng OOF rows cho F1 0,439440. Chênh lệch chỉ +0,000575 và F1 tại threshold đã chọn có selection optimism; không chứng minh uplift độc lập. ROC-AUC 0,723362, AP 0,399711, Log Loss 0,447826, Brier 0,142646. OOF artifact/analysis chi tiết: `reports/model_experiments/f1_improvement/oof-20261009.md`.
+
+Stage A OOF PASS; nested hyperparameter search **chưa chạy**. Frozen Test vẫn sealed; Validation không đọc; model/artifact chính không đổi. Cần xác nhận riêng trước nested search theo compute protocol; không được coi threshold-only OOF là F1 uplift đã xác nhận.

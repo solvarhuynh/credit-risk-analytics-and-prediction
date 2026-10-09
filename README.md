@@ -11,7 +11,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](requirements.txt)
 [![PowerBI](https://img.shields.io/badge/Power_BI-Desktop-F2C811?style=for-the-badge&logo=powerbi&logoColor=black)](reports/figures/dashboard/nghia.pbip)
 [![Dash](https://img.shields.io/badge/Plotly_Dash-Interactive_App-008DE4?style=for-the-badge&logo=plotly&logoColor=white)](apps/individual_prediction_dash/)
-[![Tests](https://img.shields.io/badge/Tests-297%20Passed-success.svg?style=for-the-badge&logo=pytest&logoColor=white)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-299%20Passed-success.svg?style=for-the-badge&logo=pytest&logoColor=white)](tests/)
 
 <br/>
 
@@ -403,7 +403,7 @@ pip install -r requirements.txt
 ```
 
 ### 8.2 Chạy Toàn Bộ Hệ Thống Kiểm Thử Tự Động (Regression Test Suite)
-Đảm bảo toàn bộ 297 kịch bản kiểm thử vượt qua thành công:
+Đảm bảo toàn bộ 299 kịch bản kiểm thử vượt qua thành công:
 
 ```powershell
 pytest tests -v

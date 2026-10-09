@@ -70,3 +70,19 @@ Theo yêu cầu tiếp theo của người dùng, run `pilot-20261009-05` đư�
 Kết luận lần chạy mới: preflight/monitor hoạt động; Pilot đã load Train nhưng bị dừng trong preprocessing trước checkpoint `FIT_START`. Không khởi chạy thêm lượt nào tới khi có yêu cầu mới.
 
 Không chạy Stage B, không đổi model/config/primary artifact, không chỉnh pagefile, không commit/push/publish.
+
+## Lần kiểm tra theo yêu cầu — `pilot-20261009-06`
+
+- Một preflight sentinel 120 giây dùng monitor production với child Python no-op: **PASS**, 40 mẫu trong 121,8 giây; available RAM 11,217–11,615 GiB; commit 59,34–60,69%; paging counters hợp lệ; không có stop event. Child sentinel kết thúc bình thường.
+- Sau đó chạy một Pilot mới với preflight nội bộ 120 giây. Preflight cũng đạt; monitor khởi chạy runner trực tiếp qua `.venv\Scripts\python.exe`, phát hiện đúng child interpreter `Python312\python.exe` (PID 8640), và giữ telemetry process tree.
+- Runner đọc đúng Train IDs rồi ghi `START`, `LOADING_DATA`, `DATA_LOADED` (807.210 rows × 103 inputs), `PREPROCESSING`. Ở lần lấy mẫu cuối, available RAM còn **4,585 GiB**; process-tree PrivateUsage peak **8,474 GiB**, Working Set peak **6,640 GiB**; system commit peak **78,90%**. Stop đúng hard rule `STOP_AVAILABLE_RAM_BELOW_5_GIB`; paging streak 1, không phải điều kiện dừng.
+- Last completed phase: `DATA_LOADED`; `PREPROCESSING_COMPLETE`/`FIT_START` không có. Không có XGBoost fit, validation/test access, result/model artifact; process tree đã bị terminate và không còn orphan. Vì preprocessing chạm ngưỡng an toàn lặp lại, **không an toàn để retry nguyên trạng** và không thể kết luận F1 có tăng hay không.
+- Run evidence ở `data/processed/modeling_experiments/f1_improvement/pilot-20261009-06/` (Git-ignored). Không tiếp tục OOF/nested CV; cần thiết kế giảm peak-memory/preprocessing một cách được duyệt trước khi thử tiếp, không nới stop rules.
+
+## Kết quả xử lý memory và OOF theo yêu cầu tiếp theo
+
+Task Manager screenshot phản ánh một thời điểm nhàn rỗi: 11,5 GiB available và 29,1/45,8 GiB committed. Snapshot agent cùng thời điểm cũng ghi 11,45 GiB available, commit 64,0%, paging 0; đây là bằng chứng đồng thuận, không mâu thuẫn với lần chạy trước. Trong lần cũ, preprocessing tăng Working Set của workload và làm system available rơi xuống 4,585 GiB; do đó không thể suy từ ảnh nhàn rỗi rằng workload sẽ giữ mức available tương tự.
+
+Runner được chuyển sang fit preprocessor trên Train partition, biến đổi theo batch và ghi CSR float32 disk-backed để tránh giữ mọi batch rồi cấp phát bản `vstack` thứ hai. Synthetic test đối chiếu ma trận thực nhận bởi XGBoost và đã PASS. Một lượt thành công `pilot-20261009-11`: fit 20,18 giây; available min 9,119 GiB; peak Working Set 5,857 GiB; peak PrivateUsage 8,188 GiB; commit max 64,03%; no stop; artifact thí nghiệm được lưu.
+
+Sau đó, theo yêu cầu có kết quả F1, 5-fold Train-only OOF hoàn tất: thời gian 342,66 giây; available min 9,472 GiB; peak Working Set 6,177 GiB; peak PrivateUsage 8,175 GiB; commit max 63,72%; no stop. Chọn threshold pooled OOF 0,2106764764 cho F1 0,440015; threshold cố định 0,2200951576 cho F1 0,439440 trên cùng pooled OOF. Đây là mức tăng rất nhỏ, selection-biased, không phải đánh giá độc lập. Không có Validation/Frozen Test reads. Chi tiết ở `reports/model_experiments/f1_improvement/oof-20261009.md`.

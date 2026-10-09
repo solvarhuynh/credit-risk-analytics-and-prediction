@@ -5,14 +5,17 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import shutil
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.dataset as ds
+from scipy.sparse import csr_matrix, issparse
 
 from src.config import (
     CANONICAL_DATASET_PATH,
@@ -65,6 +68,62 @@ def write_checkpoint(progress_path: Path, phase: str, **details: Any) -> None:
 
 def _checkpoint(phase: str, **details: Any) -> None:
     write_checkpoint(PROGRESS_LOG, phase, **details)
+
+
+def fit_transform_in_batches(
+    preprocessor: Any,
+    features: pd.DataFrame,
+    target: pd.Series,
+    *,
+    scratch_dir: Path,
+    batch_rows: int = 50_000,
+) -> csr_matrix:
+    """Fit on Train and transform bounded batches into disk-backed CSR arrays."""
+    if batch_rows <= 0:
+        raise ValueError("batch_rows must be positive")
+    if scratch_dir.exists():
+        raise FileExistsError(f"Refusing to reuse preprocessing scratch directory: {scratch_dir}")
+    scratch_dir.mkdir(parents=True)
+    preprocessor.fit(features, target)
+
+    batch_ranges = [(start, min(start + batch_rows, len(features)))
+                    for start in range(0, len(features), batch_rows)]
+    if not batch_ranges:
+        raise ValueError("Training features are empty")
+    transformed_width = len(preprocessor.get_feature_names_out())
+    total_nonzero = 0
+    for start, end in batch_ranges:
+        transformed = preprocessor.transform(features.iloc[start:end])
+        if not issparse(transformed):
+            raise TypeError("Pilot preprocessing contract requires sparse output")
+        total_nonzero += int(transformed.nnz)
+        del transformed
+    if total_nonzero >= np.iinfo(np.int32).max:
+        raise OverflowError("Transformed CSR exceeds supported 32-bit sparse index range")
+
+    data = np.memmap(scratch_dir / "data.bin", dtype=np.float32, mode="w+", shape=(total_nonzero,))
+    indices = np.memmap(scratch_dir / "indices.bin", dtype=np.int32, mode="w+", shape=(total_nonzero,))
+    indptr = np.memmap(scratch_dir / "indptr.bin", dtype=np.int32, mode="w+", shape=(len(features) + 1,))
+    indptr[0] = 0
+    nonzero_offset = 0
+    row_offset = 0
+    for start, end in batch_ranges:
+        transformed = preprocessor.transform(features.iloc[start:end]).tocsr(copy=False)
+        count = int(transformed.nnz)
+        next_offset = nonzero_offset + count
+        data[nonzero_offset:next_offset] = transformed.data
+        indices[nonzero_offset:next_offset] = transformed.indices
+        batch_rows_count = end - start
+        indptr[row_offset + 1:row_offset + batch_rows_count + 1] = (
+            transformed.indptr[1:] + nonzero_offset
+        )
+        nonzero_offset = next_offset
+        row_offset += batch_rows_count
+        del transformed
+    data.flush()
+    indices.flush()
+    indptr.flush()
+    return csr_matrix((data, indices, indptr), shape=(len(features), transformed_width), copy=False)
 
 
 def run_pilot() -> dict[str, Any]:
@@ -121,6 +180,7 @@ def run_pilot() -> dict[str, Any]:
         aligned_target = expected_target.reindex(train["loan_id"].tolist()).to_numpy()
         if not (train["target"].to_numpy() == aligned_target).all():
             raise ValueError("Filtered canonical target differs from frozen Train labels.")
+        del expected_ids, expected_target, aligned_target, training_id_values, source
         _checkpoint("DATA_LOADED", rows=int(len(train)), features=int(len(features)))
 
         _checkpoint("PREPROCESSING")
@@ -130,10 +190,14 @@ def run_pilot() -> dict[str, Any]:
         if list(selection.baseline_features) != features:
             raise ValueError("Pilot feature list differs from the locked ML-LC-05 actual input schema.")
 
-        x_train = train.loc[:, features]
-        y_train = train["target"].astype("int8")
+        y_train = train.pop("target").astype("int8")
+        train.drop(columns=["loan_id"], inplace=True)
+        x_train = train
+        train_target_counts = {
+            str(key): int(value) for key, value in y_train.value_counts().sort_index().items()
+        }
         pipeline = build_xgboost_pipeline(
-            train,
+            x_train,
             schema,
             feature_columns=features,
             random_state=int(parameters["random_state"]),
@@ -143,20 +207,32 @@ def run_pilot() -> dict[str, Any]:
             subsample=float(parameters["subsample"]),
             colsample_bytree=float(parameters["colsample_bytree"]),
         )
+        normalizer = pipeline.named_steps["normalize_missing"]
         preprocessor = pipeline.named_steps["preprocess"]
         model = pipeline.named_steps["model"]
-        x_transformed = preprocessor.fit_transform(x_train, y_train)
+        x_normalized = normalizer.fit_transform(x_train)
+        del x_train, train
+        x_transformed = fit_transform_in_batches(
+            preprocessor, x_normalized, y_train,
+            scratch_dir=RUN_DIR / "_preprocess_matrix_work",
+        )
+        del x_normalized
         _checkpoint(
             "PREPROCESSING_COMPLETE",
             transformed_features=int(len(preprocessor.get_feature_names_out())),
+            transform_batch_rows=50_000,
         )
 
-        _checkpoint("FIT_START", train_rows=int(len(train)))
+        _checkpoint("FIT_START", train_rows=int(len(y_train)))
         started = time.perf_counter()
         model.fit(x_transformed, y_train)
         fit_seconds = time.perf_counter() - started
         _checkpoint("FIT_COMPLETE", fit_seconds=float(fit_seconds))
         del x_transformed
+        import gc
+
+        gc.collect()
+        shutil.rmtree(RUN_DIR / "_preprocess_matrix_work", ignore_errors=True)
 
         transformed_feature_count = len(preprocessor.get_feature_names_out())
         result: dict[str, Any] = {
@@ -164,8 +240,8 @@ def run_pilot() -> dict[str, Any]:
             "status": "PILOT_FIT_PASS",
             "purpose": "resource pilot only; no validation/test scoring",
             "started_at_local": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-            "train_rows": int(len(train)),
-            "train_target_counts": {str(key): int(value) for key, value in y_train.value_counts().sort_index().items()},
+            "train_rows": int(len(y_train)),
+            "train_target_counts": train_target_counts,
             "train_ids_sha256": _sha256(TRAIN_IDS_PATH),
             "canonical_source": str(CANONICAL_DATASET_PATH),
             "train_ids_source": str(TRAIN_IDS_PATH),
@@ -179,7 +255,7 @@ def run_pilot() -> dict[str, Any]:
                 "eval_metric": str(model.eval_metric),
                 "tree_method": str(model.tree_method),
                 "n_jobs": int(model.n_jobs),
-                "scale_pos_weight": int(model.scale_pos_weight),
+                "scale_pos_weight": model.scale_pos_weight,
             },
             "fit_seconds": float(fit_seconds),
             "training_metrics": None,
