@@ -3,19 +3,18 @@
 
 <div align="center">
 
-[![University](https://img.shields.io/badge/University-HCMUTE-blue.svg?style=for-the-badge&logo=school)](https://hcmute.edu.vn/)
-[![Department](https://img.shields.io/badge/Department-Information%20Technology-orange.svg?style=for-the-badge)](https://fit.hcmute.edu.vn/)
-[![Course](https://img.shields.io/badge/Course-Interactive%20Data%20Visualization-brightgreen.svg?style=for-the-badge)](docs/overview/Barem-TTDLTQ.docx)
-[![Class](https://img.shields.io/badge/Class-261IDVI333677__01-purple.svg?style=for-the-badge)](#)
-[![Team](https://img.shields.io/badge/Team-Nh%C3%B3m%2014-teal.svg?style=for-the-badge)](#th%C3%A0nh-vi%C3%AAn-nh%C3%B3m-14)
+[![University](https://img.shields.io/badge/ĐH_Công_Nghệ_Kỹ_Thuật_TP.HCM-HCMUTE-0052CC.svg?style=for-the-badge&logo=school)](https://hcmute.edu.vn/)
+[![Course](https://img.shields.io/badge/Môn_Học-Tương_Tác_Trực_Quan_Dữ_Liệu-brightgreen.svg?style=for-the-badge)](reports/figures/paper/NHOM14_HO_TRONG_SON_HUYNH_TRUNG_NGHIA_HOANG_NGOC_HUY_IDV_REPORT.pdf)
+[![Team](https://img.shields.io/badge/Nhóm-14-teal.svg?style=for-the-badge)](#thành-viên-nhóm-14)
+
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](requirements.txt)
-[![PowerBI](https://img.shields.io/badge/Power_BI-Desktop-F2C811?style=for-the-badge&logo=powerbi&logoColor=black)](reports/figures/dashboard/nghia.pbip)
-[![Dash](https://img.shields.io/badge/Plotly_Dash-Interactive_App-008DE4?style=for-the-badge&logo=plotly&logoColor=white)](apps/individual_prediction_dash/)
-[![Tests](https://img.shields.io/badge/Tests-299%20Passed-success.svg?style=for-the-badge&logo=pytest&logoColor=white)](tests/)
+[![Model](https://img.shields.io/badge/Mô_Hình-XGBoost_(AUC_0.7232)-success?style=for-the-badge&logo=scikitlearn&logoColor=white)](#4-xây-dựng--đánh-giá-mô-hình-dự-báo-vỡ-nợ)
+[![PowerBI](https://img.shields.io/badge/Power_BI-Live_Dashboard-F2C811?style=for-the-badge&logo=powerbi&logoColor=black)](https://app.powerbi.com/view?r=eyJrIjoiYzlmMmM3YzAtMzE4OC00ZThjLThkMjktNzVmYTNmOTMyYzk2IiwidCI6IjM3NDE3YTJmLWYzMWEtNDZjMC05NzQyLTU0Yjg1OWY1ZmI0YyIsImMiOjEwfQ%3D%3D)
+[![Plotly Dash](https://img.shields.io/badge/Plotly_Dash-Render_Live_App-008DE4?style=for-the-badge&logo=plotly&logoColor=white)](https://credit-risk-analytics-and-prediction.onrender.com/)
 
 <br/>
 
-[**Báo Cáo Cuối Kỳ (PDF)**](docs/overview/overview-du-an.pdf) • [**Gói Bằng Chứng Mô Hình (ZIP)**](tv1_modeling_final_report_bundle.zip) • [**Barem Môn Học**](docs/overview/Barem-TTDLTQ.docx) • [**Khởi Chạy Web Demo**](#83-kh%E1%BB%9Fi-ch%E1%BA%A1y-%E1%BB%A9ng-d%E1%BB%A5ng-demo-d%E1%BB%B1-%C4%91o%C3%A1n-c%C3%A1-nh%C3%A2n-plotly-dash)
+[📄 **Báo Cáo Đồ Án Cuối Kỳ (PDF)**](reports/figures/paper/NHOM14_HO_TRONG_SON_HUYNH_TRUNG_NGHIA_HOANG_NGOC_HUY_IDV_REPORT.pdf) &nbsp;&nbsp;•&nbsp;&nbsp; [📊 **Trực Tiếp Power BI Master Dashboard**](https://app.powerbi.com/view?r=eyJrIjoiYzlmMmM3YzAtMzE4OC00ZThjLThkMjktNzVmYTNmOTMyYzk2IiwidCI6IjM3NDE3YTJmLWYzMWEtNDZjMC05NzQyLTU0Yjg1OWY1ZmI0YyIsImMiOjEwfQ%3D%3D) &nbsp;&nbsp;•&nbsp;&nbsp; [🌐 **Trực Tiếp Web App Dự Đoán (Render)**](https://credit-risk-analytics-and-prediction.onrender.com/)
 
 </div>
 
@@ -24,13 +23,13 @@
 ## THÀNH VIÊN NHÓM 14
 
 *Học phần: Tương tác Trực quan Dữ liệu (Interactive Data Visualization) — Học kỳ I, Năm học 2026–2027*  
-*Giảng viên hướng dẫn: **ThS. Đoàn Minh Trí** — Khoa Công nghệ Thông tin, Trường ĐH Sư phạm Kỹ thuật TP.HCM (HCMUTE)*
+*Giảng viên hướng dẫn: **ThS. Đoàn Minh Trí** — Khoa Công nghệ Thông tin, Trường Đại học Công nghệ Kỹ thuật TP. Hồ Chí Minh*
 
 | STT | Họ và Tên | MSSV | Vai Trò | Nhiệm Vụ Trọng Tâm |
 |:---:|:---|:---:|:---|:---|
 | 1 | **Hồ Trọng Sơn** | `24133049` | **TV2 — Data Engineering & EDA** | Thu thập, tiền xử lý dữ liệu 29.91M bản ghi, thiết kế kho dữ liệu trung gian, kiểm soát rò rỉ (Leakage Gate) và trực quan EDA tĩnh. |
-| 2 | **Huỳnh Trung Nghĩa** | `24133903` | **TV1 — Modeling & Điều phối Báo cáo** | Xây dựng pipeline học máy (Logistic, XGBoost), tối ưu ngưỡng quyết định, kiểm định Frozen Test, SHAP Explainability, Risk Tiers, Expected Loss và Web App Dash. |
-| 3 | **Hoàng Ngọc Huy** | `24133023` | **TV3 — Power BI & Tích hợp** | Thiết kế Data Model, DAX Measures, triển khai Master Dashboard 10 trang (96 visuals) trên Power BI và đóng gói nghiệm thu. |
+| 2 | **Huỳnh Trung Nghĩa** | `24133903` | **TV1 — Modeling & Ứng Dụng** | Xây dựng pipeline học máy (Logistic, XGBoost), tối ưu ngưỡng quyết định, kiểm định Frozen Test, SHAP, Risk Tiers, Expected Loss và phát triển ứng dụng Web Plotly Dash. |
+| 3 | **Hoàng Ngọc Huy** | `24133023` | **TV3 — Power BI Dashboard** | Thiết kế Data Model, DAX Measures, triển khai Master Dashboard 4 trang chính trên Power BI và đóng gói nghiệm thu. |
 
 ---
 
@@ -40,11 +39,12 @@
 3. [Phân Tích Khám Phá Dữ Liệu (EDA)](#3-phân-tích-khám-phá-dữ-liệu-eda)
 4. [Xây Dựng & Đánh Giá Mô Hình Dự Báo Vỡ Nợ](#4-xây-dựng--đánh-giá-mô-hình-dự-báo-vỡ-nợ)
 5. [Giải Thích Mô Hình (SHAP) & Định Lượng Rủi Ro (Expected Loss)](#5-giải-thích-mô-hình-shap--định-lượng-rủi-ro-expected-loss)
-6. [Hệ Thống Trực Quan Hóa: Power BI Dashboard & Web Demo](#6-hệ-thống-trực-quan-hóa-power-bi-dashboard--web-demo)
-7. [Cấu Trúc Kho Lưu Trữ (Repository Structure)](#7-cấu-trúc-kho-lưu-trữ-repository-structure)
-8. [Hướng Dẫn Cài Đặt & Thực Thi Mã Nguồn](#8-hướng-dẫn-cài-đặt--thực-thi-mã-nguồn)
-9. [Cam Kết Liêm Chính Học Thuật & Giới Hạn Đề Tài](#9-cam-kết-liêm-chính-học-thuật--giới-hạn-đề-tài)
-10. [Tài Liệu Tham Khảo](#10-tài-liệu-tham-khảo)
+6. [Hệ Thống Dashboard Power BI: Cấu Trúc 4 Trang & Câu Chuyện Dữ Liệu](#6-hệ-thống-dashboard-power-bi-cấu-trúc-4-trang--câu-chuyện-dữ-liệu)
+7. [Ứng Dụng Web Dự Đoán Cá Nhân (Plotly Dash Web App)](#7-ứng-dụng-web-dự-đoán-cá-nhân-plotly-dash-web-app)
+8. [Cấu Trúc Kho Lưu Trữ (Repository Structure)](#8-cấu-trúc-kho-lưu-trữ-repository-structure)
+9. [Hướng Dẫn Cài Đặt & Thực Thi Mã Nguồn](#9-hướng-dẫn-cài-đặt--thực-thi-mã-nguồn)
+10. [Cam Kết Liêm Chính Học Thuật & Giới Hạn Đề Tài](#10-cam-kết-liêm-chính-học-thuật--giới-hạn-đề-tài)
+11. [Tài Liệu Tham Khảo](#11-tài-liệu-tham-khảo)
 
 ---
 
@@ -283,18 +283,89 @@ $$\text{Expected Loss (EL)} = PD \times LGD \times EAD$$
 
 ---
 
-## 6. HỆ THỐNG TRỰC QUAN HÓA: POWER BI DASHBOARD & WEB DEMO
+## 6. HỆ THỐNG DASHBOARD POWER BI: CẤU TRÚC 4 TRANG & CÂU CHUYỆN DỮ LIỆU
 
-### 6.1 Master Power BI Dashboard (10 Trang — 96 Visuals)
-Báo cáo Power BI chính thức được tổ chức theo cấu trúc PBIP/PBIR chuyên nghiệp tại `reports/figures/dashboard/nghia.pbip`:
-1. **Portfolio Overview:** Bản đồ phân bố dư nợ 51 bang Hoa Kỳ, KPI tổng giải ngân (19.40 tỷ đơn vị), tỷ lệ nợ xấu 20.0%, cơ cấu hồ sơ accepted/rejected (2.3M vs 27.6M).
-2. **Portfolio Trends & Purpose:** Phân tích chuỗi thời gian phân cấp (Năm $\to$ Quý $\to$ Tháng), nhận diện đỉnh giải ngân 2015–2016, cơ cấu mục đích vay (Hợp nhất nợ chiếm đa số).
-3. **Borrower Risk Profile:** Donut phân bố sở hữu nhà (Mortgage 49.5%, Rent 39.7%), ma trận nhiệt FICO × DTI, Boxplot phân tán $PD$ theo nhóm FICO.
-4. **Analysis RISK:** Phân tích rủi ro tập trung Tier B–C, phân phối $PD$ liên tục, biểu đồ đóng góp Expected Loss theo tầng và nút chuyển trang tích hợp Web Demo.
-5. **Các trang chuyên đề kỹ thuật (V02 – V06):** Đi sâu chi tiết phân vị $PD$, giải thích SHAP toàn cục và kịch bản phân tích độ nhạy LGD (30%, 45%, 60%).
+Nhóm triển khai hệ thống báo cáo tương tác chính thức gồm **4 trang phân tích chuyên sâu** trên nền tảng Microsoft Power BI, kết nối trực tiếp với toàn bộ chuỗi dữ liệu sạch và mô hình học máy:
 
-### 6.2 Ứng Dụng Web Dự Đoán Cá Nhân (Plotly Dash Interactive Demo)
-Ứng dụng phục vụ demo trực tiếp tại buổi báo cáo đồ án, cho phép nhập liệu thời gian thực **6 đặc trưng thân thiện** của một hồ sơ vay:
+<div align="center">
+
+[![PowerBI Live](https://img.shields.io/badge/Báo_Cáo_Trực_Tuyến-Power_BI_Service-F2C811?style=for-the-badge&logo=powerbi&logoColor=black)](https://app.powerbi.com/view?r=eyJrIjoiYzlmMmM3YzAtMzE4OC00ZThjLThkMjktNzVmYTNmOTMyYzk2IiwidCI6IjM3NDE3YTJmLWYzMWEtNDZjMC05NzQyLTU0Yjg1OWY1ZmI0YyIsImMiOjEwfQ%3D%3D)
+
+*Truy cập trực tiếp Dashboard tại: [Power BI Interactive Report (Nhóm 14)](https://app.powerbi.com/view?r=eyJrIjoiYzlmMmM3YzAtMzE4OC00ZThjLThkMjktNzVmYTNmOTMyYzk2IiwidCI6IjM3NDE3YTJmLWYzMWEtNDZjMC05NzQyLTU0Yjg1OWY1ZmI0YyIsImMiOjEwfQ%3D%3D) • Tệp thiết kế nguồn: [`reports/figures/dashboard/nghia.pbip`](reports/figures/dashboard/nghia.pbip)*
+
+</div>
+
+### 6.1 Kiến Trúc 4 Trang Phân Tích & Luồng Dữ Liệu (The 4-Page Narrative Architecture)
+
+Hệ thống dashboard dẫn dắt người xem từ bức tranh toàn cảnh danh mục đến chi tiết rủi ro từng hồ sơ và lượng hóa tác động tài chính:
+
+| Trang Dashboard | Mục Tiêu & Trọng Tâm Nghiệp Vụ | Bộ Dữ Liệu Nguồn | Các Chỉ Tiêu & Visual Trọng Tâm |
+|:---:|:---|:---|:---|
+| **Trang 1: Portfolio Overview** | Bức tranh tổng quan giải ngân, chính sách sàng lọc phễu hồ sơ và phân bố địa lý rủi ro 51 bang. | `application_funnel` (29.91M hồ sơ) & `cleaned_dataset` (1.345M có nhãn) | KPI Giải ngân (19.40 tỷ USD), FICO TB (696), Default Rate (19.97%); 100% Stacked Bar phễu hồ sơ; Filled Map rủi ro cấp bang. |
+| **Trang 2: Portfolio Trends & Purpose** | Động thái chu kỳ tín dụng qua thời gian và cơ cấu mục đích sử dụng vốn của người vay. | `cleaned_dataset` & `dim_date` (2007–2018) | Biểu đồ chuỗi thời gian phân cấp (Năm $\to$ Quý $\to$ Tháng) theo dõi số lượng và nợ xấu; Biểu đồ thanh sắp xếp mục đích vay. |
+| **Trang 3: Borrower Risk Profile** | Chân dung người vay, phân khúc tài chính và tương tác rủi ro đa chiều (FICO, DTI, Thu nhập). | `cleaned_dataset` & `fact_evaluated_loan` (269K Frozen Test) | Donut sở hữu nhà (Mortgage vs Rent); Heatmap tương tác FICO × DTI; Boxplot FICO × PD; Line chart Loan-to-Income × PD. |
+| **Trang 4: Analysis RISK & Expected Loss** | Phân bố xác suất vỡ nợ, tầng rủi ro, giải thích SHAP và đo lường tổn thất kỳ vọng danh mục. | `fact_evaluated_loan`, `ml_lc_09_global_importance`, `ml_lc_11` | Histogram PD (20 bins); Thanh phân tầng A–D; Lollipop Top 10 SHAP; Pie chart đóng góp Expected Loss; Nút mở Web App Demo. |
+
+### 6.2 Phân Tích Chi Tiết Từng Trang Dashboard
+
+#### Trang 1 — Portfolio Overview (Tổng quan danh mục & Sàng lọc hồ sơ)
+- **Câu hỏi nghiệp vụ:** Quy mô danh mục Lending Club ra sao, chính sách xét duyệt có khắt khe không và rủi ro phân bố theo địa lý thế nào?
+- **Phát hiện dữ liệu:** 
+  - Toàn bộ phễu tiếp nhận **29,909,442 hồ sơ đăng ký**. Trong đó, Lending Club **từ chối tới 92.44%** (27,648,741 hồ sơ) và chỉ phê duyệt cấp vay cho **7.56%** (2,260,701 hồ sơ). Điều này khẳng định khâu sàng lọc sơ bộ ban đầu cực kỳ khắt khe.
+  - Trên tập 1,345,350 khoản vay có nhãn giải quyết xong, tổng quy mô giải ngân đạt **19.40 tỷ đơn vị tiền tệ**, điểm FICO bình quân đạt 696 và tỷ lệ vỡ nợ nền tảng quan sát là **19.97%**.
+  - Rủi ro phân bố rộng khắp 51 bang Hoa Kỳ, phản ánh quy mô kinh tế và mật độ dân cư của từng địa phương.
+
+#### Trang 2 — Portfolio Trends & Purpose (Xu hướng thời gian & Cơ cấu mục đích vay)
+- **Câu hỏi nghiệp vụ:** Quy mô giải ngân và rủi ro biến động theo chu kỳ kinh tế nào? Người vay tìm đến tín dụng P2P vì mục đích gì?
+- **Phát hiện dữ liệu:**
+  - Hoạt động tín dụng tăng trưởng bùng nổ từ sau năm 2012 và đạt đỉnh lịch sử giải ngân vào giai đoạn 2015–2016.
+  - Về mục đích vay: Hơn **75% toàn bộ danh mục** tập trung vào hai mục đích chính là **Hợp nhất nợ (Debt Consolidation)** và **Trả nợ thẻ tín dụng (Credit Card)**. Người vay tìm đến Lending Club không phải để đầu tư mạo hiểm, mà chủ yếu để tái tài trợ và giảm bớt gánh nặng lãi suất của các khoản nợ cá nhân hiện hữu.
+
+#### Trang 3 — Borrower Risk Profile (Đặc điểm người vay & Tín hiệu rủi ro đa chiều)
+- **Câu hỏi nghiệp vụ:** Đặc điểm hồ sơ nào báo hiệu rủi ro cao nhất và các biến số tài chính tương tác với nhau ra sao?
+- **Phát hiện dữ liệu:**
+  - **Tình trạng nhà ở:** Nhóm có tài sản thế chấp (Mortgage) chiếm 49.5%, nhóm đi thuê (Rent) chiếm 39.7%, và nhóm sở hữu hoàn toàn (Own) chiếm 10.7%.
+  - **Tương tác 2 chiều FICO × DTI:** Tỷ lệ DTI đơn lẻ không thể phân tách rủi ro (hai phân phối trả đủ và vỡ nợ chồng lấn lớn). Tuy nhiên, khi kết hợp hai chiều trong Heatmap: Người vay có **FICO thấp (<700) kết hợp DTI cao (>30%) có tỷ lệ vỡ nợ thực tế lên tới 33.1%**, cao gấp gần 4 lần nhóm an toàn FICO $\ge 750$ và DTI $\le 10\%$ (8.4%).
+  - **Phân bố PD theo FICO:** Boxplot chỉ ra trung vị PD giảm đơn điệu theo mức điểm FICO: từ 20.8% (nhóm 650–699) $\to$ 12.8% (700–749) $\to$ 6.8% (nhóm $\ge 750$).
+  - **Tỷ lệ Khoản vay trên Thu nhập (Loan-to-Income Ratio):** Nhóm có tỷ lệ Vay/Thu nhập càng lớn thì mức PD dự đoán trung bình càng cao (tăng từ 13.68% ở ratio <0.1 lên 32.56% ở ratio $\ge 1.0$).
+
+#### Trang 4 — Analysis RISK & Expected Loss (Phân tích rủi ro & Tổn thất kỳ vọng)
+- **Câu hỏi nghiệp vụ:** Mô hình phân bổ xác suất rủi ro ra sao, đặc trưng nào chi phối quyết định và tổn thất tài chính tập trung ở đâu?
+- **Phát hiện dữ liệu:**
+  - **Phân bố xác suất PD (Histogram 20 bins):** Tập trung mạnh ở dải thấp–trung bình (đỉnh 10–15% PD) và có đuôi rủi ro kéo dài về phía sau.
+  - **Tầng rủi ro (Risk Tiers):** Hơn 70% danh mục tập trung ở nhóm trung gian: Tier B chiếm 40.56% và Tier C chiếm 29.89%.
+  - **Giải thích toàn cục SHAP:** Kỳ hạn vay (`term_months`, Mean |SHAP| = 0.3155) là yếu tố rủi ro chi phối mạnh nhất mô hình — khoản vay 60 tháng tiềm ẩn xác suất vỡ nợ vượt trội so với 36 tháng. Kế tiếp là tỷ lệ Vay/Thu nhập ($0.1594$) và điểm FICO ($0.1560$).
+  - **Tích hợp ứng dụng:** Trang cung cấp nút điều hướng *"MỞ ỨNG DỤNG DỰ ĐOÁN"* giúp người dùng mở trực tiếp Web App Plotly Dash để kiểm tra ngay hồ sơ cá nhân.
+
+---
+
+### 6.3 Câu Chuyện Dữ Liệu Cốt Lõi & Nghịch Lý Tổn Thất Kỳ Vọng (The Expected Loss Paradox)
+
+> [!IMPORTANT]
+> **PHÁT HIỆN QUẢN TRỊ TRỌNG TÂM CỦA ĐỒ ÁN (THE CRITICAL RISK INSIGHT)**  
+> Khi đánh giá rủi ro tín dụng danh mục, việc chỉ nhìn vào xác suất vỡ nợ ($PD$) sẽ dẫn đến quyết định quản trị sai lầm nghiêm trọng nếu không kết hợp với Quy mô dư nợ tiếp xúc ($EAD$) và Tổn thất kỳ vọng ($Expected\ Loss$):
+> 
+> 1. **Nghịch lý giữa Tỷ lệ Vỡ Nợ và Tổn Thất Tài Chính:**
+>    - **Phân khúc Tier D** có xác suất vỡ nợ cá nhân cao nhất danh mục ($Mean\ PD = 51.79\%$), nhưng chỉ chiếm **6.46% tổng dư nợ** và **chỉ đóng góp 15.69% vào tổng tổn thất tài chính**.
+>    - Ngược lại, **Phân khúc Tier C** có xác suất vỡ nợ ở mức trung bình ($Mean\ PD = 30.15\%$), nhưng nắm giữ tới **33.42% tổng dư nợ tiếp xúc**, và do đó **ĐÓNG GÓP TỚI 47.89% (GẦN MỘT NỬA) TỔNG TỔN THẤT KỲ VỌNG CỦA TOÀN BỘ DANH MỤC** (178.42 triệu đơn vị tổn thất tại LGD cơ sở 45%).
+> 
+> 2. **Ý Nghĩa Thực Tiễn Đối Với Tổ Chức Tín Dụng:**
+>    - **Sai lầm truyền thống:** Bộ phận thẩm định thường dồn toàn bộ nguồn lực vào việc từ chối nhóm khách hàng rủi ro cực đoan (Tier D).
+>    - **Chiến lược đúng đắn:** An toàn vốn của tổ chức cho vay thực tế lại bị đe dọa nhiều nhất bởi **phân khúc trung gian mở rộng (Tier C)**. Nhà quản trị bắt buộc phải thiết lập chính sách kiểm soát trần hạn mức cấp tín dụng, đồng thời áp dụng cơ chế định giá lãi suất theo rủi ro (Risk-based Pricing) khắt khe cho Tier C để bù đắp 48% tổn thất kỳ vọng tiềm ẩn.
+
+---
+
+## 7. ỨNG DỤNG WEB DỰ ĐOÁN CÁ NHÂN (PLOTLY DASH WEB APP)
+
+Song song với Power BI Dashboard phân tích danh mục vĩ mô, nhóm phát triển ứng dụng Web tương tác độc lập phục vụ thẩm định vi mô theo thời gian thực:
+
+<div align="center">
+
+[![Render Web Service](https://img.shields.io/badge/Trực_Tiếp_Ứng_Dụng_Web-Render_Cloud-008DE4?style=for-the-badge&logo=render&logoColor=white)](https://credit-risk-analytics-and-prediction.onrender.com/)
+
+*Trải nghiệm trực tuyến tại: [Credit Risk Prediction App (Render Live)](https://credit-risk-analytics-and-prediction.onrender.com/)*
+
+</div>
 
 ```mermaid
 flowchart TD
@@ -310,13 +381,12 @@ flowchart TD
     style OUT fill:#E8F5E9,stroke:#43A047,stroke-width:2px
 ```
 
-*Lưu ý phương pháp luận:* Mô hình 6 biến đầu vào chỉ đóng vai trò giao diện demo tương tác hỗ trợ người dùng cuối, hoàn toàn tách biệt với mô hình chính thức 103 biến được báo cáo ở Chương 3.
-
-- **Triển khai Đám Mây (Cloud Deployment via Render):** Ngoài việc chạy cục bộ, ứng dụng Dash được đóng gói tự vận hành (self-contained bundle) sẵn sàng triển khai dưới dạng **Python Web Service** trên Render theo hướng dẫn tại [`apps/individual_prediction_dash/DEPLOY_RENDER.md`](apps/individual_prediction_dash/DEPLOY_RENDER.md) và danh mục phụ thuộc tinh gọn [`requirements-deploy.txt`](apps/individual_prediction_dash/requirements-deploy.txt). Gói runtime chỉ yêu cầu 11.5 MB dữ liệu artifacts (hoàn toàn không cần tải 29.9M dòng dữ liệu thô), cấu hình 1 Gunicorn worker tối ưu hóa bộ nhớ cho môi trường Free 512 MB RAM.
+- **Mục tiêu ứng dụng:** Cho phép chuyên viên tín dụng nhập nhanh 6 thông số trực quan của khách hàng, so sánh tức thì giữa hai mô hình (XGBoost vs Logistic), quan sát giải thích cục bộ Local SHAP cho từng quyết định và dự phóng mức tổn thất Expected Loss theo 3 kịch bản LGD (30%, 45%, 60%).
+- **Đóng gói Cloud Tự Vận Hành (Render Web Service):** Ứng dụng được thiết kế hoàn toàn khép kín tại [`apps/individual_prediction_dash/`](apps/individual_prediction_dash/) với gói artifacts chỉ **11.5 MB** (không cần nạp 29.9M dòng dữ liệu thô), vận hành trên môi trường Render Free (Python 3.12, 1 worker Gunicorn, 4 threads) ổn định dưới ngưỡng 512 MB RAM ([`DEPLOY_RENDER.md`](apps/individual_prediction_dash/DEPLOY_RENDER.md)).
 
 ---
 
-## 7. CẤU TRÚC KHO LƯU TRỮ (REPOSITORY STRUCTURE)
+## 8. CẤU TRÚC KHO LƯU TRỮ (REPOSITORY STRUCTURE)
 
 ```text
 ttdltq/
@@ -360,6 +430,7 @@ ttdltq/
 │   ├── model_experiments/              # Báo cáo thực nghiệm mở rộng & pilot F1 cải tiến
 │   │   └── f1_improvement/             # Nghiên cứu pilot F1 (protocol, logs, chẩn đoán)
 │   └── figures/                        # Toàn bộ hình ảnh phục vụ báo cáo chính thức
+│       ├── paper/                      # Báo cáo cuối kỳ bản PDF chính thức (85 trang)
 │       ├── eda/                        # 5 biểu đồ EDA tĩnh (Hình 2 - Hình 6)
 │       ├── modeling/                   # 4 biểu đồ đánh giá chuẩn mực, SHAP Global & Summary
 │       │   ├── model_roc_curve.png     # FIGURE-01: ROC Curves so sánh 3 mô hình
@@ -377,7 +448,7 @@ ttdltq/
 │       ├── evaluation_figures.py       # Tự động hóa sinh 4 đồ thị đánh giá thực nghiệm
 │       └── experiments/                # Khung thử nghiệm mở rộng & giám sát pilot F1
 │
-└── tests/                              # Hệ thống 297 unit, integration & regression tests
+└── tests/                              # Hệ thống 299 unit, integration & regression tests
     ├── apps/                           # Kiểm thử ứng dụng Dash, Percentile & Render Bundle
     ├── data/                           # Kiểm thử Data Engineering & Leakage Gate
     └── models/                         # Kiểm thử Preprocessing, Evaluation Figures, SHAP & EL
@@ -385,9 +456,9 @@ ttdltq/
 
 ---
 
-## 8. HƯỚNG DẪN CÀI ĐẶT & THỰC THI MÃ NGUỒN
+## 9. HƯỚNG DẪN CÀI ĐẶT & THỰC THI MÃ NGUỒN
 
-### 8.1 Thiết Lập Môi Trường Ảo
+### 9.1 Thiết Lập Môi Trường Ảo
 Yêu cầu máy tính cài đặt sẵn **Python 3.10+** và **Power BI Desktop** (khuyến nghị bản 2024 trở lên):
 
 ```powershell
@@ -402,14 +473,14 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 8.2 Chạy Toàn Bộ Hệ Thống Kiểm Thử Tự Động (Regression Test Suite)
+### 9.2 Chạy Toàn Bộ Hệ Thống Kiểm Thử Tự Động (Regression Test Suite)
 Đảm bảo toàn bộ 299 kịch bản kiểm thử vượt qua thành công:
 
 ```powershell
 pytest tests -v
 ```
 
-### 8.3 Khởi Chạy Ứng Dụng Demo Dự Đoán Cá Nhân (Plotly Dash Cục Bộ)
+### 9.3 Khởi Chạy Ứng Dụng Demo Dự Đoán Cá Nhân (Plotly Dash Cục Bộ)
 Chạy script tự động hóa khởi chạy Web App tại cổng `8050`:
 
 ```powershell
@@ -421,12 +492,12 @@ Hoặc khởi chạy trực tiếp thông qua Python:
 ```
 Truy cập trình duyệt tại địa chỉ: `http://127.0.0.1:8050` để thao tác nhập hồ sơ, so sánh XGBoost vs Logistic và quan sát đóng góp cục bộ SHAP.
 
-### 8.4 Mở & Tương Tác Với Power BI Dashboard
-1. Mở tệp dự án Power BI: `reports/figures/dashboard/nghia.pbip` bằng **Power BI Desktop**.
+### 9.4 Mở & Tương Tác Với Power BI Dashboard
+1. Mở tệp dự án Power BI: `reports/figures/dashboard/nghia.pbip` bằng **Power BI Desktop** (hoặc truy cập trực tiếp qua [Power BI Service Live](https://app.powerbi.com/view?r=eyJrIjoiYzlmMmM3YzAtMzE4OC00ZThjLThkMjktNzVmYTNmOTMyYzk2IiwidCI6IjM3NDE3YTJmLWYzMWEtNDZjMC05NzQyLTU0Yjg1OWY1ZmI0YyIsImMiOjEwfQ%3D%3D)).
 2. Kiểm tra các kết nối dữ liệu đến thư mục `data/interim/` và `data/processed/modeling/`.
-3. Sử dụng các Slicer (Bộ lọc Năm, Kỳ hạn, Mục đích vay, Hạng rủi ro) để trải nghiệm tính năng Drill-down và Cross-filtering trên 10 trang phân tích.
+3. Sử dụng các Slicer (Bộ lọc Năm, Kỳ hạn, Mục đích vay, Hạng rủi ro) để trải nghiệm tính năng Drill-down và Cross-filtering trên 4 trang phân tích chính.
 
-### 8.5 Triển Khai Ứng Dụng Web Lên Nền Tảng Đám Mây (Render Web Service)
+### 9.5 Triển Khai Ứng Dụng Web Lên Nền Tảng Đám Mây (Render Web Service)
 Ứng dụng Dash hỗ trợ triển khai trực tiếp từ GitHub lên Render mà không cần nạp bộ dữ liệu lớn:
 1. **Thiết lập dịch vụ Web Service trên Render:**
    - **Root Directory:** `apps/individual_prediction_dash`
@@ -442,13 +513,13 @@ Chi tiết cấu hình và tối ưu hóa tài nguyên xem tại [`DEPLOY_RENDER
 
 ---
 
-## 9. CAM KẾT LIÊM CHÍNH HỌC THUẬT & GIỚI HẠN ĐỀ TÀI
+## 10. CAM KẾT LIÊM CHÍNH HỌC THUẬT & GIỚI HẠN ĐỀ TÀI
 
-### 9.1 Cam Kết Liêm Chính Học Thuật (Academic Integrity)
+### 10.1 Cam Kết Liêm Chính Học Thuật (Academic Integrity)
 - Toàn bộ kết quả thực nghiệm trong đồ án được nhóm sinh viên xây dựng từ mã nguồn gốc, có bản kê định danh (manifest) và mã băm SHA-256 bảo vệ toàn vẹn.
 - Báo cáo phân biệt rạch ròi giữa số liệu đánh giá độc lập trên **Frozen Test** của mô hình ứng viên và kết quả suy luận thử nghiệm trên ứng dụng demo. Không gian lận dữ liệu hay báo cáo kết quả in-sample thay thế cho khả năng tổng quát hóa.
 
-### 9.2 Giới Hạn Của Đề Tài
+### 10.2 Giới Hạn Của Đề Tài
 1. **Dữ liệu lịch sử quan sát:** Dữ liệu phản ánh hành vi tín dụng tại thị trường Hoa Kỳ giai đoạn 2007–2018; không đại diện cho điều kiện kinh tế hiện tại hoặc thị trường tín dụng tại Việt Nam.
 2. **Quan hệ tương quan $\neq$ Nhân quả:** Các giải thích từ SHAP hay EDA chỉ mô tả liên hệ thống kê giữa đặc trưng đầu vào và dự báo của mô hình trên mẫu quan sát, không chứng minh can thiệp đặc trưng sẽ trực tiếp thay đổi khả năng trả nợ của người vay.
 3. **Giả định tổn thất:** $LGD$ (45%) là giả định minh họa cho phân tích kịch bản; $loan\_amnt$ là đại lượng thay thế ($EAD\ proxy$), chưa mô hình hóa lịch thanh toán thực tế và chiết khấu dòng tiền. Expected Loss ở đây là tổn thất kỳ vọng thống kê, không phải số tiền lỗ thực tế (realized loss).
@@ -456,7 +527,7 @@ Chi tiết cấu hình và tối ưu hóa tài nguyên xem tại [`DEPLOY_RENDER
 
 ---
 
-## 10. TÀI LIỆU THAM KHẢO
+## 11. TÀI LIỆU THAM KHẢO
 
 1. **Basel Committee on Banking Supervision**, *"Principles for the Management of Credit Risk,"* Bank for International Settlements (BIS), Sep. 2000.
 2. **Basel Committee on Banking Supervision**, *"IRB approach: treatment of expected losses and provisions,"* Basel Framework, CRE35, BIS.
