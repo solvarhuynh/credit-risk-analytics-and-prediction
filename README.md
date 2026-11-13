@@ -1,5 +1,5 @@
 # PHÂN TÍCH RỦI RO TÍN DỤNG VÀ KHẢ NĂNG VỠ NỢ CỦA KHÁCH HÀNG CÁ NHÂN
-## Credit Risk Analytics & Default Prediction (Lending Club 2007–2018)
+## Credit Risk Analytics & Default Prediction
 
 <div align="center">
 
